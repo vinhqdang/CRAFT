@@ -1,0 +1,51 @@
+\section{Methodology}
+
+\subsection{Architecture Overview}
+The CRAF-X pipeline evaluates spatial consistencies on BEV projected representations. Given representations $F_{\text{cam}}$ and $F_{\text{lid}}$ computed via Bird's Eye View transformation matrices, the Cross-modal Consistency Probe (CCP) maps discrepancies natively.
+
+\begin{algorithm}[h]
+\caption{CRAF-X Inference with Explainability Output}
+\begin{algorithmic}[1]
+\Require Images $I$, LiDAR points $P$, threshold $\tau \in (0,1)$
+\Ensure Detections $(H, B, V)$, Attribution $A$, Anomaly $S$
+\State $F_{\text{cam}} \gets \text{CamEnc}(I; \theta_{\text{cam}})$
+\State $F_{\text{lid}} \gets \text{LidEnc}(P; \theta_{\text{lid}})$
+\State $S \gets \text{CCP}(F_{\text{cam}}, F_{\text{lid}}; \theta_{\text{ccp}})$ 
+\State $A \gets \text{ComputeAttribution}(S)$
+\ForAll{cells $(i,j)$}
+    \If{$S(i,j) < \tau$}
+        \State Disable cross-modal interaction
+    \EndIf
+\EndFor
+\State $F_{\text{fused}} \gets \text{GAFM}(F_{\text{cam}}, F_{\text{lid}}, A; \theta_{\text{gafm}})$
+\State $(H, B, V) \gets \text{DetectionHead}(F_{\text{fused}}; \theta_{\text{head}})$
+\State \Return $(H, B, V), A, S$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Cross-modal Consistency Probe (CCP)}
+The CCP computes a per-cell consistency score $S(i,j) \in [0,1]$ that measures how semantically aligned $F_{cam}$ and $F_{lid}$ are at each BEV grid cell:
+\begin{equation}
+S(i,j) = \sigma( \text{MLP}_s( [F_{\text{cam}}(i,j) \oplus F_{\text{lid}}(i,j) \oplus |F_{\text{cam}}(i,j) - F_{\text{lid}}(i,j)|] ) )
+\end{equation}
+
+\subsection{Gated Adaptive Fusion Module (GAFM)}
+The GAFM dynamically aggregates $F_{\text{cam}}$ and $F_{\text{lid}}$ alongside the computed consistency map $S$. We compute attribution maps via temperature scaling using hyper-parameters $\alpha$ and $\beta$.
+\begin{equation}
+A(i,j,\text{cam}) = 1 - S(i,j)^\alpha  \cdot  \text{gate}_{\text{cam}}(i,j)
+\end{equation}
+\begin{equation}
+A(i,j,\text{lid}) = S(i,j)^\beta  \cdot  \text{gate}_{\text{lid}}(i,j)
+\end{equation}
+
+The final fused feature representation guarantees that degraded interactions fall to additive zero when spatial consistency indicates perturbation:
+\begin{equation}
+F_{\text{fused}}(i,j) = A(i,j,\text{cam}) F_{\text{cam}}(i,j)  +  A(i,j,\text{lid}) F_{\text{lid}}(i,j) + \text{MLP}_{\text{cross}}( F_{\text{cam}} \otimes F_{\text{lid}} )
+\end{equation}
+
+\subsection{Adversarial Consistency Training (ACT)}
+To ensure spatial alignment functions as an attack anomaly detector, the module trains utilizing Projected Gradient Descent over both modalities.
+\begin{equation}
+L_{act} = L_{det}^{\text{adv}} + \gamma \cdot \text{KL}( A_{\text{clean}} || A_{\text{perturbed}} )
+\end{equation}
+The penalty guarantees the spatial interpretation matrix $A$ responds faithfully directly correlating to spatial injections occurring on individual modalities.

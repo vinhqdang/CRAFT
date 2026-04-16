@@ -1,0 +1,30 @@
+\section{Evaluation Plan}
+
+\subsection{Datasets}
+We benchmark against three primary 3D object detection frameworks. For consistency, standard intersection metrics determine structural effectiveness.
+
+\begin{table}[h]
+\centering
+\caption{Dataset Modalities and Roles}
+\begin{tabular}{llp{5cm}}
+\toprule
+\textbf{Dataset} & \textbf{Sensors} & \textbf{Primary Role} \\
+\midrule
+nuScenes & 6 Cam + 1 LiDAR & Main robustness benchmark \\
+KITTI & 1 Cam + 1 LiDAR & Secondary benchmark \\
+Waymo Open Dataset & 5 Cam + 5 LiDAR & Scalability evaluation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Attack Scenarios}
+Evaluation incorporates rigorous bounds tracking PGD-$\ell_\infty$ gradients dynamically to trace structural decay.
+\begin{itemize}
+    \item \textbf{A1}: White-box gradient attack on Camera $F_{\text{cam}}$, $\varepsilon=4/255$.
+    \item \textbf{A2}: Adversarial displacement of point coordinates $F_{\text{lid}}$, $\varepsilon=0.1$m.
+    \item \textbf{A3}: Simultaneous multi-modal attack.
+    \item \textbf{A4}: Physical patch insertion (camera images).
+\end{itemize}
+
+\subsection{Metrics}
+Our results combine canonical bounding box correctness via \textbf{mAP} and \textbf{NDS} mapping explicitly against robustness variables \textbf{Consistency-AUC} and \textbf{Attribution Fidelity}. We establish that intrinsic spatial consistency tracks true geometric adversarial perturbations with $>0.85$ AUC alignment.

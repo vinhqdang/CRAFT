@@ -1,0 +1,13 @@
+\section{Related Works}
+
+\subsection{Multi-Modal Fusion Architectures}
+Multi-modal sensor fusion for autonomous driving has matured rapidly. Liu et al. \cite{Liu2023BEVFusion} established BEVFusion as the canonical BEV-centric framework, projecting perspective-view camera features into the BEV plane via Lift-Splat-Shoot-style depth estimation. Bai et al. \cite{Bai2022TransFusion} demonstrated that soft cross-modal attention between LiDAR proposals and image patches improves robustness to sensor degradation, introducing TransFusion. Chen et al. \cite{Chen2023FUTR3D} extended the paradigm to arbitrary sensor combinations within FUTR3D. Recent architectures like CMT \cite{Yan2023CMT} and FDSNet \cite{Ibrahim2025FDSNet} explicitly target dynamic adjustments \cite{Yang2025ICRA}. Concurrently, robustness to natural corruptions has been benchmarked extensively \cite{Yu2023Bench, Dong2023Benchmark, Chen2025RDF, Zuo2025CrossSupervised}.
+
+\subsection{Adversarial Attacks on Fusion Systems}
+The earliest demonstrations of physical vulnerabilities by Cao et al. \cite{Cao2021Invisible} formulated physical optimizations evading multiple sensors. Tu et al. \cite{Tu2022MultiSensor} placed an adversarial object atop a vehicle to corrupt LiDAR projections. The "weakest-link" finding by Cheng et al. \cite{Cheng2024FusionNotEnough} proved attacking only the camera modality drops overall mAP severely. Other modern physical attacks include backdoor triggers \cite{Chaturvedi2024BadFusion}, BEV spatial posters \cite{Wang2025BEVAttack}, and real-time open-pilot exploits \cite{Chen2025Revisiting}.
+
+\subsection{Adversarial Defenses}
+Defenses generally rely on single-channel robustness \cite{Wang2022WACV} or basic consistency voting \cite{Yang2021Defending}. Certified architectures like MMCert \cite{Wang2024MMCert} bound bounds under $\ell_0$-bounded attacks but degrade high-resolution LiDAR tracking capabilities without explaining modality trust. Models like PointGuard \cite{Liu2021PointGuard} provide cloud classification certifiability but fail extending to multimodal BEV pipelines.
+
+\subsection{Explainability \& Research Gaps}
+Recent surveys on autonomous multimodal fusion emphasize interpretability as a critically underdeveloped dimension \cite{Larsen2025Survey, Panduru2025XAI, CODA2024Workshop}. Classical saliency maps \cite{Selvaraju2020GradCAM, Sundararajan2017IG} process generic isolated domains but do not represent a spatially grounded fusion attribution map. CRAF-X explicitly bridges this gap natively inside its robustness training loop.

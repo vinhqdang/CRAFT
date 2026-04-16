@@ -1,0 +1,9 @@
+\section{Introduction}
+
+The architecture of multi-modal sensor fusion for autonomous driving has matured rapidly from simple concatenation pipelines to sophisticated cross-modal attention architectures operating in a unified Bird's-Eye View (BEV) space. However, the assumption that fusion systems are inherently robust due to modality redundancy has been conclusively disproven by a sustained body of adversarial attack research.
+
+We observe that adversarial attacks on one modality in a LiDAR-camera fusion system produce a \textit{cross-modal geometric inconsistency signal}. Given the rigid calibration between camera and LiDAR in a well-maintained vehicle, any sufficiently large perturbation to camera features projected into BEV space produces local feature vectors that are semantically inconsistent with the LiDAR BEV features co-located at the same grid cell. This exact inconsistency is what is not exploited by any existing fusion architecture.
+
+\textbf{Core Insight:} Cross-modal inconsistency at the BEV grid cell level is simultaneously (1) an \textit{adversarial attack detector}, (2) a \textit{dynamic fusion gate} that suppresses corrupted modality contributions, and (3) an \textit{explainability signal} that reveals modality trust as a spatial attribution map interpretable by auditors and regulators.
+
+CRAF-X operationalizes this insight through three tightly coupled components: a Cross-modal Consistency Probe (CCP), a Gated Adaptive Fusion Module (GAFM), and an Adversarial Consistency Training (ACT) objective with Modal Attribution Regularization (MAR).

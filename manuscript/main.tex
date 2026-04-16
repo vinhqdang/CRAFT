@@ -1,0 +1,39 @@
+\documentclass[acmsmall, review, anonymous]{acmart}
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+\begin{document}
+
+\title{CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability for Autonomous Perception}
+
+\author{Anonymous Author}
+\affiliation{%
+  \institution{Institution}
+  \city{City}
+  \country{Country}
+}
+
+\begin{abstract}
+Explainability for multi-modal autonomous perception has emerged as a critical research gap. We introduce CRAF-X, a Cross-modal Robust Adaptive Fusion with eXplainability framework. By explicitly mapping spatial modality contradictions, we derive a dynamic Gated Adaptive Fusion Module (GAFM) bounded by an Adversarial Consistency Training (ACT) routine. CRAF-X represents the first multi-modal Bird's-Eye View (BEV) fusion framework extracting geometric consistency intrinsically to suppress adversarial signals and produce spatially grounded interpretation maps.
+\end{abstract}
+
+\maketitle
+
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_methodology}
+\input{sections/04_evaluation}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}
