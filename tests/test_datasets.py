@@ -28,3 +28,30 @@ def test_dataloader_batching():
     assert batch['image'].shape == (2, 3, 32, 32)
     assert batch['m'].shape == (2, 1, 32, 32)
     assert batch['targets']['H'].shape == (2, 10, 32, 32)
+
+
+from craf_x.datasets.nuscenes_dataset import CRAFXNuScenesDataset
+from craf_x.datasets.kitti_dataset import CRAFXKittiDataset
+from craf_x.datasets.waymo_dataset import CRAFXWaymoDataset
+
+def test_nuscenes_real_wrapper():
+    dataset = CRAFXNuScenesDataset(data_root="/tmp/fake_nusc")
+    assert len(dataset) > 0
+    sample = dataset[0]
+    assert 'image' in sample
+    assert 'pointcloud' in sample
+    assert 'targets' in sample
+
+def test_kitti_real_wrapper():
+    dataset = CRAFXKittiDataset(data_root="/tmp/fake_kitti")
+    assert len(dataset) > 0
+    sample = dataset[0]
+    assert 'image' in sample
+    assert 'pointcloud' in sample
+
+def test_waymo_real_wrapper():
+    dataset = CRAFXWaymoDataset(data_root="/tmp/fake_waymo")
+    assert len(dataset) > 0
+    sample = dataset[0]
+    assert 'image' in sample
+    assert 'pointcloud' in sample
