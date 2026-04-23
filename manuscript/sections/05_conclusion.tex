@@ -1,0 +1,10 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we introduced CRAF-X (Cross-modal Robust Adaptive Fusion with eXplainability), a novel multi-modal fusion architecture designed to secure autonomous vehicle perception against adversarial attacks while providing native, spatially grounded explainability. Traditional fusion mechanisms blindly integrate camera and LiDAR streams, creating a critical vulnerability where an attack on a single modality can collapse the entire detection system. CRAF-X fundamentally resolves this by shifting from blind fusion to verified gating.
+
+By leveraging the inherent geometric constraints between perspective images and 3D point clouds, our Cross-modal Consistency Probe (CCP) actively monitors the Bird's-Eye View (BEV) space for semantic misalignment. When an adversarial perturbation or severe sensor degradation (e.g., blinding fog) corrupts one modality, the CCP detects the geometric inconsistency and signals the Gated Adaptive Fusion Module (GAFM) to dynamically quarantine the corrupted features. This ensures that the detection head relies exclusively on the surviving, uncompromised sensor data. Furthermore, our novel Adversarial Consistency Training (ACT) objective guarantees that these gating mechanisms remain calibrated even under sophisticated, multi-modal white-box attacks.
+
+Crucially, CRAF-X achieves this state-of-the-art robustness without sacrificing clean performance, and it natively produces interpretable Modal Attribution Maps as a free byproduct of the gating process. These Trust Maps explicitly visualize \emph{where} and \emph{why} the system trusted or rejected specific sensor data, fulfilling a critical requirement for safety auditors and regulatory bodies governing autonomous deployments. 
+
+Future work will explore extending the CRAF-X consistency formulation into the temporal domain, incorporating 4D radar streams, and deploying the architecture onto embedded hardware to evaluate real-time gating efficiency in physical driving environments.

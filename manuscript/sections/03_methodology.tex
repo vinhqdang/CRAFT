@@ -1,7 +1,54 @@
 \section{Methodology}
+\label{sec:methodology}
 
-\subsection{Architecture Overview}
-The CRAF-X pipeline evaluates spatial consistencies on BEV projected representations. Given representations $F_{\text{cam}}$ and $F_{\text{lid}}$ computed via Bird's Eye View transformation matrices, the Cross-modal Consistency Probe (CCP) maps discrepancies natively.
+The core philosophy of CRAF-X is to reject the premise of blind multi-modal aggregation. Instead of assuming the input modalities are inherently trustworthy, we implement a verify-then-fuse architecture. This verification occurs natively in the 3D Bird's-Eye View (BEV) space, allowing us to compute physical, spatial contradictions between the camera and LiDAR representations.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{figures/fig_bev_fusion.png}
+    \caption{Conceptualization of the BEV Fusion Grid. Camera frustums and LiDAR voxel blocks are projected into a unified 2D grid. The CRAF-X consistency probe monitors this grid, highlighting localized geometric inconsistencies (red) when the physical structure captured by LiDAR fails to align with the semantic features extracted by the camera.}
+    \label{fig:bev_fusion}
+\end{figure}
+
+\subsection{Modality-Specific BEV Encoding}
+Given $N_c$ perspective camera images $I \in \mathbb{R}^{N_c \times H \times W \times 3}$ and a LiDAR point cloud $P \in \mathbb{R}^{N_p \times 4}$ (XYZ and intensity), the first stage of the architecture extracts modality-specific BEV feature maps.
+
+For the camera branch, we employ a Lift-Splat-Shoot (LSS) style view transform paired with a Swin-Transformer backbone. This generates a soft depth distribution per pixel, allowing the 2D image features to be projected into 3D frustum coordinates and voxelized into the BEV plane, yielding $F_{\text{cam}} \in \mathbb{R}^{H_b \times W_b \times C}$. Concurrently, the LiDAR branch processes the point cloud through a Sparse 3D Convolutional Network. The resulting 3D feature volume is height-collapsed via max-pooling to produce the LiDAR BEV representation $F_{\text{lid}} \in \mathbb{R}^{H_b \times W_b \times C}$.
+
+\subsection{Cross-modal Consistency Probe (CCP)}
+The CCP computes a per-cell consistency score $S(i,j) \in [0,1]$ that measures how semantically aligned $F_{\text{cam}}$ and $F_{\text{lid}}$ are at each specific BEV grid cell. Rather than performing global feature alignment, this module ensures strict local geometric agreement:
+\begin{equation}
+S(i,j) = \sigma\left( \text{MLP}_s\left( \left[F_{\text{cam}}(i,j) \oplus F_{\text{lid}}(i,j) \oplus |F_{\text{cam}}(i,j) - F_{\text{lid}}(i,j)|\right] \right) \right)
+\end{equation}
+where $\oplus$ denotes concatenation, $|\cdot|$ is the element-wise absolute difference, and $\sigma$ is the sigmoid activation function. When an adversarial perturbation displaces or corrupts camera BEV features relative to the uncompromised LiDAR geometry, $S(i,j)$ will drop significantly in the affected grid cells, explicitly tagging the spatial anomaly.
+
+\subsection{Gated Adaptive Fusion Module (GAFM)}
+The GAFM serves as the defensive quarantine mechanism. Using the consistency map $S$, it dynamically aggregates $F_{\text{cam}}$ and $F_{\text{lid}}$. We compute attribution maps via temperature scaling using hyper-parameters $\alpha$ and $\beta$, scaling the gate mechanisms based on the computed trust:
+\begin{equation}
+A(i,j,\text{cam}) = 1 - S(i,j)^\alpha  \cdot  \text{gate}_{\text{cam}}(i,j)
+\end{equation}
+\begin{equation}
+A(i,j,\text{lid}) = S(i,j)^\beta  \cdot  \text{gate}_{\text{lid}}(i,j)
+\end{equation}
+
+The final fused feature representation $F_{\text{fused}}$ guarantees that degraded or attacked interactions fall to an additive zero. If the spatial consistency indicates a perturbation, the corrupted modality is silenced for that specific grid cell:
+\begin{equation}
+F_{\text{fused}}(i,j) = A(i,j,\text{cam}) F_{\text{cam}}(i,j)  +  A(i,j,\text{lid}) F_{\text{lid}}(i,j) + \text{MLP}_{\text{cross}}( F_{\text{cam}} \otimes F_{\text{lid}} )
+\end{equation}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{figures/fig_crafx_gating.png}
+    \caption{Gating and Explainability. The GAFM generates an explicit Modal Attribution Map (visualized here as a UI overlay). When an attack occurs, the system quarantines the camera input for the affected region (red aura) and relies exclusively on the geometric LiDAR bounds (green bounding box) to maintain safe trajectory tracking.}
+    \label{fig:crafx_gating}
+\end{figure}
+
+\subsection{Adversarial Consistency Training (ACT)}
+To ensure the spatial alignment functions as a robust attack anomaly detector, the entire module trains utilizing Projected Gradient Descent (PGD) over both modalities simultaneously. 
+\begin{equation}
+L_{act} = L_{det}^{\text{adv}} + \gamma \cdot \text{KL}( A_{\text{clean}} || A_{\text{perturbed}} )
+\end{equation}
+The Modal Attribution Regularization penalty ($\gamma \cdot \text{KL}$) guarantees that the spatial interpretation matrix $A$ responds faithfully, directly correlating to spatial injections occurring on individual modalities. This mechanism intrinsically binds the network's explainability to its mathematical robustness.
 
 \begin{algorithm}[h]
 \caption{CRAF-X Inference with Explainability Output}
@@ -14,7 +61,7 @@ The CRAF-X pipeline evaluates spatial consistencies on BEV projected representat
 \State $A \gets \text{ComputeAttribution}(S)$
 \ForAll{cells $(i,j)$}
     \If{$S(i,j) < \tau$}
-        \State Disable cross-modal interaction
+        \State Disable cross-modal interaction for cell $(i,j)$
     \EndIf
 \EndFor
 \State $F_{\text{fused}} \gets \text{GAFM}(F_{\text{cam}}, F_{\text{lid}}, A; \theta_{\text{gafm}})$
@@ -22,30 +69,3 @@ The CRAF-X pipeline evaluates spatial consistencies on BEV projected representat
 \State \Return $(H, B, V), A, S$
 \end{algorithmic}
 \end{algorithm}
-
-\subsection{Cross-modal Consistency Probe (CCP)}
-The CCP computes a per-cell consistency score $S(i,j) \in [0,1]$ that measures how semantically aligned $F_{cam}$ and $F_{lid}$ are at each BEV grid cell:
-\begin{equation}
-S(i,j) = \sigma( \text{MLP}_s( [F_{\text{cam}}(i,j) \oplus F_{\text{lid}}(i,j) \oplus |F_{\text{cam}}(i,j) - F_{\text{lid}}(i,j)|] ) )
-\end{equation}
-
-\subsection{Gated Adaptive Fusion Module (GAFM)}
-The GAFM dynamically aggregates $F_{\text{cam}}$ and $F_{\text{lid}}$ alongside the computed consistency map $S$. We compute attribution maps via temperature scaling using hyper-parameters $\alpha$ and $\beta$.
-\begin{equation}
-A(i,j,\text{cam}) = 1 - S(i,j)^\alpha  \cdot  \text{gate}_{\text{cam}}(i,j)
-\end{equation}
-\begin{equation}
-A(i,j,\text{lid}) = S(i,j)^\beta  \cdot  \text{gate}_{\text{lid}}(i,j)
-\end{equation}
-
-The final fused feature representation guarantees that degraded interactions fall to additive zero when spatial consistency indicates perturbation:
-\begin{equation}
-F_{\text{fused}}(i,j) = A(i,j,\text{cam}) F_{\text{cam}}(i,j)  +  A(i,j,\text{lid}) F_{\text{lid}}(i,j) + \text{MLP}_{\text{cross}}( F_{\text{cam}} \otimes F_{\text{lid}} )
-\end{equation}
-
-\subsection{Adversarial Consistency Training (ACT)}
-To ensure spatial alignment functions as an attack anomaly detector, the module trains utilizing Projected Gradient Descent over both modalities.
-\begin{equation}
-L_{act} = L_{det}^{\text{adv}} + \gamma \cdot \text{KL}( A_{\text{clean}} || A_{\text{perturbed}} )
-\end{equation}
-The penalty guarantees the spatial interpretation matrix $A$ responds faithfully directly correlating to spatial injections occurring on individual modalities.
