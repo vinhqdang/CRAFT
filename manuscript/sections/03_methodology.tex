@@ -5,6 +5,13 @@ The core philosophy of CRAF-X is to reject the premise of blind multi-modal aggr
 
 \begin{figure}[ht]
     \centering
+    \includegraphics[width=\linewidth]{figures/fig_architecture.png}
+    \caption{Overall Architecture of CRAF-X. Perspective images and LiDAR point clouds are processed by their respective encoders into BEV feature maps. The novel Cross-modal Consistency Probe (CCP) computes a semantic alignment score $S$, driving the Gated Adaptive Fusion Module (GAFM) to dynamically attenuate corrupted features before passing the fused representation to the CenterPoint detection head.}
+    \label{fig:architecture}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
     \includegraphics[width=\linewidth]{figures/fig_bev_fusion.png}
     \caption{Conceptualization of the BEV Fusion Grid. Camera frustums and LiDAR voxel blocks are projected into a unified 2D grid. The CRAF-X consistency probe monitors this grid, highlighting localized geometric inconsistencies (red) when the physical structure captured by LiDAR fails to align with the semantic features extracted by the camera.}
     \label{fig:bev_fusion}
