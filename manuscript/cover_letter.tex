@@ -1,0 +1,45 @@
+\documentclass[11pt,a4paper]{letter}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\begin{document}
+
+\begin{letter}{
+Editor-in-Chief\\
+\textbf{The Visual Computer}\\
+Springer
+}
+
+\opening{Dear Editor-in-Chief,}
+
+We are pleased to submit our original research manuscript entitled \textbf{``CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability for Autonomous Perception''} for consideration for publication in \textit{The Visual Computer}.
+
+In this manuscript, we address a critical vulnerability in modern autonomous vehicle perception: the ``weakest link'' problem in multi-modal sensor fusion. While fusing camera and LiDAR data is standard practice, current architectures blindly aggregate these modalities, leaving the system highly susceptible to single-sensor adversarial attacks and severe environmental degradation (e.g., blinding fog). Furthermore, these black-box systems lack spatial explainability, creating significant hurdles for safety auditing.
+
+To overcome these challenges, we introduce \textbf{CRAF-X}, a novel defensive fusion framework that pioneers a \textit{verify-then-fuse} paradigm. Our core contributions include:
+\begin{enumerate}
+    \item \textbf{Cross-modal Consistency Probe (CCP):} A novel mechanism that natively detects semantic and geometric contradictions between modalities in the shared Bird's-Eye View (BEV) space.
+    \item \textbf{Gated Adaptive Fusion Module (GAFM):} A dynamic gating system that quarantines corrupted sensory inputs at the grid-cell level, preventing catastrophic perception failures.
+    \item \textbf{Adversarial Consistency Training (ACT):} A rigorous training objective that binds mathematical robustness to visual explainability, generating natively interpretable \textit{Modal Attribution Maps} (Trust Maps).
+\end{enumerate}
+
+Extensive evaluations on the nuScenes dataset demonstrate that CRAF-X achieves state-of-the-art robustness against simultaneous multi-modal attacks, physical patch insertions, and severe sensor dropout, while maintaining exceptional clean performance.
+
+We believe this work is an excellent fit for \textit{The Visual Computer}, as it significantly advances the state-of-the-art in visual computing for autonomous systems. The generation of explicitly grounded, visual interpretation maps directly aligns with the journal's focus on innovative visual representations and computer vision applications.
+
+We confirm that this manuscript is original, has not been published elsewhere, and is not currently under consideration by another journal. All authors have approved the manuscript and agree with its submission to \textit{The Visual Computer}.
+
+Thank you for your time and consideration. We look forward to your response.
+
+\closing{Sincerely,\\
+\vspace{1cm}
+Corresponding Author Name\\
+Title/Position\\
+Institution Name\\
+Email Address\\
+Phone Number
+}
+
+\end{letter}
+\end{document}
