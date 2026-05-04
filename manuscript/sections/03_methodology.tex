@@ -20,7 +20,7 @@ The core philosophy of CRAF-X is to reject the premise of blind multi-modal aggr
 \subsection{Modality-Specific BEV Encoding}
 Given $N_c$ perspective camera images $I \in \mathbb{R}^{N_c \times H \times W \times 3}$ and a LiDAR point cloud $P \in \mathbb{R}^{N_p \times 4}$ (XYZ and intensity), the first stage of the architecture extracts modality-specific BEV feature maps.
 
-For the camera branch, we employ a Lift-Splat-Shoot (LSS) style view transform paired with a Swin-Transformer backbone. This generates a soft depth distribution per pixel, allowing the 2D image features to be projected into 3D frustum coordinates and voxelized into the BEV plane, yielding $F_{\text{cam}} \in \mathbb{R}^{H_b \times W_b \times C}$. Concurrently, the LiDAR branch processes the point cloud through a Sparse 3D Convolutional Network. The resulting 3D feature volume is height-collapsed via max-pooling to produce the LiDAR BEV representation $F_{\text{lid}} \in \mathbb{R}^{H_b \times W_b \times C}$.
+For the camera branch, we employ a Lift-Splat-Shoot (LSS) style view transform paired with a Swin-Transformer (Swin-T) backbone. This generates a soft depth distribution per pixel, allowing the 2D image features to be projected into 3D frustum coordinates and voxelized into the BEV plane, yielding $F_{\text{cam}} \in \mathbb{R}^{H_b \times W_b \times C}$. Concurrently, the LiDAR branch processes the point cloud through a Sparse 3D Convolutional Network (SparseConvNet). The resulting 3D feature volume is height-collapsed via max-pooling to produce the LiDAR BEV representation $F_{\text{lid}} \in \mathbb{R}^{H_b \times W_b \times C}$. In our implementation, we use a uniform BEV grid resolution of $H_b \times W_b = 128 \times 128$ with a feature dimension of $C = 256$.
 
 \subsection{Cross-modal Consistency Probe (CCP)}
 The CCP computes a per-cell consistency score $S(i,j) \in [0,1]$ that measures how semantically aligned $F_{\text{cam}}$ and $F_{\text{lid}}$ are at each specific BEV grid cell. Rather than performing global feature alignment, this module ensures strict local geometric agreement:
@@ -29,8 +29,14 @@ S(i,j) = \sigma\left( \text{MLP}_s\left( \left[F_{\text{cam}}(i,j) \oplus F_{\te
 \end{equation}
 where $\oplus$ denotes concatenation, $|\cdot|$ is the element-wise absolute difference, and $\sigma$ is the sigmoid activation function. When an adversarial perturbation displaces or corrupts camera BEV features relative to the uncompromised LiDAR geometry, $S(i,j)$ will drop significantly in the affected grid cells, explicitly tagging the spatial anomaly.
 
+The CCP is trained via a self-supervised contrastive objective ($L_{ccp}$) on clean data using known camera-LiDAR calibration. Matched cells (where $\ge 1$ LiDAR point projects onto a camera-visible pixel) should have high $S$, while unmatched cells should have low $S$:
+\begin{equation}
+L_{ccp} = - \sum_{(i,j)\in M} \log S(i,j) - \sum_{(i,j)\notin M} \log(1 - S(i,j))
+\end{equation}
+where $M$ is the set of geometrically matched cells derived from calibration.
+
 \subsection{Gated Adaptive Fusion Module (GAFM)}
-The GAFM serves as the defensive quarantine mechanism. Using the consistency map $S$, it dynamically aggregates $F_{\text{cam}}$ and $F_{\text{lid}}$. We compute attribution maps via temperature scaling using hyper-parameters $\alpha$ and $\beta$, scaling the gate mechanisms based on the computed trust:
+The GAFM serves as the defensive quarantine mechanism. Using the consistency map $S$, it dynamically aggregates $F_{\text{cam}}$ and $F_{\text{lid}}$. We compute attribution maps via temperature scaling using hyper-parameters $\alpha=2.0$ and $\beta=2.0$, scaling the gate mechanisms based on the computed trust:
 \begin{equation}
 A(i,j,\text{cam}) = 1 - S(i,j)^\alpha  \cdot  \text{gate}_{\text{cam}}(i,j)
 \end{equation}
@@ -53,9 +59,22 @@ F_{\text{fused}}(i,j) = A(i,j,\text{cam}) F_{\text{cam}}(i,j)  +  A(i,j,\text{li
 \subsection{Adversarial Consistency Training (ACT)}
 To ensure the spatial alignment functions as a robust attack anomaly detector, the entire module trains utilizing Projected Gradient Descent (PGD) over both modalities simultaneously. 
 \begin{equation}
-L_{act} = L_{det}^{\text{adv}} + \gamma \cdot \text{KL}( A_{\text{clean}} || A_{\text{perturbed}} )
+L_{act} = \max_{||\delta_{\text{cam}}|| \le \varepsilon} L_{det}\left(F_{\text{fused}}(F_{\text{cam}} + \delta_{\text{cam}}, F_{\text{lid}})\right) + \max_{||\delta_{\text{lid}}|| \le \varepsilon} L_{det}\left(F_{\text{fused}}(F_{\text{cam}}, F_{\text{lid}} + \delta_{\text{lid}})\right)
 \end{equation}
-The Modal Attribution Regularization penalty ($\gamma \cdot \text{KL}$) guarantees that the spatial interpretation matrix $A$ responds faithfully, directly correlating to spatial injections occurring on individual modalities. This mechanism intrinsically binds the network's explainability to its mathematical robustness.
+where perturbations are generated using $k=7$ PGD steps during training.
+
+To ensure the attribution map behaves predictably under attack, we introduce Modal Attribution Regularization (MAR), defined as:
+\begin{equation}
+L_{mar} = - \sum_{(i,j)} \left[A(i,j,\text{cam}) \log A(i,j,\text{cam}) + A(i,j,\text{lid}) \log A(i,j,\text{lid})\right] + \mu ||A||_{TV}
+\end{equation}
+The entropy term encourages decisive attribution (committing to one modality), while the Total Variation ($\mu ||A||_{TV}$) term enforces spatial smoothness.
+
+The final combined adversarial objective is:
+\begin{equation}
+L_{total} = L_{det} + \lambda_1 L_{ccp} + \lambda_2 L_{act} + \lambda_3 L_{mar} + \gamma \cdot \text{KL}( A_{\text{clean}} || A_{\text{perturbed}} )
+\end{equation}
+
+The Kullback-Leibler ($\gamma \cdot \text{KL}$) penalty guarantees that the spatial interpretation matrix $A$ responds faithfully, directly correlating to spatial injections occurring on individual modalities. This mechanism intrinsically binds the network's explainability to its mathematical robustness.
 
 \begin{algorithm}[h]
 \caption{CRAF-X Inference with Explainability Output}
