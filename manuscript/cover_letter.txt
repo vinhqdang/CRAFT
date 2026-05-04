@@ -16,6 +16,8 @@ Extensive evaluations on the nuScenes dataset demonstrate that CRAF-X achieves s
 
 We believe this work is an excellent fit for The Visual Computer, as it significantly advances the state-of-the-art in visual computing for autonomous systems. The generation of explicitly grounded, visual interpretation maps directly aligns with the journal's focus on innovative visual representations and computer vision applications.
 
+To ensure the highest standards of transparency and facilitate future research, the full source code, datasets, and pre-trained weights for the CRAF-X framework are publicly available at https://github.com/vinhqdang/CRAFT (DOI: 10.5281/zenodo.20017952).
+
 We confirm that this manuscript is original, has not been published elsewhere, and is not currently under consideration by another journal. All authors have approved the manuscript and agree with its submission to The Visual Computer.
 
 Thank you for your time and consideration. We look forward to your response.
