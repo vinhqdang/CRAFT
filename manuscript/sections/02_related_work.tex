@@ -1,4 +1,3 @@
-
 \section{Related Work}
 \label{sec:related}
 
@@ -42,6 +41,14 @@ treating every cross-modal association not as a soft prior but as a
 hypothesis to be \emph{probed} against an adversarially robust
 consistency criterion before contributing to the output.
 
+Sgaravatti~et~al.~\cite{SgaravattiLCF3D2026} very recently proposed LCF3D,
+a late-cascade fusion framework that explicitly crossvalidates LiDAR
+3D proposals against RGB 2D detections to suppress false positives and
+recover false negatives, achieving strong domain-generalisation on KITTI
+and nuScenes. Their cross-modal validation logic directly motivates the
+coordinate-level consistency probe in CRAF-X, extending it to an
+adversarially hardened setting.
+
 \subsection{Adversarial attacks on AV perception}
 
 AV perception has been attacked at every level of the stack. On the
@@ -61,7 +68,7 @@ jointly optimises a physical object to fool both image and LiDAR
 branches of production fusion stacks with over 90\% attack success. The
 frustum attack of Hallyburton~et~al.~\cite{HallyburtonFrustum2022}
 designs spoofed LiDAR points that \emph{preserve} cross-modal
-consistency, evading naïve geometric sanity checks. Most recently,
+consistency, evading na\"{i}ve geometric sanity checks. Most recently,
 Cheng~et~al.'s ``Fusion is Not Enough''~\cite{ChengFusion2024} showed
 that camera-only adversarial patches are sufficient to collapse six
 state-of-the-art fusion detectors, because static fusion weights allow
@@ -69,6 +76,14 @@ the weakest modality to dominate. Together these results expose two
 gaps that CRAF-X addresses directly: consistency checks must look beyond
 coincident projection, and fusion weights must be input-adaptive and
 \emph{spatially local} rather than global.
+
+Sahu~et~al.~\cite{SahuAD22026} conducted a 2026 closed-loop evaluation
+of end-to-end AV agents under three attack vectors---acoustic-wave blur,
+electromagnetic image distortion, and ghost-object perturbations---in the
+CARLA simulator, observing driving-score collapses of up to 99\% and
+proposing a lightweight attention-based detector (AD$^2$) for run-time
+threat identification. Their findings reinforce the urgency of in-model
+detection mechanisms such as CRAF-X's consistency probe.
 
 \subsection{Robust and certified defenses for multi-modal perception}
 
@@ -120,15 +135,34 @@ Closely related is uncertainty-aware fusion: Kendall, Gal, and
 Cipolla~\cite{KendallMTL2018} weight multi-task losses by homoscedastic
 uncertainty, and CLOCs~\cite{PangCLOCs2020} performs learned
 object-candidate fusion before NMS.
-CRAF-X differs from this line in two respects. First, our gating
+
+Recent work has tightened the coupling between dynamic gating and
+explicit, queryable reliability signals. Sadeghian~et~al.'s
+ReliFusion~\cite{SadeghianReliFusion2025} employs cross-modality
+contrastive learning to assign per-modality confidence scores in the
+BEV space, feeding a Confidence-Weighted Mutual Cross-Attention
+mechanism that gracefully re-weights LiDAR and camera contributions
+under limited-FOV LiDAR or sensor-malfunction scenarios on nuScenes.
+Chen~et~al.'s HyperDUM~\cite{ChenHyperDUM2025}, presented at CVPR 2025,
+takes a complementary approach: hyperdimensional projection is used to
+compute channel- and patch-wise epistemic uncertainty with a single
+forward pass, producing spatial uncertainty maps that reweight modality
+features before fusion across camera, LiDAR, and event-camera streams
+under fog, rain, and sun corruptions on the DeLiVER and aiMotive benchmarks,
+with substantially fewer parameters than Monte-Carlo baselines.
+
+CRAF-X differs from this line in two key respects. First, our gating
 criterion is driven by a \emph{probed cross-modal disagreement signal},
 not by static input statistics or entropy; this allows it to detect
 targeted adversaries that pass conventional confidence filters.
 Second, our gating is applied at BEV-pixel granularity so that a
 localised adversarial patch triggers a localised quarantine rather than
-demoting the entire modality.
+demoting the entire modality. Crucially, unlike ReliFusion and HyperDUM,
+our gating signal is simultaneously a \emph{spatially-grounded
+explainability output}---the Modal Attribution Map---rather than an
+internal weighting coefficient that remains opaque to downstream auditors.
 
-\subsection{Explainable AI for autonomous driving and safety auditing}
+\subsection{Explainable AI for Safety Auditing: BEV Modal Attribution and Trust Maps}
 
 Trust Maps sit within a broader literature on post-hoc explanation.
 Gradient-based saliency methods---Grad-CAM~\cite{SelvarajuGradCAM2017},
@@ -145,16 +179,77 @@ survey~\cite{OmeizaSurvey2022} catalogue the subsequent explosion of
 XAI methods for vision-based AV and their regulatory relevance. A
 prerequisite for trustworthy explanations is well-calibrated
 confidence, studied comprehensively by Guo~et~al.~\cite{GuoCalibration2017}.
-Despite this activity, explanations for \emph{multi-modal} AV
-perception remain largely unstudied: prior work rarely attributes a
-3D detection back to the responsible modality, let alone at spatial
-granularity. CRAF-X's Trust Maps fill this gap by exposing, for every
-BEV cell, which modality the fusion gate trusted and with what
-calibrated confidence. In combination with the consistency probe, this
-provides safety auditors with a falsifiable record of why each object
-was accepted or rejected---an artefact, we argue, that is as important
-as the detection itself for the certification of adversarially robust
-AV perception.
 
+Two 2025 surveys sharpen the framing for multi-modal XAI.
+Yeong~et~al.~\cite{YeongXAIAV2025} systematically review the intersection
+of multi-sensor fusion (camera, LiDAR, radar, GPS) with post-hoc and
+intrinsic XAI, identifying the absence of \emph{real-time, stakeholder-aware}
+explanations as a primary barrier to AV deployment and certification.
+A concurrent Sensors review~\cite{SensorsMSFReview2025} surveying BEV-centric
+and token-level cross-modal fusion explicitly flags ``limited interpretability''
+as one of three primary deployment blockers alongside spatio-temporal
+misalignment and domain shift, and calls for Shapley-style sensor-wise
+contribution maps and attention-rollout methods as emerging solutions.
 
+Despite this activity, explanations for \emph{multi-modal} AV perception
+remain largely unstudied: prior work rarely attributes a 3D detection back
+to the responsible modality, let alone at spatial granularity.
+Park~et~al.'s Layer-wise Modality Decomposition
+(LMD)~\cite{ParkLMD2025}, presented at NeurIPS 2025, addresses this
+gap directly and represents the closest published precedent to CRAF-X's
+Trust Maps. LMD propagates modality-specific contributions separately
+through every non-linear layer of a pretrained fusion network---activations,
+LayerNorm, attention---using a first-order Taylor / layer-wise relevance
+propagation linearisation with a ``ratio rule'' that preserves model
+behaviour. The result is a per-layer, \emph{post-hoc} attribution map for
+each input modality, validated on BEVFusion and RCBEVDet across camera,
+LiDAR, and radar streams on nuScenes. While LMD is the first method to
+attribute 3D fusion predictions to individual modalities, it remains a
+\emph{post-hoc} tool requiring layer-by-layer linearisation of a frozen
+model. CRAF-X, by contrast, produces Trust Maps as a \emph{native
+architectural output} co-trained with the detection objective, yielding
+attributions that are causally aligned with the model's live gating
+decisions rather than being reconstructed from gradients after the fact.
 
+Zeng~et~al.'s RESAR-BEV~\cite{ZengRESARBEV2025} demonstrates that
+interpretability can alternatively be designed \emph{intrinsically} into
+a fusion pipeline. Their progressive residual autoregressive architecture
+for camera--radar BEV segmentation decomposes predictions into
+coarse-to-fine stages---early stages establish road topology, later stages
+refine lane boundaries and small objects---providing stage-level error
+localisation on nuScenes at competitive accuracy and real-time speed.
+RESAR-BEV confirms that architectural interpretability and fusion
+performance are not at odds; CRAF-X extends this philosophy into the
+adversarially hardened camera--LiDAR 3D detection setting, where the
+consistency probe replaces the stage-decomposition mechanism.
+
+The XAI-for-AV literature has also explored explanation modalities
+beyond spatial maps. Zarghani~et~al.~\cite{ZarghaniExplainableAD2025}
+propose a multimodal framework that fuses video (VideoMAE), sensor data,
+and natural-language text (BERT) to jointly predict driving actions and
+generate textual rationales, achieving a BLEU-4 score of 0.75 on BDD-X
+while fostering regulatory compliance through human-readable explanations.
+While orthogonal to CRAF-X's spatial attribution focus, this line of work
+illustrates the breadth of the emerging ``explainability-by-design''
+programme for AV perception.
+
+CRAF-X's Trust Maps fill the gap identified across all of these works
+by exposing, for every BEV cell, which modality the fusion gate trusted
+and with what calibrated confidence---and doing so \emph{natively}, as a
+byproduct of the gating process rather than a separate post-hoc step.
+In combination with the consistency probe, this provides safety auditors
+with a falsifiable record of why each object was accepted or rejected---an
+artefact that, we argue, is as important as the detection itself for the
+certification of adversarially robust AV perception.
+
+Almadhor~et~al.~\cite{AlmadhorMSF2026} integrated LiDAR, radar, and
+camera fusion with a Transformer backbone and an explicit XAI module on
+nuScenes, demonstrating that embedding explainability into the perception
+pipeline---rather than appending it post hoc---yields more faithful
+spatial attributions; this motivates CRAF-X's design of Trust Maps as a
+first-class architectural output rather than a visualisation afterthought.
+Similarly, Wei~et~al.~\cite{WeiSafeDrive2026} proposed SafeDrive-Fusion,
+an illumination-adaptive dynamic attention framework that achieves 87.5\%
+accuracy under extreme low-light by learning spatially varying modality
+weights---an orthogonal robustness axis to adversarial corruption that
+future extensions of CRAF-X may incorporate.

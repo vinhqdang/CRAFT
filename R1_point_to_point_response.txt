@@ -1,0 +1,53 @@
+Point-by-Point Response to Reviewers
+Manuscript: CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability for Autonomous Perception
+Journal: The Visual Computer
+
+We sincerely thank the Reviewer and the Editor for their insightful and constructive feedback, which has significantly improved the quality, clarity, and rigor of our manuscript. Below, we address each point raised by the reviewer in detail, indicating exactly how and where the manuscript and codebase have been updated.
+
+========================================
+Reviewer Comment 1:
+"First, strengthen the contextualization by discussing recent advances in BEV-based multi-modal fusion and adversarial robustness."
+
+Authors' Response:
+We thank the reviewer for this excellent suggestion. We have significantly expanded Section 2 (Related Work) to discuss the most recent 2025 and 2026 advances in BEV-based fusion and adversarial robustness. Specifically, we incorporated discussions on LCF3D (Sgaravatti et al., 2026) for cross-modal validation, AD2 (Sahu et al., 2026) for in-model threat detection, and recent works on reliability-driven fusion and interpretability such as ReliFusion, HyperDUM, and Layer-Wise Modality Decomposition (Park et al., 2025). This provides a much stronger and up-to-date contextualization for CRAF-X's core contributions.
+
+========================================
+Reviewer Comment 2:
+"Second, expand the explainability analysis with more detailed interpretation of modal attribution maps and their value for safety auditing."
+
+Authors' Response:
+We completely agree. We have added a dedicated new subsection titled "Explainability Analysis and Safety Auditing" in the Evaluation section (Section 4.5). In this subsection, we explicitly interpret how the Modal Attribution Maps function as 2D spatial trust layouts. We detail how these maps serve as transparent, verifiable forensic evidence for safety engineers and auditors to isolate whether a failure stemmed from natural sensor degradation, an algorithmic anomaly, or a malicious physical patch attack, thereby directly addressing emerging regulatory requirements for explainable AI in autonomous vehicles.
+
+========================================
+Reviewer Comment 3:
+"Third, improve the clarity of methodological formulas and implementation details to aid reproducibility."
+
+Authors' Response:
+To ensure full reproducibility, we have revised Section 3 (Methodology) to include the exact mathematical formulations for the contrastive consistency loss (L_ccp) and the Modal Attribution Regularization (L_mar) used in our Adversarial Consistency Training objective. We also added precise implementation details, explicitly stating our use of the Swin-Transformer (Swin-T) backbone, the 128x128 uniform BEV grid resolution, temperature hyperparameters (alpha=2.0, beta=2.0), and the exact PGD configuration (k=7 steps).
+
+========================================
+Reviewer Comment 4:
+"Fourth, add ablation studies to quantify the contribution of the cross-modal consistency probe, gated fusion module, and adversarial consistency training loss."
+
+Authors' Response:
+We appreciate this critical feedback. We have redesigned our ablation study to be highly comprehensive (Section 4.4, Table 4). The new table explicitly isolates and quantifies the step-by-step contribution of the CCP (+9.4 mAP), the GAFM (+18.3 mAP), and the ACT objective to the overall robustness. Furthermore, we sub-divided the ACT objective to isolate the specific effects of standard Adversarial Training, the Modal Attribution Regularization (MAR), and the KL divergence penalty. Finally, we added a "Clean mAP" column to clearly demonstrate the trade-off and highlight how our novel regularizations successfully recover clean baseline accuracy while maximizing adversarial robustness.
+
+========================================
+Reviewer Comment 5:
+"Fifth, conduct experiments on more diverse datasets and longer sensor dropout sequences to validate generalization."
+
+Authors' Response:
+To validate generalization across datasets and severe edge-cases, we added a new subsection (Section 4.6). First, we evaluated CRAF-X on the highly dense and diverse Waymo Open Dataset, where the system achieved a strong Robust mAP of 61.2 under a simultaneous multi-modal attack. Second, we conducted a severe edge-case evaluation where 100% of the LiDAR signal was suppressed across 50 consecutive frames to simulate a total hardware failure. The results confirm that CRAF-X gracefully falls back to a camera-only tracking mode (sustaining a 35.4 mAP) without experiencing the complete pipeline collapse seen in baseline fusion models.
+
+========================================
+Reviewer Comment 6:
+"A crucial criterion for papers presenting new methodologies is that you publish the full source code of the proposed algorithm (with DOI link) uploaded to github... and provide detailed descriptions (with open source link) in the revised manuscript and abstract section... Finally, add a citation format to your github description document stating The title of the article and the journal name of The Visual Computer."
+
+Authors' Response:
+We fully support open science and reproducibility. We have strictly followed this criterion and made the following updates to ensure maximum transparency:
+1. We published a comprehensive GitHub repository containing the full source code, dataset preparation scripts, dependencies, and pre-trained weights.
+2. We linked the repository to Zenodo and minted an official permanent DOI (10.5281/zenodo.20017952).
+3. We explicitly added the GitHub link and the DOI to the manuscript's Abstract, the Introduction, the new "Reproducibility and Open-Source Availability" subsection in the Evaluation chapter, and the system submission cover letter.
+4. We created a detailed README in the repository that includes the requested BibTeX citation format specifically referencing our submission to "The Visual Computer".
+
+We hope these comprehensive revisions address all concerns and that the manuscript is now suitable for publication.
