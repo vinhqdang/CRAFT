@@ -1,6 +1,5 @@
 # CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **CRAF-X** is a novel defense-oriented fusion framework for 3D object detection in autonomous perception. It pioneers a verify-then-fuse paradigm by deploying a Cross-modal Consistency Probe (CCP) that natively detects geometric and semantic contradictions in the shared Bird's-Eye View (BEV) space, providing robustness against multi-modal adversarial attacks and severe sensor degradation. 
