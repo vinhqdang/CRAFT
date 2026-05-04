@@ -11,13 +11,11 @@ This repository contains the official PyTorch implementation, testing scripts, a
 If you find this code or our research helpful in your work, please cite our paper published in **The Visual Computer**:
 
 ```bibtex
-@article{crafx2026,
+@article{crafx_under_review,
   title={{CRAF-X}: Cross-modal Robust Adaptive Fusion with eXplainability for Autonomous Perception},
   author={Anonymous Author},
-  journal={The Visual Computer},
-  year={2026},
-  publisher={Springer},
-  doi={10.1007/s00371-026-XXXXX-X}
+  journal={Under review at The Visual Computer},
+  year={2026}
 }
 ```
 
