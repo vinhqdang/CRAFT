@@ -1,0 +1,113 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{ArevaloGMU2017}
+Arevalo, J., Solorio, T., y~G{\'o}mez, M.M., Gonz{\'a}lez, F.A.: Gated
+  multimodal units for information fusion. In: International Conference on
+  Learning Representations (ICLR) Workshop Track (2017)
+
+\bibitem{BaiTransFusion2022}
+Bai, X., Hu, Z., Zhu, X., Huang, Q., Chen, Y., Fu, H., Tai, C.L.:
+  {TransFusion}: Robust {LiDAR}-camera fusion for {3D} object detection with
+  transformers. In: IEEE/CVF Conference on Computer Vision and Pattern
+  Recognition (CVPR). pp. 1090--1099 (2022). \doi{10.1109/CVPR52688.2022.00116}
+
+\bibitem{CaoMSFADV2021}
+Cao, Y., Wang, N., Xiao, C., Yang, D., Fang, J., Yang, R., Chen, Q.A., Liu, M.,
+  Li, B.: Invisible for both camera and {LiDAR}: Security of multi-sensor
+  fusion based perception in autonomous driving under physical-world attacks.
+  In: IEEE Symposium on Security and Privacy (S\&P). pp. 176--194 (2021).
+  \doi{10.1109/SP40001.2021.00076}
+
+\bibitem{CaoAdvLiDAR2019}
+Cao, Y., Xiao, C., Cyr, B., Zhou, Y., Park, W., Rampazzi, S., Chen, Q.A., Fu,
+  K., Mao, Z.M.: Adversarial sensor attack on {LiDAR}-based perception in
+  autonomous driving. In: ACM SIGSAC Conference on Computer and Communications
+  Security (CCS). pp. 2267--2281 (2019). \doi{10.1145/3319535.3339815}
+
+\bibitem{ChengFusion2024}
+Cheng, Z., Choi, H., Liang, J.C., Feng, S., Tao, G., Liu, D., Zuzak, M., Zhang,
+  X.: Fusion is not enough: Single-modal attacks on fusion models for {3D}
+  object detection. In: International Conference on Learning Representations
+  (ICLR) (2024)
+
+\bibitem{HuangEPNet2020}
+Huang, T., Liu, Z., Chen, X., Bai, X.: {EPNet}: Enhancing point features with
+  image semantics for {3D} object detection. In: European Conference on
+  Computer Vision (ECCV). LNCS, vol. 12360, pp. 35--52. Springer (2020).
+  \doi{10.1007/978-3-030-58555-6_3}
+
+\bibitem{KuAVOD2018}
+Ku, J., Mozifian, M., Lee, J., Harakeh, A., Waslander, S.L.: Joint {3D}
+  proposal generation and object detection from view aggregation. In: IEEE/RSJ
+  International Conference on Intelligent Robots and Systems (IROS). pp.~1--8
+  (2018). \doi{10.1109/IROS.2018.8594049}
+
+\bibitem{LiuBEVFusion2023}
+Liu, Z., Tang, H., Amini, A., Yang, X., Mao, H., Rus, D.L., Han, S.:
+  {BEVFusion}: Multi-task multi-sensor fusion with unified bird's-eye view
+  representation. In: IEEE International Conference on Robotics and Automation
+  (ICRA). pp. 2774--2781 (2023). \doi{10.1109/ICRA48891.2023.10160968}
+
+\bibitem{MadryPGD2018}
+Madry, A., Makelov, A., Schmidt, L., Tsipras, D., Vladu, A.: Towards deep
+  learning models resistant to adversarial attacks. In: International
+  Conference on Learning Representations (ICLR) (2018)
+
+\bibitem{ParkLMD2025}
+Park, J., Park, K., Kim, D., Park, J., Choi, J.W.: Layer-wise modality
+  decomposition for interpretable multimodal sensor fusion. In: Advances in
+  Neural Information Processing Systems. vol.~38 (2025), arXiv:2511.00859
+
+\bibitem{SadeghianReliFusion2025}
+Sadeghian, R., et~al.: Reliability-driven {LiDAR}-camera fusion for robust {3D}
+  object detection. arXiv preprint arXiv:2502.01856  (2025)
+
+\bibitem{SelvarajuGradCAM2017}
+Selvaraju, R.R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., Batra, D.:
+  {Grad-CAM}: Visual explanations from deep networks via gradient-based
+  localization. In: IEEE International Conference on Computer Vision (ICCV).
+  pp. 618--626 (2017). \doi{10.1109/ICCV.2017.74}
+
+\bibitem{ThysPatch2019}
+Thys, S., {Van Ranst}, W., Goedem{\'e}, T.: Fooling automated surveillance
+  cameras: Adversarial patches to attack person detection. In: IEEE/CVF
+  Conference on Computer Vision and Pattern Recognition Workshops (CVPRW). pp.
+  49--55 (2019). \doi{10.1109/CVPRW.2019.00012}
+
+\bibitem{TuMultiSensor2021}
+Tu, J., Li, H., Yan, X., Ren, M., Chen, Y., Liang, M., Bitar, E., Yumer, E.,
+  Urtasun, R.: Exploring adversarial robustness of multi-sensor perception
+  systems in self driving. In: Conference on Robot Learning (CoRL). PMLR,
+  vol.~164, pp. 1013--1024 (2021)
+
+\bibitem{ValadaSSMA2020}
+Valada, A., Mohan, R., Burgard, W.: Self-supervised model adaptation for
+  multimodal semantic segmentation. International Journal of Computer Vision
+  \textbf{128},  1239--1285 (2020). \doi{10.1007/s11263-019-01188-y}
+
+\bibitem{VoraPointPainting2020}
+Vora, S., Lang, A.H., Helou, B., Beijbom, O.: {PointPainting}: Sequential
+  fusion for {3D} object detection. In: IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR). pp. 4603--4611 (2020).
+  \doi{10.1109/CVPR42600.2020.00466}
+
+\bibitem{YanCMT2023}
+Yan, J., Liu, Y., Sun, J., Jia, F., Li, S., Wang, T., Zhang, X.: Cross modal
+  transformer: Towards fast and robust {3D} object detection. In: IEEE/CVF
+  International Conference on Computer Vision (ICCV). pp. 18268--18278 (2023)
+
+\bibitem{YeongXAIAV2025}
+Yeong, D.J., Panduru, K., Walsh, J.: Exploring the unseen: A survey of
+  multi-sensor fusion and the role of explainable {AI} ({XAI}) in autonomous
+  vehicles. Sensors  \textbf{25}(3), ~856 (2025). \doi{10.3390/s25030856}
+
+\bibitem{ZengRESARBEV2025}
+Zeng, Z., Yin, Y., Yuan, Z., Dey, A., Bao, X.: {RESAR-BEV}: An explainable
+  progressive residual autoregressive approach for camera-radar fusion in bev
+  segmentation. IEEE Transactions on Intelligent Transportation Systems
+  (2026). \doi{https://doi.org/10.1109/TITS.2026.3672182}
+
+\end{thebibliography}

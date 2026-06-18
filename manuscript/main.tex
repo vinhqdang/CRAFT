@@ -1,42 +1,53 @@
-\documentclass[acmsmall, review, anonymous]{acmart}
-
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
 \usepackage{graphicx}
-\usepackage{amsmath}
+\usepackage{subfiles}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{mathrsfs}
+\usepackage[title]{appendix}
+\usepackage{xcolor}
+\usepackage{textcomp}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{threeparttable}
 
-\AtBeginDocument{%
-  \providecommand\BibTeX{{%
-    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+\let\proof\relax
+\let\endproof\relax
+\usepackage{amsthm}
+\theoremstyle{plain}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
-
+%
 \title{CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability for Autonomous Perception}
 
-\author{Anonymous Author}
-\affiliation{%
-  \institution{Institution}
-  \city{City}
-  \country{Country}
-}
+\maketitle              % typeset the header of the contribution
 
 \begin{abstract}
-Multi-modal sensor fusion is the backbone of modern autonomous vehicle perception, combining the dense semantic richness of cameras with the precise geometric structure of LiDAR. However, standard fusion architectures suffer from a critical ``weakest link'' vulnerability: they blindly aggregate modalities via static weights or soft attention, allowing single-sensor adversarial attacks or natural severe weather degradation to collapse the entire 3D detection pipeline. Furthermore, these black-box mechanisms offer no spatial explainability to justify their fusion decisions, creating significant safety auditing hurdles. To address these fundamental flaws, we introduce CRAF-X (Cross-modal Robust Adaptive Fusion with eXplainability), a novel defensive fusion framework. CRAF-X pioneers a verify-then-fuse paradigm by deploying a Cross-modal Consistency Probe (CCP) that natively detects geometric and semantic contradictions in the shared Bird's-Eye View (BEV) space. When an anomaly is detected, a Gated Adaptive Fusion Module (GAFM) dynamically quarantines the corrupted modality at the granular grid-cell level. Trained under a novel Adversarial Consistency Training (ACT) objective, CRAF-X not only achieves state-of-the-art robustness against multi-modal spoofing, physical patch attacks, and severe sensor dropout, but also outputs natively interpretable Modal Attribution Maps. These Trust Maps provide a spatially grounded, auditable record of sensor utilization, bridging the critical gap between robust perception and verifiable autonomous safety. To facilitate further research and ensure maximum transparency, the full source code, datasets, and key algorithm implementations are publicly available at \url{https://github.com/vinhqdang/CRAFT}.
+Multi-modal sensor fusion is the backbone of modern autonomous vehicle perception, combining the dense semantic richness of cameras with the precise geometric structure of LiDAR. However, standard fusion architectures suffer from a critical ``weakest link'' vulnerability: they blindly aggregate modalities via static weights or soft attention, allowing single-sensor adversarial attacks or natural severe weather degradation to collapse the entire 3D detection pipeline. Furthermore, these black-box mechanisms offer no spatial explainability to justify their fusion decisions, creating significant safety auditing hurdles. To address these fundamental flaws, we introduce CRAF-X (Cross-modal Robust Adaptive Fusion with eXplainability), a novel defensive fusion framework. CRAF-X pioneers a verify-then-fuse paradigm by deploying a Cross-modal Consistency Probe (CCP) that natively detects geometric and semantic contradictions in the shared Bird's-Eye View (BEV) space. When an anomaly is detected, a Gated Adaptive Fusion Module (GAFM) dynamically quarantines the corrupted modality at the granular grid-cell level. Trained under a novel Adversarial Consistency Training (ACT) objective, CRAF-X not only achieves state-of-the-art robustness against multi-modal spoofing, physical patch attacks, and severe sensor dropout, but also outputs natively interpretable Modal Attribution Maps. These Trust Maps provide a spatially grounded, auditable record of sensor utilization, bridging the critical gap between robust perception and verifiable autonomous safety.
+
+\keywords{Hallucination Mitigation \and Multimodal Knowledge Graphs \and Cross-Modal Verification \and Real-Time Correction \and Adaptive Confidence Calibration}
 \end{abstract}
 
-\keywords{Hallucination Mitigation, Multimodal Knowledge Graphs, Cross-Modal Verification, Real-Time Correction, Adaptive Confidence Calibration}
+\subfile{1intro}
+\subfile{2relate}
+\subfile{3method}
+\subfile{4exp}
+\subfile{5conclusion}
 
-\maketitle
-
-\input{sections/01_introduction}
-\input{sections/02_related_work}
-\input{sections/03_methodology}
-\input{sections/04_evaluation}
-\input{sections/05_conclusion}
-
-\bibliographystyle{ACM-Reference-Format}
-\bibliography{references}
+\bibliographystyle{splncs04}
+\bibliography{sn-bibliography}
 
 \end{document}

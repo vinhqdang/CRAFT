@@ -1,0 +1,26 @@
+\section{Related Work}
+\label{sec:related}
+
+CRAF-X sits at the intersection of four critical research threads: (i) deep camera-LiDAR fusion for 3D object detection, (ii) adversarial attacks on autonomous-vehicle (AV) sensors, (iii) robust defenses for multi-modal perception, and (iv) explainable AI (XAI) for safety-critical driving systems. We position CRAF-X as the first framework that unifies cross-modal consistency probing, spatially dynamic gated fusion, and auditable Trust Maps in a single detector.
+
+\subsection{Deep Camera-LiDAR Fusion for 3D Object Detection}
+Camera-LiDAR fusion has matured rapidly from early proposal-level schemes \cite{KuAVOD2018} to transformer-based dense fusion. Early approaches combined 2D region proposals with LiDAR geometry but proved brittle to failures in the image branch. Sequential point-level fusion \cite{VoraPointPainting2020,HuangEPNet2020} improved accuracy but inherently inherited the camera branch's expanded adversarial surface.
+
+Feature-level BEV fusion is now the dominant paradigm: BEVFusion \cite{LiuBEVFusion2023} projects both modalities into a shared bird's-eye-view tensor to decouple streams, while TransFusion \cite{BaiTransFusion2022} and Cross Modal Transformer (CMT) \cite{YanCMT2023} adopt soft attention to improve tolerance to calibration noise. CRAF-X builds on BEV-attention fusion but departs from prior work by treating every cross-modal association not as a soft prior, but as a rigid hypothesis to be strictly probed against an adversarially robust consistency criterion.
+
+\subsection{Adversarial Attacks on AV Perception}
+AV perception has been attacked at every level. On the camera branch, Thys et al.'s person-hiding patch \cite{ThysPatch2019} established that small physical perturbations can reliably fool detectors. LiDAR-side attacks progressed from spoofed laser injections \cite{CaoAdvLiDAR2019} to generalized black-box sensor attacks. 
+
+The hope that fusion was inherently robust was dispelled by pivotal works. MSF-ADV \cite{CaoMSFADV2021} jointly optimizes a physical object to fool both image and LiDAR branches with over 90\% attack success. Most recently, Cheng et al.'s "Fusion is Not Enough" \cite{ChengFusion2024} showed that camera-only adversarial patches are completely sufficient to collapse state-of-the-art fusion detectors because static fusion weights allow the weakest modality to dominate the output. These results expose a massive gap that CRAF-X addresses: fusion weights must be input-adaptive and highly spatially local.
+
+\subsection{Robust Defenses and Dynamic Gating}
+Defensive research has largely treated each modality in isolation. On the image side, PGD adversarial training \cite{MadryPGD2018} remains the canonical defense. Multi-modal defenses remain scarce, though Tu et al. \cite{TuMultiSensor2021} highlight the need for robustness via feature denoising. 
+
+Dynamic gating has a rich history. Early efforts \cite{ArevaloGMU2017,ValadaSSMA2020} introduced spatially local gating designed to degrade gracefully when a modality fails naturally (e.g., in fog). Recent work like ReliFusion \cite{SadeghianReliFusion2025} assigns confidence scores based on cross-modality contrastive learning. However, these gating criteria are driven by statistical input variance rather than a mathematically probed disagreement signal, meaning targeted adversaries that pass conventional confidence filters bypass them. CRAF-X's gating is driven by direct, adversarial consistency probing.
+
+\subsection{Explainable AI for Safety Auditing in Perception}
+While Explainable AI (XAI) is heavily established for 2D vision via gradient-based saliency methods (Grad-CAM \cite{SelvarajuGradCAM2017}), multi-modal 3D perception remains largely a black box, a primary deployment blocker for autonomous vehicles \cite{YeongXAIAV2025}.
+
+Prior work rarely attributes a 3D detection back to the responsible modality at spatial granularity. Park et al.'s Layer-wise Modality Decomposition (LMD) \cite{ParkLMD2025} addresses this gap by propagating modality-specific contributions backward through every non-linear layer of a pretrained fusion network. However, LMD is strictly a post-hoc tool requiring layer-by-layer linearization. 
+
+In contrast, Zeng et al.'s RESAR-BEV \cite{ZengRESARBEV2025} demonstrated that interpretability can be intrinsically designed into the fusion pipeline itself. CRAF-X extends this philosophy to adversarial robustness: our Trust Maps are produced natively as an architectural output co-trained alongside the detection objective. This yields spatial attributions that are strictly causally aligned with the model's real-time gating decisions.

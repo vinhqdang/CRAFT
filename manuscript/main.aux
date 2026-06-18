@@ -1,0 +1,103 @@
+\relax 
+\@writefile{toc}{\contentsline {title}{CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability for Autonomous Perception}{1}{}\protected@file@percent }
+\@writefile{toc}{\authcount {1}}
+\@writefile{toc}{\contentsline {author}{No Author Given}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{}{section.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Multi-modal Perception Overview. Autonomous vehicles fuse dense semantic camera features (left) with sparse, highly accurate 3D geometry from LiDAR point clouds (right). While this fusion is highly effective under nominal conditions, static fusion weights create a critical vulnerability.}}{2}{}\protected@file@percent }
+\newlabel{fig:perception_split}{{1}{2}{}{figure.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The Weakest Link Vulnerability. A physical adversarial patch placed on a vehicle successfully misclassifies the object in the camera view (left). Despite the LiDAR point cloud (right) capturing the true 3D physical geometry of the vehicle perfectly, traditional fusion models will blindly incorporate the corrupted camera data and fail to detect the threat.}}{3}{}\protected@file@percent }
+\newlabel{fig:patch_attack}{{2}{3}{}{figure.2}{}}
+\citation{KuAVOD2018}
+\citation{VoraPointPainting2020,HuangEPNet2020}
+\citation{LiuBEVFusion2023}
+\citation{BaiTransFusion2022}
+\citation{YanCMT2023}
+\citation{ThysPatch2019}
+\citation{CaoAdvLiDAR2019}
+\citation{CaoMSFADV2021}
+\citation{ChengFusion2024}
+\citation{MadryPGD2018}
+\citation{TuMultiSensor2021}
+\citation{ArevaloGMU2017,ValadaSSMA2020}
+\citation{SadeghianReliFusion2025}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{4}{}\protected@file@percent }
+\newlabel{sec:related}{{2}{4}{}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Deep Camera-LiDAR Fusion for 3D Object Detection}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Adversarial Attacks on AV Perception}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Robust Defenses and Dynamic Gating}{4}{}\protected@file@percent }
+\citation{SelvarajuGradCAM2017}
+\citation{YeongXAIAV2025}
+\citation{ParkLMD2025}
+\citation{ZengRESARBEV2025}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Explainable AI for Safety Auditing in Perception}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Methodology}{5}{}\protected@file@percent }
+\newlabel{sec:methodology}{{3}{5}{}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Modality-Specific BEV Encoding}{5}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Overall Architecture of CRAF-X. The CCP computes a semantic alignment score $S$, driving the GAFM.}}{6}{}\protected@file@percent }
+\newlabel{fig:architecture}{{3}{6}{}{figure.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces BEV Grid Fusion. Consistency probing highlights geometric inconsistencies (red).}}{6}{}\protected@file@percent }
+\newlabel{fig:bev_fusion}{{4}{6}{}{figure.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Cross-modal Consistency Probe (CCP)}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Gated Adaptive Fusion Module (GAFM)}{7}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Gating and Explainability. The GAFM generates an explicit Modal Attribution Map. When an attack occurs, the system quarantines the camera input for the affected region (red aura) and relies exclusively on the geometric LiDAR bounds (green bounding box) to maintain safe trajectory tracking.}}{7}{}\protected@file@percent }
+\newlabel{fig:crafx_gating}{{5}{7}{}{figure.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Adversarial Consistency Training (ACT)}{7}{}\protected@file@percent }
+\citation{LiuBEVFusion2023}
+\citation{BaiTransFusion2022}
+\citation{YanCMT2023}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces CRAF-X Inference with Explainability Output}}{8}{}\protected@file@percent }
+\citation{LiuBEVFusion2023}
+\citation{BaiTransFusion2022}
+\citation{YanCMT2023}
+\citation{LiuBEVFusion2023}
+\citation{BaiTransFusion2022}
+\citation{YanCMT2023}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Evaluation}{9}{}\protected@file@percent }
+\newlabel{sec:evaluation}{{4}{9}{}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Datasets and Experimental Setup}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Performance under Attack}{9}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Clean vs. Robust Performance (mAP / NDS) on the nuScenes validation set under a simultaneous multi-modal attack (A3). CRAF-X maintains near-clean performance, while standard fusion models suffer severe degradation.}}{9}{}\protected@file@percent }
+\newlabel{fig:performance}{{6}{9}{}{figure.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Attack Success Rate (ASR) Comparison. Lower is better. CRAF-X drastically reduces the effectiveness of all four attack vectors (A1-A4) compared to the baseline.}}{9}{}\protected@file@percent }
+\newlabel{fig:asr}{{7}{9}{}{figure.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces 3D Object Detection Performance (mAP / NDS) on nuScenes under Simultaneous Attack (A3)}}{10}{}\protected@file@percent }
+\newlabel{tab:performance}{{1}{10}{}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Attack Success Rate (ASR \%) across Different Threat Models. Lower is better.}}{10}{}\protected@file@percent }
+\newlabel{tab:asr}{{2}{10}{}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Robustness to Natural Sensor Degradation}{10}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces mAP Robustness under simulated LiDAR dropout. As the percentage of dropped LiDAR points increases, CRAF-X degrades gracefully by adaptively shifting reliance to the camera modality.}}{11}{}\protected@file@percent }
+\newlabel{fig:degradation}{{8}{11}{}{figure.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Qualitative fallback during adverse weather. In severe fog/rain where the camera is blinded (left), CRAF-X's CCP detects the discrepancy and trusts the fog-penetrating LiDAR point cloud (right) exclusively for affected spatial regions.}}{11}{}\protected@file@percent }
+\newlabel{fig:adverse_weather}{{9}{11}{}{figure.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Ablation Studies}{11}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Ablation Study of CRAF-X Components on nuScenes (Attack A3)}}{11}{}\protected@file@percent }
+\newlabel{tab:ablation_components}{{3}{11}{}{table.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Sensitivity Analysis of the Gating Threshold $\tau $ under simultaneous attack (A3). A balanced threshold near 0.5 yields optimal robust mAP.}}{12}{}\protected@file@percent }
+\newlabel{fig:ablation_tau}{{10}{12}{}{figure.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Explainability Analysis and Safety Auditing}{12}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Generalization Across Diverse Datasets and Extended Sensor Dropout}{13}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{13}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{5}{13}{}{section.5}{}}
+\bibstyle{splncs04}
+\bibdata{sn-bibliography}
+\bibcite{ArevaloGMU2017}{1}
+\bibcite{BaiTransFusion2022}{2}
+\bibcite{CaoMSFADV2021}{3}
+\bibcite{CaoAdvLiDAR2019}{4}
+\bibcite{ChengFusion2024}{5}
+\bibcite{HuangEPNet2020}{6}
+\bibcite{KuAVOD2018}{7}
+\bibcite{LiuBEVFusion2023}{8}
+\bibcite{MadryPGD2018}{9}
+\bibcite{ParkLMD2025}{10}
+\bibcite{SadeghianReliFusion2025}{11}
+\bibcite{SelvarajuGradCAM2017}{12}
+\bibcite{ThysPatch2019}{13}
+\bibcite{TuMultiSensor2021}{14}
+\bibcite{ValadaSSMA2020}{15}
+\bibcite{VoraPointPainting2020}{16}
+\bibcite{YanCMT2023}{17}
+\bibcite{YeongXAIAV2025}{18}
+\bibcite{ZengRESARBEV2025}{19}
+\gdef \@abspage@last{15}
