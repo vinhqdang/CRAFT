@@ -5,9 +5,17 @@
 
 ## Idea
 
-Wrap a 3D object detector's outputs in split conformal prediction (calibrated on clear-weather data), then track an **e-process / testing-by-betting statistic** over the resulting per-frame miscoverage rate as a driving scene evolves. The statistic gives anytime-valid Type-I error control (via Ville's inequality) for detecting the *onset* of distribution shift — e.g. clear conditions degrading into snowfall — without needing a fixed monitoring horizon or multiple-testing correction. The target metric is detection delay (time from true weather onset to alarm) vs. false-alarm rate under stationary conditions, evaluated against naive fixed-window and corrected-batch conformal baselines.
+Wrap a 3D object detector's outputs in split conformal prediction (calibrated on clear-weather data), then track an **e-process / testing-by-betting statistic** over the resulting miscoverage rate as a driving scene evolves, to detect the *onset* of distribution shift (e.g. clear conditions degrading into snowfall) with anytime-valid Type-I error control (Ville's inequality) — no fixed monitoring horizon, no multiple-testing correction.
 
-See [`plan.md`](plan.md) for the full statistical setup, novelty considerations, and baselines as currently scoped.
+That backbone by itself is not novel — see the September 2026 literature check in [`plan.md`](plan.md). The closest prior work, [Monroy Muñoz, Verma & Timans (WACV 2026)](https://arxiv.org/abs/2602.12983), already does anytime-valid e-process failure detection for streaming vision, with the betting rate learned from the failure metric's own history. This paper's contribution is narrowed to what that work explicitly leaves open and what it doesn't address:
+
+1. **Covariate-informed betting** — condition the betting rate on `craf_x`'s Cross-modal Consistency Probe (CCP) score (LiDAR/camera geometric disagreement) instead of only the failure metric's own history, to get a leading rather than lagging signal.
+2. **Multi-object, spatially-resolved monitoring** — a grid of per-BEV-cell e-processes with anytime-valid multiplicity control, producing a live "where is perception untrustworthy" map, instead of one global/per-object scalar. The prior work is explicitly single-object and lists this as future work.
+3. **Real adverse-weather distribution shift** in multimodal 3D driving perception, rather than 2D visual tracking.
+
+The target metric is detection delay (time from true weather onset to alarm) vs. false-alarm rate, evaluated against the prior work's own covariate-blind betting rules (the real baseline, not a strawman) plus naive fixed-window and corrected-batch conformal baselines.
+
+See [`plan.md`](plan.md) for the full statistical setup, the literature check with sources, and baselines as currently scoped.
 
 ## Primary dataset: Snowy Scenes
 
@@ -21,9 +29,10 @@ This is a strong fit because it provides real, physically grounded adverse-weath
 
 ## Relationship to `craf_x`
 
-This paper does not currently reuse the `craf_x` modeling code (CCP/GAFM/ACT are specific to the CRAF-X fusion architecture). It instead wraps arbitrary off-the-shelf 3D detectors (PointPillars, CenterPoint, TransFusion-L, Cylinder3D) in a conformal-prediction + sequential-testing layer. If that layer turns out to be broadly reusable across papers in this repository, it should move into a shared location (e.g. a new top-level module) rather than staying paper-local — see [`papers/README.md`](../README.md) for the "when to promote paper-local code to the shared library" guidance.
+This paper now depends on `craf_x` after all: the strengthened design (see above) conditions the e-process betting rate on the Cross-modal Consistency Probe (CCP) score from `craf_x/models/ccp.py`, reusing the sibling CRAF-X paper's disagreement signal as the covariate rather than reimplementing one from scratch. The 3D detector being monitored (PointPillars, CenterPoint, TransFusion-L, Cylinder3D, or CRAF-X itself) and the conformal-prediction + sequential-testing layer around it are paper-local. If that layer turns out to be broadly reusable beyond this paper, promote it into a shared location — see [`papers/README.md`](../README.md).
 
 ## Open risks to close before committing to the writeup
 
-- **Dataset access** — pending author response.
-- **Novelty claim** — online/adaptive conformal prediction and sequential e-process monitoring both have prior literature; it is plausible the exact combination has precedent. A literature search is needed before finalizing the headline contribution claim (most likely delta: block-dependence handling for temporally correlated driving frames, multi-object aggregation, and a real adverse-weather onset-detection evaluation — not the e-process-meets-conformal idea in the abstract, which is likely not novel by itself).
+- **Dataset access** — pending author response; see fallback plan above.
+- **Novelty claim** — narrowed and lit-checked as of September 2026 (see `plan.md`), but not exhaustively: re-run a fuller search (semantic search + citation chase) before the camera-ready contribution statement is locked in.
+- **Competitive timing** — a co-author of the closest prior work (Monroy Muñoz, Verma & Timans, WACV 2026) has an existing line of work on conformal prediction for multi-object 3D detection in autonomous driving, and is well-positioned to make the AV/3D extension independently before ICRA 2027. Worth periodically re-checking their output.

@@ -1,6 +1,29 @@
 # Model design notes — Anytime-Valid Conformal Monitoring for Weather-Onset Detection
 
-Working notes from initial model-design discussion. Not yet reviewed against literature — see "Open risks" in `README.md`.
+Working notes from model-design discussion. A literature check was run in September 2026 (see below) to pressure-test the novelty claim before committing to a contribution statement — the earlier draft of this document treated "anytime-valid e-process over conformal miscoverage" as the contribution, which the check below shows is not defensible on its own.
+
+## Literature check (September 2026)
+
+Closest prior art found, from most to least direct:
+
+1. **Monroy Muñoz, Verma & Timans, "Detecting Object Tracking Failure via Sequential Hypothesis Testing," WACV 2026 Workshops (Real-World Surveillance, 6th), March 2026** ([arXiv:2602.12983](https://arxiv.org/abs/2602.12983), HTML: [arxiv.org/html/2602.12983v1](https://arxiv.org/html/2602.12983v1)). This is the direct predecessor and the paper to differentiate against explicitly:
+   - Frames tracking-failure detection as a sequential hypothesis test formalized as an e-process: `X_0 = 1`, `X_t = Π_{i=1}^{t} [1 + λ_i(ε − M_i)]`, where `M_t ∈ [0,1]` is a bounded tracking-quality metric and `ε` a tolerance threshold.
+   - Betting rate `λ_t` is adaptive and *learned from the metric's own history* via aGRAPA (approximate GRAPA) or SF-OGD (Scale-Free Online Gradient Descent) — no external covariate is used.
+   - Provides anytime-valid false-alert-rate control (Ville's inequality argument, same backbone we had planned).
+   - Scope is explicitly **single-object, per-video** (tested on OTB-100, LaSOT, TrackingNet, GOT-10k; `N_vid=50`, one metric stream per video). No spatial structure, no multiplicity control across simultaneously-tracked objects.
+   - Application is 2D visual tracking (surveillance/motion-capture/robotics); no LiDAR, no multimodal fusion, no 3D detection, no weather/distribution-shift treatment.
+   - Its own stated future work: *"the broader methodology of sequential testing with e-processes is well suited to other streaming vision tasks, including multi-object tracking, action recognition, trajectory prediction, or anomaly detection"* — i.e., the multi-object extension is explicitly open, not claimed.
+   - **Competitive-timing risk:** co-author Alexander Timans has an existing line of work on conformal prediction for multi-object 3D detection uncertainty in autonomous driving (bounding-box coverage guarantees). That group is well-positioned to make the AV/3D extension themselves before ICRA 2027. Worth re-checking their output every few months.
+
+2. **State-dependent conformal prediction (Geng, Waite, Turnquist, Ivanov & Ruchkin, Dec 2025 / rev. Apr 2026)** ([arXiv:2512.02893](https://arxiv.org/abs/2512.02893)) — conditions conformal error bounds on the autonomous system's dynamical state, combined with symbolic reachability analysis. Covariate-conditioned, but **not sequential/anytime-valid** (batch conformal, no e-process/martingale), and no weather/distribution-shift treatment in the abstract.
+
+3. **Context-aware nonconformity functions for robotic planning and perception (Kumar, Tayebati, Migliarba, Krishnan & Trivedi, Sept 2025)** ([arXiv:2509.21955](https://arxiv.org/pdf/2509.21955)) — learnable, context-conditioned nonconformity scores for robotics. Also **standard batch conformal, not sequential**; context comes from learned task representations, not cross-modal sensor disagreement specifically.
+
+4. **Value-Gated Modality Refiner / "Before Fusion, Ask What to Keep" (Liu et al., June 2026)** ([arXiv:2606.02679](https://arxiv.org/html/2606.02679)) — uses cross-modal agreement/disagreement to gate fusion, but purely as a learned neural gate, not as a statistical test covariate, and targets sentiment/action-recognition/audio-visual tasks, not AV perception.
+
+5. **Antonante, Spivak & Carlone, "Monitoring and Diagnosability of Perception Systems" (2020)** ([arXiv:2005.11816](https://arxiv.org/abs/2005.11816)) — foundational robotics perception-monitoring reference, but graph-theoretic/topos-theoretic diagnosability, not statistical sequential testing. Good related-work citation for "monitoring perception systems" framing at a robotics venue, not a competing method.
+
+**Conclusion:** as of this check, nothing combines (a) sequential/anytime-valid e-process testing, (b) multi-object and spatially-resolved structure with multiplicity control, (c) a betting rule conditioned on an external cross-modal disagreement signal rather than the failure metric's own history, and (d) real adverse-weather distribution shift in multimodal 3D driving perception. Item 1 is the one to beat and cite explicitly; items 2–4 are adjacent-but-different and belong in related work. This is not a from-scratch literature review — re-run a fuller pass (semantic search + backward/forward citation chase from item 1) before the camera-ready novelty claim is locked in, and especially re-check item 1's group for new output given the competitive-timing risk noted above.
 
 ## Setup
 
@@ -13,29 +36,30 @@ For object `i` in frame `t`:
 
 ## Null hypothesis
 
-`H0`: the pipeline is operating nominally — `E[m(t) | F_{t-1}] ≤ α` for all `t`. Goal: detect the *first time* this is violated (snow-onset degradation), with **anytime-valid** Type-I control: `P_H0(∃t: reject at t) ≤ δ`, regardless of when or how often the process is checked.
+`H0`: the pipeline is operating nominally — `E[m(t) | F_{t-1}] ≤ α` for all `t`. Goal: detect the *first time* this is violated (snow-onset degradation), with **anytime-valid** Type-I control: `P_H0(∃t: reject at t) ≤ δ`, regardless of when or how often the process is checked. (This backbone — the e-process itself and its Ville's-inequality guarantee — is the established part; see literature check above. It is the engine, not the contribution.)
 
 ## The e-process (testing by betting)
 
 Wealth process: `K_t = Π_{s=1}^{t} (1 + λ_s · (m(s) − α))`, with `λ_s ∈ [0, 1/(1−α)]` chosen `F_{s-1}`-measurably (predictable).
 
-Under `H0`, `K_t` is a nonnegative supermartingale, so by Ville's inequality `P_H0(sup_t K_t ≥ 1/δ) ≤ δ`. Alarm the first time `K_t ≥ 1/δ`. This gives valid Type-I error at any stopping time — no Bonferroni correction, no fixed monitoring horizon needed.
+Under `H0`, `K_t` is a nonnegative supermartingale, so by Ville's inequality `P_H0(sup_t K_t ≥ 1/δ) ≤ δ`. Alarm the first time `K_t ≥ 1/δ`.
 
-For `λ_s`: start with the Waudby-Smith–Ramdas running-mean-estimate betting rule rather than a fancier online-learning scheme (ONS, GRAPA) — lower implementation risk given the deadline. Revisit only if there's time.
+## Strengthened contribution — where the novelty actually needs to live
 
-## Where the actual contribution needs to live
+Given the literature check, the contribution is **not** "e-process applied to conformal miscoverage" (established, and item 1 above already does an anytime-valid sequential failure test for streaming vision with a learned betting rule). The delta needs to be concrete and checkable:
 
-The e-process-meets-conformal idea by itself is likely not novel (see "Open risks" in the README). The contribution needs to come from handling the driving-scene structure:
-
-1. **Temporal dependence.** Frames within a scene are highly correlated — the martingale argument doesn't require independence, only `E[m(t) | F_{t-1}] ≤ α` under `H0`, which conformal calibration gives regardless of within-scene correlation. This is a real strength worth stating explicitly, but it affects *power*, not *validity* — should show empirically that block-level aggregation (short scene chunks, ~10–20 frames) trades detection latency against noise reduction.
-2. **Multi-object aggregation.** Frames with more detected objects shouldn't dominate the statistic — weight per-object miscoverage rather than a flat per-frame average.
-3. **Weather-onset detection as the target quantity.** Evaluate on detection delay (frames/seconds from snow onset to alarm) vs. false-alarm rate under stationary clear-weather, as an operating curve — this is the ICRA-relevant metric, not just coverage accuracy.
+1. **Covariate-informed betting, not metric-history-only betting.** Item 1's aGRAPA/SF-OGD choose `λ_t` purely from the history of the failure metric `M_t` itself. Instead, condition `λ_t` on `craf_x`'s Cross-modal Consistency Probe (CCP) score — an external, physically-grounded signal (LiDAR/camera geometric disagreement) computed at the same timestep, not derived from the test statistic's own past. Claim: this sharpens detection power (shorter onset-to-alarm delay at the same false-alarm budget `δ`) versus a covariate-blind bettor (aGRAPA/SF-OGD applied to `m(t)` alone), because the bettor can act on a leading indicator of degradation rather than only the lagging miscoverage signal itself. This is the paper's primary empirical claim and must be validated head-to-head against item 1's own betting rules as the baseline, not a strawman.
+2. **Multi-object aggregation with spatial resolution, not a single per-video/per-frame scalar.** Item 1 is explicitly single-object/per-video and lists multi-object extension as open future work. Run the e-process per BEV grid cell (or cell-cluster) rather than one global statistic per frame, with anytime-valid multiplicity control across cells (online e-BH / closed e-testing — see e.g. the online-FDR-with-e-values line of work) so simultaneously testing many spatial regions doesn't inflate the false-alarm rate. Output is a live, spatially localized "where is perception currently untrustworthy" map, not one global alarm — this is the actionable, robotics-relevant deliverable (e.g., feeding a downstream controller or `craf_x`'s GAFM gate) and is what makes this an ICRA paper rather than a stats paper.
+3. **Temporal dependence within a scene.** The martingale argument doesn't require independence, only `E[m(t) | F_{t-1}] ≤ α` under `H0`, which conformal calibration gives regardless of within-scene correlation. Worth stating explicitly and showing empirically that block-level aggregation (short scene chunks, ~10–20 frames) trades detection latency against noise reduction — this affects power, not validity.
+4. **Weather-onset detection as the target quantity, on real distribution shift.** Evaluate on detection delay (frames/seconds from snow onset to alarm) vs. false-alarm rate under stationary clear-weather, as an operating curve, on real snow-onset transitions (Snowy Scenes) rather than only synthetic corruption — this is the ICRA-relevant metric and the reason a real adverse-weather dataset matters over KITTI/nuScenes alone.
 
 ## Baselines to beat
 
+- **Monroy Muñoz et al. (WACV 2026) e-process, as-is**, applied to the frame-level miscoverage rate `m(t)` with aGRAPA or SF-OGD betting (covariate-blind). This is the real baseline for claim 1 above, not a strawman.
 - Fixed-window batch conformal test recomputed every `K` frames, uncorrected (should show inflated false alarms under continuous monitoring — the naive-practitioner failure mode).
 - Same, with Bonferroni / O'Brien-Fleming correction (valid but conservative — should show higher detection latency).
 - Raw AP/mIoU with a CUSUM change-detector (no distribution-free guarantee — informal baseline).
+- Single global e-process (no spatial resolution) vs. the per-cell version, to isolate the value of claim 2 above.
 
 ## Parameters to fix
 
@@ -43,6 +67,7 @@ The e-process-meets-conformal idea by itself is likely not novel (see "Open risk
 - `δ` (false-alarm budget, e.g. 0.05)
 - Calibration split from clear/no-snowfall scenes (Snowy Scenes, if access is granted in time)
 - Pending dataset access and its ordering metadata: whether scenes carry real temporal ordering across the full drive, or need to be concatenated synthetically to simulate weather onset
+- BEV cell size / cell-cluster granularity for the spatial e-process grid, and the online-FDR level for cross-cell multiplicity control
 
 ## Dataset decision (open, deadline-sensitive)
 
@@ -54,7 +79,9 @@ Primary target is Snowy Scenes (real adverse-weather distribution shift, publish
 
 ## Next steps
 
-- [ ] Literature search to confirm the actual novelty delta before finalizing the contribution statement.
+- [ ] Fuller literature pass (semantic search + citation chase from Monroy Muñoz et al. 2602.12983) before locking the camera-ready novelty claim; re-check that group's output periodically given the competitive-timing risk.
 - [ ] Follow up on Snowy Scenes dataset access request.
 - [ ] Stand up the KITTI/nuScenes synthetic-corruption fallback pipeline.
-- [ ] Implement the WSR betting-rule e-process and the three baselines above on whichever dataset is ready first.
+- [ ] Implement the covariate-blind baseline (Monroy Muñoz et al.'s aGRAPA/SF-OGD on `m(t)`) first, to have a real comparison point.
+- [ ] Implement the CCP-informed betting variant and the per-BEV-cell spatial e-process with online multiplicity control.
+- [ ] Design the detection-delay-vs-false-alarm operating-curve evaluation on whichever dataset is ready first.
