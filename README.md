@@ -1,32 +1,31 @@
-# CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability
+# CRAFT
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20017952.svg)](https://doi.org/10.5281/zenodo.20017952)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**CRAF-X** is a novel defense-oriented fusion framework for 3D object detection in autonomous perception. It pioneers a verify-then-fuse paradigm by deploying a Cross-modal Consistency Probe (CCP) that natively detects geometric and semantic contradictions in the shared Bird's-Eye View (BEV) space, providing robustness against multi-modal adversarial attacks and severe sensor degradation. 
+This repository is a multi-paper research codebase. It holds a shared PyTorch library, `craf_x/`, for cross-modal fusion research on 3D object detection in autonomous perception, plus one directory per paper built on top of it under [`papers/`](papers/).
 
-This repository contains the official PyTorch implementation, testing scripts, and pre-trained weights for the algorithms described in our manuscript.
+## Layout
 
-## Citation
-
-If you find this code or our research helpful in your work, please cite our paper published in **The Visual Computer**:
-
-```bibtex
-@article{crafx_under_review,
-  title={{CRAF-X}: Cross-modal Robust Adaptive Fusion with eXplainability for Autonomous Perception},
-  author={Anonymous Author},
-  journal={Under review at The Visual Computer},
-  year={2026}
-}
+```
+CRAFT/
+├── craf_x/     # shared library: models, datasets, training, evaluation, utils
+├── tests/      # shared unit tests and evaluation scripts for craf_x
+└── papers/     # one subdirectory per paper (manuscript, planning notes, paper-specific scripts)
+    ├── craf-x-tvc/               # CRAF-X, under review at The Visual Computer
+    └── conformal-snow-icra2027/  # anytime-valid conformal monitoring, targeting ICRA 2027
 ```
 
-## Key Algorithms & Components
+See [`papers/README.md`](papers/README.md) for the list of papers and how to add a new one, and each paper's own `README.md` for its abstract, status, and citation.
 
-1. **Cross-modal Consistency Probe (CCP)**: Acts as an intrinsic anomaly detector. It computes semantic alignment scores between LiDAR geometry and Camera features to dynamically detect adversarial patches or point-cloud displacements.
-2. **Gated Adaptive Fusion Module (GAFM)**: Dynamically quarantines adversarial or degraded signals at the BEV grid-cell level. It shifts trust weights automatically when sensor dropout occurs.
-3. **Adversarial Consistency Training (ACT)**: A joint objective combining detection loss, consistency contrastive loss, and Modal Attribution Regularization. It ensures the network produces interpretable, auditor-friendly spatial trust maps directly tied to its predictions.
+## The `craf_x` library
 
-Full implementations of these modules can be found in `craf_x/models/`.
+`craf_x` implements the shared modeling components used across papers in this repository, currently centered on:
+
+1. **Cross-modal Consistency Probe (CCP)**: computes semantic alignment scores between LiDAR geometry and Camera features to detect adversarial patches or point-cloud displacements.
+2. **Gated Adaptive Fusion Module (GAFM)**: dynamically quarantines adversarial or degraded modality signals at the BEV grid-cell level.
+3. **Adversarial Consistency Training (ACT)**: a joint training objective combining detection loss, consistency contrastive loss, and Modal Attribution Regularization.
+
+Full implementations live in `craf_x/models/`. See [`papers/craf-x-tvc/README.md`](papers/craf-x-tvc/README.md) for the paper these components were introduced in.
 
 ## Dependencies and Requirements
 
@@ -55,27 +54,25 @@ python setup.py develop
 
 ## Data Sets
 
-CRAF-X is evaluated on the standard multi-modal autonomous driving benchmarks. You must download the datasets directly from their official providers and organize them into the `data/` directory.
+Experiments in this repository are evaluated on standard multi-modal autonomous driving benchmarks. Download each dataset directly from its official provider and organize it under `data/`:
 
-- **nuScenes**: The primary robustness benchmark. Download the full dataset from [nuscenes.org](https://www.nuscenes.org/download) and extract to `data/nuscenes/`.
-- **KITTI 3D Object Detection**: Used for secondary benchmarking. Download from [cvlibs.net](http://www.cvlibs.net/datasets/kitti/) and extract to `data/kitti/`.
-- **Waymo Open Dataset**: Used for evaluating scalability. Download from [waymo.com/open/](https://waymo.com/open/download/) and extract to `data/waymo/`.
+- **nuScenes**: Download from [nuscenes.org](https://www.nuscenes.org/download) and extract to `data/nuscenes/`.
+- **KITTI 3D Object Detection**: Download from [cvlibs.net](http://www.cvlibs.net/datasets/kitti/) and extract to `data/kitti/`.
+- **Waymo Open Dataset**: Download from [waymo.com/open/](https://waymo.com/open/download/) and extract to `data/waymo/`.
 
 After downloading, run the dataset preparation scripts:
 ```bash
 python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
 ```
 
-## Reproducing Experiments
-
-To test the architecture and generate evaluation visualizations locally:
+## Running Tests
 
 ```bash
-# Run unit tests to verify modules
+# Run unit tests to verify craf_x modules
 python tests/run_all.py
 
 # Evaluate a pre-trained model under adversarial attack
 python tests/run_evaluation.py --checkpoint checkpoints/crafx_nuscenes.pth --attack simultaneous_pgd
 ```
 
-For more detailed guides on training your own models with Adversarial Consistency Training (ACT), please refer to the `docs/` folder (coming soon upon full open-source release).
+For a specific paper's citation, results, and reproduction steps, see that paper's own README under `papers/`.

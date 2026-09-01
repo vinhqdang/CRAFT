@@ -14,7 +14,7 @@ plt.rcParams.update({
     'figure.autolayout': True
 })
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'manuscript', 'figures')
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'manuscript', 'figures')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def generate_performance_chart():

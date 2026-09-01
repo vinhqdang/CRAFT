@@ -27,7 +27,7 @@ if __name__ == '__main__':
     mock_img_path = os.path.join(os.path.dirname(__file__), 'mock_bev_input.png')
     generate_mock_image(mock_img_path)
     
-    output_vis_path = os.path.join(os.path.dirname(__file__), '..', 'manuscript', 'figures', 'crafx_visualization.png')
+    output_vis_path = os.path.join(os.path.dirname(__file__), '..', 'papers', 'craf-x-tvc', 'manuscript', 'figures', 'crafx_visualization.png')
     print(f"Running visual evaluation with output: {output_vis_path}")
     
     run_visualization(mock_img_path, output_vis_path)

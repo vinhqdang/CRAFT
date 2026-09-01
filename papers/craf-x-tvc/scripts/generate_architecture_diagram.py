@@ -1,3 +1,4 @@
+import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
@@ -77,7 +78,8 @@ def draw_architecture():
     ax.set_xlim(0, 12)
     ax.set_ylim(-6.5, 7.5)
     plt.tight_layout()
-    plt.savefig('/Users/vinhdq1/work/CRAFT/manuscript/figures/fig_architecture.png', dpi=300, bbox_inches='tight')
+    output_path = os.path.join(os.path.dirname(__file__), '..', 'manuscript', 'figures', 'fig_architecture.png')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
     
 if __name__ == '__main__':
     draw_architecture()
