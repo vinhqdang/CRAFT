@@ -1,7 +1,7 @@
 # Anytime-Valid Conformal Monitoring for Weather-Onset Detection
 
 **Target venue:** ICRA 2027
-**Status:** Planning — statistical model being designed; primary dataset access requested, not yet confirmed.
+**Status:** Prototype implementation in progress. The method (calibration, both betting rules, the spatial e-process, and the KITTI/nuScenes synthetic-corruption fallback) is implemented and unit-tested end-to-end in `conformal_monitor/`; it has not yet been run on the real evaluation datasets. Primary dataset (Snowy Scenes) access is still requested, not yet confirmed.
 
 ## Idea
 
@@ -17,6 +17,19 @@ The target metric is detection delay (time from true weather onset to alarm) vs.
 
 See [`plan.md`](plan.md) for the full statistical setup, the literature check with sources, and baselines as currently scoped.
 
+## Contents
+
+- `plan.md` — statistical design, literature check, and baselines.
+- `conformal_monitor/` — the method's implementation:
+  - `calibration.py` — split conformal calibration of craf_x detections (nonconformity scores, calibrated quantile, frame-level miscoverage rate `m(t)`).
+  - `betting.py` — the e-process wealth process and the three betting rules: `AGRAPABettor` and `SFOGDBettor` (covariate-blind, reproducing the Monroy Muñoz et al. baseline) and `CCPInformedBettor` (this paper's primary contribution, plan.md claim 1).
+  - `spatial.py` — the per-BEV-cell grid of e-processes with `"bonferroni"` and `"ebh"` (Wang & Ramdas e-BH) multiplicity-control modes, producing the live "where is perception untrustworthy" map (plan.md claim 2).
+  - `corruption.py` — `WeatherOnsetStream`, the KITTI/nuScenes synthetic-corruption fallback pipeline (clear → onset → ramped severity), kept dataset-agnostic so real Snowy Scenes onset labels drop in later without redesign.
+  - `evaluate.py` — wires the above to `craf_x.models.CRAFX_Net` into the detection-delay-vs-false-alarm operating-curve evaluation from plan.md.
+- `tests/` — unit and integration tests for `conformal_monitor/` (`python papers/conformal-snow-icra2027/tests/run_all.py`).
+
+Not yet done: running any of this against real detection results (clean or corrupted) at scale, tuning `kappa`/the calibration split, and the head-to-head operating-curve comparison against the Monroy Muñoz et al. baseline that the paper's central claim rests on.
+
 ## Primary dataset: Snowy Scenes
 
 [Snowy Scenes](https://github.com/snowyscenes/dataset) (Ngo, Aksoy, et al., accepted at IEEE RA-L 2026) is a multimodal AV perception dataset collected in Espoo, Finland, purpose-built for snowy conditions: 22,331 synchronized frames over 14.4 km, 5,027 annotated LiDAR scans (128-beam LiDAR + RGB + 3 thermal cameras + GNSS/IMU), 221,081 3D bounding boxes across 27 semantic classes, with dedicated splits for accumulated snow, active snowfall, and highway snow.
@@ -29,7 +42,7 @@ This is a strong fit because it provides real, physically grounded adverse-weath
 
 ## Relationship to `craf_x`
 
-This paper now depends on `craf_x` after all: the strengthened design (see above) conditions the e-process betting rate on the Cross-modal Consistency Probe (CCP) score from `craf_x/models/ccp.py`, reusing the sibling CRAF-X paper's disagreement signal as the covariate rather than reimplementing one from scratch. The 3D detector being monitored (PointPillars, CenterPoint, TransFusion-L, Cylinder3D, or CRAF-X itself) and the conformal-prediction + sequential-testing layer around it are paper-local. If that layer turns out to be broadly reusable beyond this paper, promote it into a shared location — see [`papers/README.md`](../README.md).
+This paper depends on `craf_x`: the CCP-informed betting rate is conditioned on the Cross-modal Consistency Probe (CCP) score from `craf_x/models/ccp.py`, reusing the sibling CRAF-X paper's disagreement signal as the covariate rather than reimplementing one from scratch, and `conformal_monitor/evaluate.py` runs the monitor directly on top of `craf_x.models.CRAFX_Net`. The 3D detector being monitored (currently CRAF-X; PointPillars/CenterPoint/TransFusion-L/Cylinder3D remain options) and the conformal-prediction + sequential-testing layer around it (`conformal_monitor/`) are kept paper-local. If that layer turns out to be broadly reusable beyond this paper, promote it into a shared location — see [`papers/README.md`](../README.md).
 
 ## Open risks to close before committing to the writeup
 

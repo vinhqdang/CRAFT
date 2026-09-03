@@ -81,7 +81,9 @@ Primary target is Snowy Scenes (real adverse-weather distribution shift, publish
 
 - [ ] Fuller literature pass (semantic search + citation chase from Monroy Muñoz et al. 2602.12983) before locking the camera-ready novelty claim; re-check that group's output periodically given the competitive-timing risk.
 - [ ] Follow up on Snowy Scenes dataset access request.
-- [ ] Stand up the KITTI/nuScenes synthetic-corruption fallback pipeline.
-- [ ] Implement the covariate-blind baseline (Monroy Muñoz et al.'s aGRAPA/SF-OGD on `m(t)`) first, to have a real comparison point.
-- [ ] Implement the CCP-informed betting variant and the per-BEV-cell spatial e-process with online multiplicity control.
-- [ ] Design the detection-delay-vs-false-alarm operating-curve evaluation on whichever dataset is ready first.
+- [x] Stand up the KITTI/nuScenes synthetic-corruption fallback pipeline — `conformal_monitor/corruption.py` (`WeatherOnsetStream`), unit-tested in `tests/test_corruption.py`.
+- [x] Implement the covariate-blind baseline (Monroy Muñoz et al.'s aGRAPA/SF-OGD on `m(t)`) first, to have a real comparison point — `conformal_monitor/betting.py` (`AGRAPABettor`, `SFOGDBettor`).
+- [x] Implement the CCP-informed betting variant and the per-BEV-cell spatial e-process with online multiplicity control — `conformal_monitor/betting.py` (`CCPInformedBettor`) and `conformal_monitor/spatial.py` (`SpatialEProcessGrid`, Bonferroni and e-BH modes).
+- [x] Design the detection-delay-vs-false-alarm operating-curve evaluation — `conformal_monitor/evaluate.py` (`operating_curve`), wired to `CRAFX_Net` and unit-tested on the synthetic-corruption stream.
+- [ ] Run the implemented pipeline at scale (not just unit tests) on the synthetic-corruption fallback, and on Snowy Scenes once access is confirmed, to actually produce the head-to-head operating curve (CCP-informed vs. covariate-blind bettors) the paper's central claim depends on.
+- [ ] Tune `kappa` (the CCP-disagreement gain in `CCPInformedBettor`) and the calibration split size; both are currently unfit placeholders.
