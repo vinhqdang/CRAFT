@@ -1,3 +1,5 @@
+import pytest
+
 from conformal_monitor.betting import (
     AGRAPABettor,
     CCPInformedBettor,
@@ -26,6 +28,25 @@ def test_wealth_process_clips_lambda_to_bounds():
     wp = WealthProcess(alpha=0.1, lambda_max=2.0)
     wp.step(m_t=1.0, lambda_t=100.0)  # should clip to lambda_max=2.0
     assert wp.wealth == 1.0 + 2.0 * (1.0 - 0.1)
+
+
+def test_default_lambda_max_never_lets_wealth_go_negative_for_any_alpha():
+    # Regression test: the nonnegativity-preserving bound is 1/alpha (the
+    # dangerous extreme is m_t=0), not 1/(1-alpha) (which only bounds the
+    # m_t=1 side and is unsafe for alpha > 0.5 -- e.g. alpha=0.6 gives
+    # lambda_max=2.5, and betting lambda_max on a clean frame (m_t=0) would
+    # give factor = 1 + 2.5*(0-0.6) = -0.5 if that bound were used).
+    for alpha in (0.05, 0.1, 0.3, 0.5, 0.6, 0.9, 0.99):
+        wp = WealthProcess(alpha=alpha)  # default lambda_max
+        wealth = wp.step(m_t=0.0, lambda_t=wp.lambda_max)  # worst case for nonnegativity
+        assert wealth >= 0.0
+        assert wealth == pytest.approx(0.0, abs=1e-9)  # 1 - lambda_max*alpha == 0 exactly at the bound
+
+
+def test_default_lambda_max_is_reciprocal_of_alpha():
+    assert WealthProcess(alpha=0.6).lambda_max == pytest.approx(1.0 / 0.6)
+    assert AGRAPABettor(alpha=0.6).lambda_max == pytest.approx(1.0 / 0.6)
+    assert SFOGDBettor(alpha=0.6).lambda_max == pytest.approx(1.0 / 0.6)
 
 
 def test_agrapa_bettor_lambda_within_bounds():

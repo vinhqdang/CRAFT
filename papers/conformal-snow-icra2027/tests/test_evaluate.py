@@ -77,7 +77,7 @@ def test_operating_curve_covariate_informed_vs_blind_shapes():
         )
 
     def clear_stream_factory():
-        # onset_frame == scene_length -> severity stays 0 for the whole scene
+        # severity_max=0.0 -> severity stays 0 for the whole scene regardless of onset_frame
         return WeatherOnsetStream(
             NuScenesMockDataset(num_samples=4), scene_length=4, onset_frame=3, ramp_length=1, severity_max=0.0,
         )
@@ -97,3 +97,48 @@ def test_operating_curve_covariate_informed_vs_blind_shapes():
         for point in curve:
             assert 0.0 <= point["false_alarm_rate"] <= 1.0
             assert "mean_detection_delay" in point
+
+
+def test_operating_curve_computes_each_replicate_trajectory_once_per_delta_sweep():
+    # Regression test: operating_curve must reuse one wealth trajectory per
+    # replicate across the whole `deltas` sweep instead of rerunning the
+    # model once per delta, since the trajectory itself doesn't depend on
+    # delta. Verified by counting model.forward calls directly.
+    model = _build_model()
+    calibration_dataset = NuScenesMockDataset(num_samples=4)
+    q_hat = calibrate_on_clear_weather(model, calibration_dataset, CONFORMAL_ALPHA, batch_size=2)
+
+    call_count = {"n": 0}
+    original_forward = model.forward
+
+    def counting_forward(*args, **kwargs):
+        call_count["n"] += 1
+        return original_forward(*args, **kwargs)
+
+    model.forward = counting_forward
+
+    scene_length = 4
+    n_onset_replicates, n_clear_replicates = 2, 2
+
+    def onset_stream_factory():
+        return WeatherOnsetStream(
+            NuScenesMockDataset(num_samples=4), scene_length=scene_length, onset_frame=2, ramp_length=1,
+        )
+
+    def clear_stream_factory():
+        return WeatherOnsetStream(
+            NuScenesMockDataset(num_samples=4), scene_length=scene_length, onset_frame=2, ramp_length=1,
+            severity_max=0.0,
+        )
+
+    operating_curve(
+        model, q_hat, CONFORMAL_ALPHA, deltas=[0.5, 0.3, 0.1, 0.05],  # 4 deltas
+        onset_stream_factory=onset_stream_factory,
+        clear_stream_factory=clear_stream_factory,
+        bettor_factory=lambda: AGRAPABettor(CONFORMAL_ALPHA),
+        n_onset_replicates=n_onset_replicates, n_clear_replicates=n_clear_replicates,
+    )
+
+    # One forward call per frame per replicate, independent of len(deltas).
+    # Under the old per-delta-rerun behavior this would scale with len(deltas)==4.
+    assert call_count["n"] == (n_onset_replicates + n_clear_replicates) * scene_length

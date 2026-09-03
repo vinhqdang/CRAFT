@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 
 from craf_x.models.crafx_net import CRAFX_Net
 
-from .betting import SequentialTester
+from .betting import WealthProcess
 from .calibration import calibrate_quantile, object_nonconformity_scores, frame_miscoverage_rate
 from .corruption import WeatherOnsetStream
 from .spatial import SpatialEProcessGrid, pool_to_cell_grid
@@ -58,22 +58,25 @@ class MonitorRun:
 
 
 @torch.no_grad()
-def run_global_monitor(
+def compute_global_wealth_trajectory(
     model: CRAFX_Net,
     stream: WeatherOnsetStream,
     q_hat: float,
     alpha: float,
-    delta: float,
     bettor_factory: Callable[[], object],
-) -> MonitorRun:
+) -> List[float]:
     """
-    Runs a single global (whole-frame) sequential monitor over an onset
-    stream and reports the alarm time, if any, relative to the stream's
-    true onset frame.
+    Runs the model over the full stream and drives a single global
+    (whole-frame) wealth process to completion. Deliberately
+    delta-independent (delta only gates the post-hoc alarm threshold 1/delta
+    applied to this trajectory, via `alarm_time_from_trajectory`), so a
+    sweep over multiple deltas can reuse one trajectory instead of rerunning
+    the model once per delta.
     """
     model.eval()
-    tester = SequentialTester(alpha, delta, bettor_factory())
-    wealth_trajectory: List[float] = []
+    bettor = bettor_factory()
+    wealth_process = WealthProcess(alpha, lambda_max=bettor.lambda_max)
+    trajectory: List[float] = []
 
     for t in range(len(stream)):
         sample = stream[t]
@@ -87,13 +90,44 @@ def run_global_monitor(
         m_t = frame_miscoverage_rate(scores, q_hat)
         ccp_disagreement = float((1.0 - out["S"]).mean().item())
 
-        wealth = tester.step(m_t, t, ccp_disagreement=ccp_disagreement)
-        wealth_trajectory.append(wealth)
-        if tester.alarm_time is not None:
-            break
+        lam = bettor.next_lambda(ccp_disagreement=ccp_disagreement)
+        wealth = wealth_process.step(m_t, lam)
+        bettor.update(m_t, ccp_disagreement=ccp_disagreement)
+        trajectory.append(wealth)
 
-    delay = None if tester.alarm_time is None else tester.alarm_time - stream.onset_frame
-    return MonitorRun(tester.alarm_time, stream.onset_frame, delay, wealth_trajectory)
+    return trajectory
+
+
+def alarm_time_from_trajectory(trajectory: List[float], delta: float) -> Optional[int]:
+    """First t with trajectory[t] >= 1/delta, or None if the process never alarms."""
+    threshold = 1.0 / delta
+    for t, wealth in enumerate(trajectory):
+        if wealth >= threshold:
+            return t
+    return None
+
+
+def run_global_monitor(
+    model: CRAFX_Net,
+    stream: WeatherOnsetStream,
+    q_hat: float,
+    alpha: float,
+    delta: float,
+    bettor_factory: Callable[[], object],
+) -> MonitorRun:
+    """
+    Runs a single global (whole-frame) sequential monitor over an onset
+    stream and reports the alarm time, if any, relative to the stream's
+    true onset frame. For a sweep over multiple deltas on the same stream,
+    call `compute_global_wealth_trajectory` once and reuse it with
+    `alarm_time_from_trajectory` instead of calling this per delta.
+    """
+    full_trajectory = compute_global_wealth_trajectory(model, stream, q_hat, alpha, bettor_factory)
+    alarm_time = alarm_time_from_trajectory(full_trajectory, delta)
+    trajectory = full_trajectory[: alarm_time + 1] if alarm_time is not None else full_trajectory
+
+    delay = None if alarm_time is None else alarm_time - stream.onset_frame
+    return MonitorRun(alarm_time, stream.onset_frame, delay, trajectory)
 
 
 @torch.no_grad()
@@ -182,22 +216,40 @@ def operating_curve(
     bettors (covariate-blind vs. CCP-informed) in plan.md's evaluation plan.
     Runs that never alarm are excluded from the mean delay and reported
     separately as `n_censored`.
+
+    Each replicate's wealth trajectory is delta-independent (see
+    `compute_global_wealth_trajectory`), so it is computed once per
+    replicate here and reused across the whole `deltas` sweep — this also
+    means every delta's point is evaluated on the exact same replicate
+    streams, a paired comparison rather than independently resampled ones.
     """
+    onset_runs = []
+    for _ in range(n_onset_replicates):
+        stream = onset_stream_factory()
+        trajectory = compute_global_wealth_trajectory(model, stream, q_hat, alpha, bettor_factory)
+        onset_runs.append((trajectory, stream.onset_frame))
+
+    clear_trajectories = [
+        compute_global_wealth_trajectory(model, clear_stream_factory(), q_hat, alpha, bettor_factory)
+        for _ in range(n_clear_replicates)
+    ]
+
     curve = []
     for delta in deltas:
         delays = []
         n_censored = 0
-        for _ in range(n_onset_replicates):
-            stream = onset_stream_factory()
-            run = run_global_monitor(model, stream, q_hat, alpha, delta, bettor_factory)
-            if run.detection_delay is None:
+        for trajectory, onset_frame in onset_runs:
+            alarm_time = alarm_time_from_trajectory(trajectory, delta)
+            if alarm_time is None:
                 n_censored += 1
             else:
-                delays.append(run.detection_delay)
+                delays.append(alarm_time - onset_frame)
 
-        fa_rate = false_alarm_rate(
-            model, clear_stream_factory, q_hat, alpha, delta, bettor_factory, n_clear_replicates
+        n_alarmed = sum(
+            1 for trajectory in clear_trajectories if alarm_time_from_trajectory(trajectory, delta) is not None
         )
+        fa_rate = n_alarmed / n_clear_replicates if n_clear_replicates else 0.0
+
         curve.append(
             {
                 "delta": delta,

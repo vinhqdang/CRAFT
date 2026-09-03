@@ -14,9 +14,14 @@ betting)"), which is the established part of the method, plus:
 
 Under H0: E[m(t) | F_{t-1}] <= alpha for all t, the wealth process
 K_t = prod_{s<=t} (1 + lambda_s * (m(s) - alpha)) is a nonnegative
-supermartingale for any predictable lambda_s in [0, 1/(1-alpha)], so by
-Ville's inequality P_H0(sup_t K_t >= 1/delta) <= delta. Alarm the first time
+supermartingale for any predictable lambda_s in [0, 1/alpha], so by Ville's
+inequality P_H0(sup_t K_t >= 1/delta) <= delta. Alarm the first time
 K_t >= 1/delta.
+
+The 1/alpha bound (not 1/(1-alpha), which only bounds the m(t)=1 side) is
+what's needed: since 1 + lambda*(m(t)-alpha) is linear and increasing in
+m(t) in [0, 1], its minimum over that range is at m(t)=0, i.e.
+1 - lambda*alpha, which is >= 0 iff lambda <= 1/alpha.
 """
 import math
 from typing import Optional
@@ -31,15 +36,15 @@ class WealthProcess:
         if not (0.0 < alpha < 1.0):
             raise ValueError(f"alpha must be in (0, 1), got {alpha}")
         self.alpha = alpha
-        self.lambda_max = lambda_max if lambda_max is not None else 1.0 / (1.0 - alpha)
+        self.lambda_max = lambda_max if lambda_max is not None else 1.0 / alpha
         self.wealth = 1.0
         self.history = []  # list of (m_t, lambda_t, wealth_t)
 
     def step(self, m_t: float, lambda_t: float) -> float:
         lambda_t = float(np.clip(lambda_t, 0.0, self.lambda_max))
         factor = 1.0 + lambda_t * (m_t - self.alpha)
-        # Guard against numerical noise pushing the factor (theoretically >= 0
-        # since lambda_t <= 1/(1-alpha) and m_t <= 1) fractionally negative.
+        # Guard against floating-point noise only: factor is theoretically
+        # >= 0 whenever lambda_t <= 1/alpha (see module docstring).
         factor = max(factor, 0.0)
         self.wealth *= factor
         self.history.append((m_t, lambda_t, self.wealth))
@@ -79,7 +84,7 @@ class AGRAPABettor:
 
     def __init__(self, alpha: float, lambda_max: Optional[float] = None, eps: float = 1e-6):
         self.alpha = alpha
-        self.lambda_max = lambda_max if lambda_max is not None else 1.0 / (1.0 - alpha)
+        self.lambda_max = lambda_max if lambda_max is not None else 1.0 / alpha
         self.eps = eps
         self._moments = _RunningMoments()
 
@@ -106,7 +111,7 @@ class SFOGDBettor:
 
     def __init__(self, alpha: float, lambda_max: Optional[float] = None):
         self.alpha = alpha
-        self.lambda_max = lambda_max if lambda_max is not None else 1.0 / (1.0 - alpha)
+        self.lambda_max = lambda_max if lambda_max is not None else 1.0 / alpha
         self._lambda = 0.0
         self._sq_grad_sum = 0.0
 
