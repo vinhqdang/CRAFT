@@ -151,8 +151,10 @@ def false_alarm_rate(
     """
     Empirical false-alarm rate under stationary clear weather: fraction of
     independent clear-weather-only replicate scenes on which the global
-    monitor alarms at all (a clear scene has `onset_frame == scene_length`,
-    i.e. severity stays 0 throughout).
+    monitor alarms at all. `clear_stream_factory` should build a
+    `WeatherOnsetStream` with `severity_max=0.0` (severity stays 0
+    throughout regardless of `onset_frame`, which must still be a valid
+    index into the stream).
     """
     n_alarmed = 0
     for _ in range(n_replicates):

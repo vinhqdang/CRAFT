@@ -27,8 +27,11 @@ See [`plan.md`](plan.md) for the full statistical setup, the literature check wi
   - `corruption.py` — `WeatherOnsetStream`, the KITTI/nuScenes synthetic-corruption fallback pipeline (clear → onset → ramped severity), kept dataset-agnostic so real Snowy Scenes onset labels drop in later without redesign.
   - `evaluate.py` — wires the above to `craf_x.models.CRAFX_Net` into the detection-delay-vs-false-alarm operating-curve evaluation from plan.md.
 - `tests/` — unit and integration tests for `conformal_monitor/` (`python papers/conformal-snow-icra2027/tests/run_all.py`).
+- `scripts/run_operating_curve_experiment.py` — runs the full pipeline (calibration → onset stream → both bettors → operating curve) at a larger scale than the unit tests, as a mechanics smoke-run.
 
-Not yet done: running any of this against real detection results (clean or corrupted) at scale, tuning `kappa`/the calibration split, and the head-to-head operating-curve comparison against the Monroy Muñoz et al. baseline that the paper's central claim rests on.
+**Smoke-run caveat:** that script currently runs against an *untrained* `CRAFX_Net` and the mock random-tensor dataset, so its output (no alarms, either bettor, any `delta`) reflects that a randomly-initialized detector's regression residuals aren't measurably affected by the synthetic corruption — not a finding about the method. It confirms the pipeline executes correctly at scale (proper shapes, no false alarms, no crashes) but is not evidence for or against the paper's claim either way.
+
+Not yet done: running any of this against a *trained* detector on real (or corruption-augmented real) data, tuning `kappa`/the calibration split, and the head-to-head operating-curve comparison against the Monroy Muñoz et al. baseline that the paper's central claim rests on.
 
 ## Primary dataset: Snowy Scenes
 
