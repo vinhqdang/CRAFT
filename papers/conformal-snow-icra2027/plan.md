@@ -65,11 +65,20 @@ Given the literature check, the contribution is **not** "e-process applied to co
 
 - `α` (target miscoverage, e.g. 0.1)
 - `δ` (false-alarm budget, e.g. 0.05)
-- Calibration split from clear/no-snowfall scenes (Snowy Scenes, if access is granted in time)
-- Pending dataset access and its ordering metadata: whether scenes carry real temporal ordering across the full drive, or need to be concatenated synthetically to simulate weather onset
+- Calibration split: no clear/no-snowfall scenes exist in Snowy Scenes (see below) — currently held-out `accumulated`-category frames (measured mildest), not a true clear baseline.
+- Dataset access resolved; ordering metadata resolved too — see "Snowy Scenes scoping notes" below.
 - BEV cell size / cell-cluster granularity for the spatial e-process grid, and the online-FDR level for cross-cell multiplicity control
 
-## Dataset decision (open, deadline-sensitive)
+## Snowy Scenes scoping notes (resolved access, revised design)
+
+Access arrived (`ROADVIEW5k.zip`, ~49GB, read in-place via `zipfile` — see `papers/conformal-snow-icra2027/README.md` for the full access story). Two assumptions in the original dataset decision below turned out wrong once the real data was inspected:
+
+1. **No clear-weather baseline.** All three splits (`accumulated`, `falling`, `highway`) are already-snowy driving; there's no dry/clear split to calibrate on.
+2. **No within-sequence onset ramp.** Sampling the ground-truth per-point "snow" class fraction across a timestamp-ordered `falling` sequence shows noisy fluctuation (bursty active snowfall), not a clean monotonic onset curve.
+
+What's real and usable instead: the mean per-point "snow" fraction differs sharply and physically-sensibly **across** categories (`accumulated` 0.0001 < `highway` 0.0041 < `falling` 0.0119 — active/airborne snowfall registers as spurious near-range LiDAR returns, settled snow doesn't). `conformal_monitor/real_snow_stream.py`'s `RealSnowOnsetStream` splices held-out `accumulated` frames (nominal) with `falling` frames (degraded) at a known onset index — real sensor data on both sides, only the splice point is constructed. This replaces the KITTI/nuScenes synthetic-corruption fallback (`corruption.py`, kept for a real-vs-synthetic ablation) as the primary evaluation stream. Flagged as an open risk in the README: reviewers may push back on a cross-category splice standing in for a natural onset transition — a real-KITTI-clear-frames splice remains a fallback option if so, not yet tried since this environment has no real KITTI data downloaded.
+
+## Dataset decision (superseded — kept for history)
 
 Primary target is Snowy Scenes (real adverse-weather distribution shift, published 3D detection baselines to build on). Access is requested but not confirmed as of this writing, and the ICRA deadline does not allow waiting indefinitely. Do not block model/method development or writing on it:
 
@@ -80,10 +89,11 @@ Primary target is Snowy Scenes (real adverse-weather distribution shift, publish
 ## Next steps
 
 - [ ] Fuller literature pass (semantic search + citation chase from Monroy Muñoz et al. 2602.12983) before locking the camera-ready novelty claim; re-check that group's output periodically given the competitive-timing risk.
-- [ ] Follow up on Snowy Scenes dataset access request.
+- [x] Follow up on Snowy Scenes dataset access request — resolved; see "Snowy Scenes scoping notes" above.
 - [x] Stand up the KITTI/nuScenes synthetic-corruption fallback pipeline — `conformal_monitor/corruption.py` (`WeatherOnsetStream`), unit-tested in `tests/test_corruption.py`.
 - [x] Implement the covariate-blind baseline (Monroy Muñoz et al.'s aGRAPA/SF-OGD on `m(t)`) first, to have a real comparison point — `conformal_monitor/betting.py` (`AGRAPABettor`, `SFOGDBettor`).
 - [x] Implement the CCP-informed betting variant and the per-BEV-cell spatial e-process with online multiplicity control — `conformal_monitor/betting.py` (`CCPInformedBettor`) and `conformal_monitor/spatial.py` (`SpatialEProcessGrid`, Bonferroni and e-BH modes).
 - [x] Design the detection-delay-vs-false-alarm operating-curve evaluation — `conformal_monitor/evaluate.py` (`operating_curve`), wired to `CRAFX_Net` and unit-tested on the synthetic-corruption stream.
-- [ ] Run the implemented pipeline at scale (not just unit tests) on the synthetic-corruption fallback, and on Snowy Scenes once access is confirmed, to actually produce the head-to-head operating curve (CCP-informed vs. covariate-blind bettors) the paper's central claim depends on.
+- [x] Implement the real Snowy Scenes onset stream and run the pipeline against the real archive on a Colab GPU (calibration + both bettors) — `conformal_monitor/real_snow_stream.py`. Surfaced and fixed two real bugs (`evaluate.py` device handling, a fork-unsafe cached zip handle in `CRAFXSnowyScenesDataset`) that the CPU-only unit test suite couldn't have caught.
+- [ ] **Train `CRAFX_Net` on Snowy Scenes** (`tools/train.py --dataset snowy_scenes`) — now the critical path. The first real pipeline run (untrained model) alarmed before the true onset on both bettors, exactly as expected from random-weight box regression; the head-to-head operating curve the paper's central claim depends on needs a trained detector before the numbers mean anything.
 - [ ] Tune `kappa` (the CCP-disagreement gain in `CCPInformedBettor`) and the calibration split size; both are currently unfit placeholders.
