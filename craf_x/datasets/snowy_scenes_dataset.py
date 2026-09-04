@@ -82,13 +82,22 @@ class CRAFXSnowyScenesDataset(Dataset):
         self.y_range = y_range
         self.z_range = z_range
 
-        self._zf: Optional[zipfile.ZipFile] = None  # opened lazily per-worker, see _zip()
+        self._zf: Optional[zipfile.ZipFile] = None  # opened lazily per-process, see _zip()
         self._root = "ROADVIEW5k"
         self._split_dir = f"{self._root}/{split}"
 
-        names = self._zip().namelist()
-        label_map_path = f"{self._root}/label_map.yaml"
-        self.classes = _parse_label_map(self._zip().read(label_map_path).decode("utf-8")) if label_map_path in names else {}
+        # Use a throwaway handle for this one-time listing rather than
+        # self._zip(), so self._zf stays None after construction. DataLoader
+        # workers on Linux are forked (not spawned/pickled), so they inherit
+        # process memory directly -- if self._zf were already open here, every
+        # worker would inherit the *same* underlying file descriptor and
+        # race on its shared read offset, corrupting reads (BadZipFile).
+        # Leaving it None means each process's own first _zip() call (from
+        # __getitem__) opens an independent handle.
+        with zipfile.ZipFile(zip_path) as zf:
+            names = zf.namelist()
+            label_map_path = f"{self._root}/label_map.yaml"
+            self.classes = _parse_label_map(zf.read(label_map_path).decode("utf-8")) if label_map_path in names else {}
 
         prefix = f"{self._split_dir}/velodyne/"
         self.sample_indices = sorted(

@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import torch
 from PIL import Image
+from torch.utils.data import DataLoader
 
 from craf_x.config import CRAFXConfig
 from craf_x.datasets.snowy_scenes_dataset import CRAFXSnowyScenesDataset, SNOWY_SCENES_NUM_CLASSES
@@ -69,6 +70,18 @@ def test_dataset_lists_frames_and_parses_label_map(snowy_zip):
     assert dataset.classes == {0: "unlabeled", 2: "car", 7: "person"}
 
 
+def test_zip_handle_is_not_opened_during_construction(snowy_zip):
+    # Regression test: __init__ must not leave self._zf pointing at an
+    # already-open handle. DataLoader workers on Linux are forked, not
+    # spawned/pickled, so they inherit process memory directly -- if _zf
+    # were already open here, every worker would inherit the same
+    # underlying file descriptor and race on its shared read offset,
+    # corrupting reads (BadZipFile), as reproduced live with
+    # num_workers=4 against the real archive.
+    dataset = CRAFXSnowyScenesDataset(zip_path=snowy_zip, split="train")
+    assert dataset._zf is None
+
+
 def test_image_is_read_correctly(snowy_zip):
     config = CRAFXConfig(bev_h=16, bev_w=16, num_classes=SNOWY_SCENES_NUM_CLASSES)
     dataset = CRAFXSnowyScenesDataset(zip_path=snowy_zip, split="train", config=config)
@@ -117,6 +130,35 @@ def test_match_mask_is_all_ones(snowy_zip):
     dataset = CRAFXSnowyScenesDataset(zip_path=snowy_zip, split="train")
     sample = dataset[0]
     assert torch.all(sample["m"] == 1.0)
+
+
+def test_dataloader_with_multiple_workers_reads_correctly(tmp_path):
+    # Exercises actual forked DataLoader workers (Linux default), which is
+    # how the __init__-time-eager-handle bug (see
+    # test_zip_handle_is_not_opened_during_construction) was originally
+    # caught against the real archive: with more frames per worker there's
+    # more chance for concurrent reads to overlap and corrupt each other if
+    # a zip handle were shared across forked processes.
+    path = str(tmp_path / "ROADVIEW5k.zip")
+    img = Image.new("RGB", (16, 16), color=(30, 30, 30))
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+    points = np.array([[1.0, 1.0, 0.0, 0.2]], dtype=np.float32)
+
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("ROADVIEW5k/label_map.yaml", LABEL_MAP_YAML)
+        for i in range(12):
+            frame_id = f"falling_{i:06d}"
+            zf.writestr(f"ROADVIEW5k/train/images/{frame_id}.png", img_bytes.getvalue())
+            zf.writestr(f"ROADVIEW5k/train/velodyne/{frame_id}.bin", points.tobytes())
+
+    dataset = CRAFXSnowyScenesDataset(zip_path=path, split="train")
+    loader = DataLoader(dataset, batch_size=2, num_workers=2)
+
+    seen_ids = []
+    for batch in loader:
+        seen_ids.extend(batch["idx"])
+    assert sorted(seen_ids) == sorted(dataset.sample_indices)
 
 
 def test_dataset_is_picklable_for_dataloader_workers(snowy_zip):

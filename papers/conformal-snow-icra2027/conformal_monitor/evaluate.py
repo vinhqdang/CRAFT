@@ -10,7 +10,7 @@ calibrate on clear weather, run the monitor over an onset scene, and report
 whether/when it alarmed relative to the true onset frame.
 """
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
 import torch
@@ -29,20 +29,37 @@ def match_mask_from_heatmap(heatmap: torch.Tensor, threshold: float = 0.5) -> to
     return (heatmap.amax(dim=1, keepdim=True) > threshold).float()
 
 
+def _to_device(image: torch.Tensor, pointcloud: torch.Tensor, targets: Dict[str, torch.Tensor], device: torch.device):
+    """Moves a frame's inputs and targets onto the model's device (DataLoader/dataset tensors default to CPU)."""
+    return (
+        image.to(device),
+        pointcloud.to(device),
+        {k: v.to(device) for k, v in targets.items()},
+    )
+
+
 @torch.no_grad()
-def calibrate_on_clear_weather(model: CRAFX_Net, calibration_dataset, alpha: float, batch_size: int = 8) -> float:
+def calibrate_on_clear_weather(
+    model: CRAFX_Net, calibration_dataset, alpha: float, batch_size: int = 8, num_workers: int = 0
+) -> float:
     """
     Runs the model over a held-out, clear-weather calibration set and
     returns the calibrated nonconformity quantile q_hat.
+
+    `num_workers` matters for datasets where a single __getitem__ is slow
+    (e.g. CRAFXSnowyScenesDataset decompresses each sample from a zip
+    archive) -- the default 0 keeps existing single-process behavior.
     """
     model.eval()
-    loader = DataLoader(calibration_dataset, batch_size=batch_size)
+    device = next(model.parameters()).device
+    loader = DataLoader(calibration_dataset, batch_size=batch_size, num_workers=num_workers)
     all_scores: List[np.ndarray] = []
 
     for batch in loader:
-        out = model(batch["image"], batch["pointcloud"])
-        match_mask = match_mask_from_heatmap(batch["targets"]["H"])
-        scores = object_nonconformity_scores(out["B"], batch["targets"]["B"], match_mask)
+        image, pointcloud, targets = _to_device(batch["image"], batch["pointcloud"], batch["targets"], device)
+        out = model(image, pointcloud)
+        match_mask = match_mask_from_heatmap(targets["H"])
+        scores = object_nonconformity_scores(out["B"], targets["B"], match_mask)
         all_scores.append(scores)
 
     calibration_scores = np.concatenate(all_scores) if all_scores else np.zeros(0)
@@ -74,6 +91,7 @@ def compute_global_wealth_trajectory(
     the model once per delta.
     """
     model.eval()
+    device = next(model.parameters()).device
     bettor = bettor_factory()
     wealth_process = WealthProcess(alpha, lambda_max=bettor.lambda_max)
     trajectory: List[float] = []
@@ -83,6 +101,7 @@ def compute_global_wealth_trajectory(
         image = sample["image"].unsqueeze(0)
         pointcloud = sample["pointcloud"].unsqueeze(0)
         targets = {k: v.unsqueeze(0) for k, v in sample["targets"].items()}
+        image, pointcloud, targets = _to_device(image, pointcloud, targets, device)
 
         out = model(image, pointcloud)
         match_mask = match_mask_from_heatmap(targets["H"])
@@ -148,6 +167,7 @@ def run_spatial_monitor(
     maps (n_cells_h, n_cells_w).
     """
     model.eval()
+    device = next(model.parameters()).device
     grid = SpatialEProcessGrid(alpha, delta, n_cells_h, n_cells_w, bettor_factory, correction)
     flagged_maps: List[np.ndarray] = []
 
@@ -156,6 +176,7 @@ def run_spatial_monitor(
         image = sample["image"].unsqueeze(0)
         pointcloud = sample["pointcloud"].unsqueeze(0)
         targets = {k: v.unsqueeze(0) for k, v in sample["targets"].items()}
+        image, pointcloud, targets = _to_device(image, pointcloud, targets, device)
 
         out = model(image, pointcloud)
         match_mask = match_mask_from_heatmap(targets["H"])  # (1, 1, H, W)
