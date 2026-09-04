@@ -23,3 +23,4 @@ class CRAFXConfig:
     bev_channels: int = 256
     bev_h: int = 128
     bev_w: int = 128
+    num_classes: int = 10  # heatmap channels; nuScenes default, set to 3 for KITTI (Car/Pedestrian/Cyclist)

@@ -19,7 +19,7 @@ class CRAFXCenterHead(nn.Module):
         )
         
         # Task 1: Semantic Center Heatmap mapping
-        self.heatmap_head = nn.Conv2d(in_channels, 10, kernel_size=1)
+        self.heatmap_head = nn.Conv2d(in_channels, config.num_classes, kernel_size=1)
         
         # Task 2: 3D Regression Sub-head (X, Y, Z offsets + dimensions W, L, H)
         self.regression_head = nn.Conv2d(in_channels, 6, kernel_size=1)

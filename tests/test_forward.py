@@ -27,3 +27,16 @@ def test_forward_pass():
     assert torch.all(out['A'] <= 1.0)
     
     assert out['F_fused'].shape == (2, config.bev_channels, 32, 32)
+    assert out['H'].shape == (2, config.num_classes, 32, 32)
+
+
+def test_num_classes_controls_heatmap_channels():
+    # KITTI (Car/Pedestrian/Cyclist) needs a 3-channel heatmap, not nuScenes' default 10.
+    config = CRAFXConfig(bev_h=16, bev_w=16, num_classes=3)
+    model = CRAFX_Net(config)
+
+    image = torch.randn(2, 3, 16, 16)
+    pointcloud = torch.randn(2, 4, 16, 16)
+    out = model(image, pointcloud)
+
+    assert out['H'].shape == (2, 3, 16, 16)
