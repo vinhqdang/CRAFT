@@ -1,0 +1,15 @@
+# Core
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+Pillow>=10.0
+
+# PyTorch: install via https://pytorch.org/get-started/locally/ instead of
+# this file if you need a specific CUDA build (e.g. a laptop GPU) -- the
+# correct wheel depends on your installed CUDA driver version, which pip
+# can't detect on its own. These floors are enough for a CPU-only install:
+torch>=2.1
+torchvision>=0.16
+
+# Tests
+pytest>=7.4
