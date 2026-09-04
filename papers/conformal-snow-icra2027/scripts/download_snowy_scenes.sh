@@ -42,12 +42,59 @@ curl -sSL -c "$COOKIEJAR" -b "$COOKIEJAR" -A "$UA" -H "Accept: text/html" \
   "$SHARE_URL"
 
 echo "==> Downloading to $OUTPUT_PATH (resumable; safe to re-run if interrupted)..."
-curl -SL -C - --retry 10 --retry-delay 5 --retry-all-errors \
-  -c "$COOKIEJAR" -b "$COOKIEJAR" -A "$UA" -H "Accept: */*" \
-  -o "$OUTPUT_PATH" -D "$WORKDIR/headers.txt" \
-  "${DOWNLOAD_HOST}?SourceUrl=${DOWNLOAD_SOURCE_URL}"
+# Deliberately NOT using curl's own --retry here: against this host, curl's
+# --continue-at(-C -) resume offset is computed once when the process starts
+# and is NOT recomputed before each internal --retry attempt. Observed live:
+# two responses ~90 minutes apart, after the output file had grown from
+# 477MB to 14GB in between, both showed the identical
+# `Content-Range: bytes 500314112-...` -- i.e. every internal retry re-asked
+# for the offset the *process* started at, silently overwriting/discarding
+# everything downloaded since, and the file size oscillated instead of
+# growing monotonically. A fresh curl process re-stats the output file on
+# every launch, so the fix is to retry at the process level (this loop)
+# with a single attempt per curl invocation (--retry 0), not inside curl.
+#
+# --speed-limit/--speed-time: exit 28 if the transfer drops below 20KB/s for
+# 60s straight, so a connection that's open but stalled (observed in
+# practice) doesn't hang the current attempt indefinitely.
+MAX_ATTEMPTS=500
+attempt=0
+while true; do
+  attempt=$((attempt + 1))
+  BEFORE_SIZE="$( { wc -c < "$OUTPUT_PATH"; } 2>/dev/null || echo 0)"
+  # set -e would otherwise kill the whole script the instant curl exits
+  # non-zero, before this loop's own retry handling ever runs -- disable it
+  # for just this one command.
+  set +e
+  curl -SL -C - --retry 0 \
+    --speed-limit 20480 --speed-time 60 \
+    -c "$COOKIEJAR" -b "$COOKIEJAR" -A "$UA" -H "Accept: */*" \
+    -o "$OUTPUT_PATH" -D "$WORKDIR/headers.txt" \
+    "${DOWNLOAD_HOST}?SourceUrl=${DOWNLOAD_SOURCE_URL}"
+  status=$?
+  set -e
+  if [ "$status" -eq 0 ]; then
+    break
+  fi
+  AFTER_SIZE="$( { wc -c < "$OUTPUT_PATH"; } 2>/dev/null || echo 0)"
+  if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+    echo "==> curl attempt $attempt failed (exit $status) after ${BEFORE_SIZE} -> ${AFTER_SIZE} bytes; giving up after $MAX_ATTEMPTS attempts." >&2
+    exit "$status"
+  fi
+  echo "==> curl attempt $attempt failed (exit $status), ${BEFORE_SIZE} -> ${AFTER_SIZE} bytes; retrying with a fresh process in 5s..." >&2
+  sleep 5
+done
 
-EXPECTED_SIZE="$(grep -i '^content-length:' "$WORKDIR/headers.txt" | tail -1 | tr -d '\r' | awk '{print $2}' || true)"
+# The final request is very likely a resumed (206 Partial Content) request,
+# whose Content-Length is the bytes remaining from the resume point, not the
+# full file size -- comparing that against the total downloaded size always
+# looks like a "mismatch" once a download has resumed even once. The true
+# total lives in Content-Range's ".../<total>" suffix on a 206 response;
+# only fall back to Content-Length for a plain (non-resumed) 200 response.
+EXPECTED_SIZE="$(grep -i '^content-range:' "$WORKDIR/headers.txt" | tail -1 | tr -d '\r' | sed -E 's#.*/([0-9]+)$#\1#')"
+if [ -z "$EXPECTED_SIZE" ]; then
+  EXPECTED_SIZE="$(grep -i '^content-length:' "$WORKDIR/headers.txt" | tail -1 | tr -d '\r' | awk '{print $2}' || true)"
+fi
 ACTUAL_SIZE="$(wc -c < "$OUTPUT_PATH" | tr -d ' ')"
 
 echo "==> Downloaded $ACTUAL_SIZE bytes (server reported $EXPECTED_SIZE)."
