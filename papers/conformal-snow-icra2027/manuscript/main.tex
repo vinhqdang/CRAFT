@@ -1,13 +1,13 @@
-\documentclass[runningheads]{llncs}
-%
+\documentclass[letterpaper, 10pt, conference]{ieeeconf}
+
+\IEEEoverridecommandlockouts
+\overrideIEEEmargins
+
 \usepackage{cmap}
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
-\usepackage{subfiles}
-\usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{mathrsfs}
-\usepackage[title]{appendix}
 \usepackage{xcolor}
 \usepackage{textcomp}
 \usepackage{booktabs}
@@ -15,41 +15,39 @@
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
-\usepackage{listings}
 \usepackage{threeparttable}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta}
+\usetikzlibrary{positioning,arrows.meta,calc}
 
 \let\proof\relax
 \let\endproof\relax
 \usepackage{amsthm}
 \theoremstyle{plain}
 
-\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
-    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\title{\LARGE \bf
+Anytime-Valid Conformal Monitoring for Weather-Onset Detection in Multimodal 3D Perception
+}
+
+\author{Anonymous Author(s)\thanks{Anonymous Author(s) are with Anonymous Institution. Submission under double-blind review for ICRA 2027; author and affiliation details withheld.}}
 
 \begin{document}
-%
-\title{Anytime-Valid Conformal Monitoring for Weather-Onset Detection in Multimodal 3D Perception}
-
-\author{Anonymous Author(s)}
-\institute{Anonymous Institution}
 
 \maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
 
 \begin{abstract}
 A perception stack that is accurate in clear weather offers no guarantee once snow begins to fall, and the transition itself is rarely instrumented: a 3D detector either keeps running silently degraded or fails outright, with no statistically principled signal marking the moment its outputs stopped being trustworthy. We wrap a multimodal 3D object detector's predictions in split conformal prediction, calibrated on held-out nominal-weather data, and track the resulting frame-level miscoverage rate with an anytime-valid sequential test built from testing-by-betting e-processes, so that a driving scene can be monitored continuously -- not at a fixed horizon, not with a post-hoc multiple-testing correction -- while still controlling the false-alarm rate under Ville's inequality. That backbone is not new; the closest predecessor already applies it, covariate-blind, to single-object 2D tracking failure. We extend it in two ways. First, a grid of per-BEV-cell e-processes with online false-discovery-rate control, turning one global alarm into a live, spatially localized map of where the perception stack is currently untrustworthy -- implemented and validated end to end on a real trained detector and dataset, though not yet evaluated against a real multi-object scene with genuine spatial heterogeneity in where degradation occurs, which we flag as the natural next experiment. Second, and more centrally, we build and report -- to our knowledge, the first -- evaluation of this style of monitor against a real adverse-weather driving dataset rather than only synthetic corruption of a clear-weather one: Snowy Scenes, a real multimodal dataset with genuine snowfall, which turns out to contain no clear-weather split at all, so we measure a real, physically grounded severity ordering across its own weather categories and splice held-out mild-snow frames with heavy-snowfall frames to construct a real, if assembled, onset transition. On this real evaluation, the covariate-blind e-process backbone itself detects the true weather onset within 3 to 10 frames depending on the false-alarm budget, with zero false alarms across every budget tested. Alongside these two contributions, we also tried conditioning the betting rate on a cross-modal disagreement signal from the detector's own camera/LiDAR consistency probe, intended as a leading indicator of degradation -- and report, in full, why it did not work: the first trained checkpoint's consistency score had collapsed to near-constant agreement, a training-objective gap we diagnosed and fixed, but the corrected covariate then varied in the wrong direction for this task, leaving the covariate-informed bettor's operating curve strictly worse than the covariate-blind baseline's rather than better. We treat that mechanism as an open problem this paper's own evidence argues against, reported with the same rigor as our positive results, rather than a third headline contribution.
 
-\keywords{Conformal Prediction \and Anytime-Valid Sequential Testing \and Testing by Betting \and Distribution Shift Detection \and Multimodal 3D Object Detection \and Autonomous Driving \and Adverse Weather Perception}
 \end{abstract}
 
-\subfile{1intro}
-\subfile{2relate}
-\subfile{3method}
-\subfile{4exp}
-\subfile{5conclusion}
+\input{1intro}
+\input{2relate}
+\input{3method}
+\input{4exp}
+\input{5conclusion}
 
-\bibliographystyle{splncs04}
+\bibliographystyle{IEEEtran}
 \bibliography{sn-bibliography}
 
 \end{document}
