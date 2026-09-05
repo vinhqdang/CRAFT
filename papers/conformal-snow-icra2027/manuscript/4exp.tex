@@ -1,0 +1,74 @@
+\section{Evaluation}
+\label{sec:experiments}
+
+\subsection{Dataset: Snowy Scenes}
+\label{sec:dataset}
+
+We evaluate on Snowy Scenes~\cite{SnowyScenes2026}, a multimodal driving dataset captured entirely in real winter conditions and distributed as a single $\sim$49\,GB archive (ROADVIEW5k), which we read lazily via \texttt{zipfile} rather than extracting to disk given its $\sim$93\,GB uncompressed footprint. It contains 5{,}027 frames across three splits (3{,}016 train / 1{,}005 val / 1{,}006 test), matching the dataset's own stated frame count, with per-frame RGB camera images, 128-beam LiDAR point clouds in the same $(N,4)$ float32 layout as KITTI, 3D object boxes already expressed in the LiDAR frame (no camera$\leftrightarrow$LiDAR extrinsic transform required, unlike KITTI), and per-point semantic segmentation labels across 29 SemanticKITTI-style classes -- the segmentation labels are not consumed here, since CRAF-X's head has no segmentation output.
+
+Two things about the real archive turned out different from what we had planned around before access arrived. First, Snowy Scenes' three weather categories -- \texttt{accumulated}, \texttt{highway}, and \texttt{falling} -- are all already-snowy driving; there is no dry/clear split to calibrate on or to serve as the nominal side of an onset transition, which the original plan had assumed would exist. Second, within-category severity does not ramp monotonically: sampling the ground-truth per-point ``snow'' semantic class fraction across a timestamp-ordered \texttt{falling} sequence shows real but noisy fluctuation ($0.002$--$0.044$) rather than a clean onset curve, since active snowfall is bursty rather than steadily accumulating. What the data does support is a real, physically grounded severity contrast \emph{across} categories: measuring the mean per-point ``snow''-class fraction per category gives $\texttt{accumulated} = 0.0001 < \texttt{highway} = 0.0041 < \texttt{falling} = 0.0119$, an ordering with a clear physical explanation -- \texttt{falling} captures active, airborne snowfall, which LiDAR registers as spurious near-range returns, while \texttt{accumulated} is settled snow on surfaces rather than particles in the air.
+
+\subsection{Constructing a Real Onset Stream Without a Clear-Weather Split}
+\label{sec:onset-stream}
+
+We use this ordering to build \texttt{RealSnowOnsetStream}: a nominal (held-out \texttt{accumulated}) prefix spliced with a degraded (\texttt{falling}) suffix at a known onset index, drawing frames from each category's frame pool with wraparound if a requested scene length exceeds the pool size. Every individual frame on both sides of the transition is real sensor data -- real images, real LiDAR, real object labels; only the splice point itself is a construction, since Snowy Scenes' own sequences do not contain a within-sequence weather transition. We are explicit that this is a scoping compromise relative to the originally planned design (an in-dataset clear$\rightarrow$snow transition), not the design we would have chosen if the data supported it, and we flag the alternative we did not have the means to try: splicing in real KITTI clear-weather frames as the nominal side instead of held-out \texttt{accumulated} frames, which would give a genuine cross-dataset clear-to-snow contrast at the cost of mixing class spaces -- an option for future work if reviewers judge the within-Snowy-Scenes splice an insufficiently strong stand-in for a naturally occurring onset.
+
+The same absence of a true clear-weather condition affects the false-alarm-rate control in our operating-curve evaluation (Section~\ref{sec:results}): with no clear split available, our ``clear'' replicates use \texttt{accumulated} frames on \emph{both} sides of the splice, so the stream is stationary throughout rather than transitioning at all. This measures the false-alarm rate under a real but comparatively mild, non-transitioning snow condition, not under true clear weather, and we report it as exactly that rather than implying a stronger guarantee than the data supports.
+
+\subsection{Detector Training and a Real Negative Result}
+\label{sec:training}
+
+We train CRAF-X for 5 epochs on the real \texttt{train} split (3{,}016 frames) under its Adversarial Consistency Training (ACT) objective, on a single local NVIDIA RTX 5000 Ada GPU, at $128\times128$ BEV resolution, batch size 4, Adam with learning rate $10^{-4}$; training loss converges from $\approx 2.3$ to $\approx 0.008$. Getting a real, trained checkpoint onto real data surfaced a finding that changed our own evaluation before we could report the operating curve honestly.
+
+Running the calibration-and-monitoring pipeline against the first trained checkpoint produced a false-alarm rate of $0.0$ across every tested $\delta$ and detection delays that were \emph{numerically identical} between the covariate-informed and covariate-blind bettors, to every digit the operating curve reports. That is not the outcome our method predicts if the covariate carries any signal at all, and treating it as a clean result rather than investigating it would have been a mistake. Sampling the CCP consistency score $S$ directly across a real onset stream with the trained model showed why: $S$ had collapsed to $\approx 0.9993$ uniformly, with standard deviation $\approx 0.0001$--$0.0002$, statistically indistinguishable between the nominal (\texttt{accumulated}) and degraded (\texttt{falling}) regimes. With $1 - S$ this close to a constant, $\text{CCPInformedBettor}$'s $(1 + \kappa \cdot \overline{(1-S)})$ scaling term barely perturbs the base bettor's own $\lambda_t$ -- the two bettors were not tied by coincidence; they were, numerically, almost the same bettor.
+
+Tracing the cause led to \texttt{craf\_x/training/adversarial.py} rather than to anything in the monitoring code itself. The CCP contrastive loss, $L_{\mathrm{ccp}} = -\sum_{(i,j) \in M} \log S(i,j) - \sum_{(i,j) \notin M} \log(1 - S(i,j))$, was being computed exactly once per training step, on the \emph{clean} forward pass, against the dataset's mask $m$ -- which is all-ones, because real, synchronized Snowy Scenes frames have no annotated camera$\leftrightarrow$LiDAR mismatch to supervise against. The Adversarial Consistency Training loop does compute two additional CCP forward passes, on camera- and LiDAR-adversarially-perturbed features respectively, but those scores were only ever consumed by the KL-divergence attribution-consistency term, never by the CCP contrastive loss itself with a mismatched target. Nothing in the training objective, as implemented, ever penalized $S$ for staying high under a genuine cross-modal perturbation; minimizing $L_{\mathrm{ccp}}$ against an all-ones mask is trivially satisfied by pushing $S \to 1$ everywhere, and that is exactly what five epochs of training converged to.
+
+We consider this worth reporting as a methodological finding in its own right, independent of whether the reader cares about CRAF-X specifically: a signal trained under an \emph{invariance} objective (here, adversarial \emph{consistency} training, whose whole point is to make the cross-modal agreement score robust to attack) is, by construction, in tension with reusing that same signal as a \emph{leading indicator of degradation} for a downstream monitor, which requires exactly the sensitivity the training objective was suppressing. Any paper proposing to repurpose an internal robustness or consistency signal as an external covariate for a statistically distinct purpose should check, empirically, that the signal still varies at all under the condition it is meant to detect -- we did not check this before the first real run, and the identical-bettors result is what caught it.
+
+The fix we applied supervises the two adversarial branches with the same CCP loss, against a mismatched ($m=0$) target, alongside the existing clean-branch call: $L_{\mathrm{ccp}} = L_{\mathrm{ccp}}^{\mathrm{clean}} + L_{\mathrm{ccp}}^{\mathrm{adv\text{-}cam}} + L_{\mathrm{ccp}}^{\mathrm{adv\text{-}lid}}$, since a PGD-perturbed feature pair is a real cross-modal mismatch by construction and was already being computed for another purpose. We added a direct unit test confirming \texttt{compute\_ccp\_loss} penalizes a confidently-agreeing score under a mismatched mask more than a confidently-disagreeing one, and an integration test confirming \texttt{act\_training\_step}'s loss decomposition actually includes a nonzero adversarial-CCP term, as a regression guard against this exact collapse recurring silently. We then retrained CRAF-X from scratch under the corrected objective and re-ran the full evaluation; Section~\ref{sec:results} reports what changed.
+
+\subsection{Evaluation Protocol}
+\label{sec:protocol}
+
+Calibration uses 40 held-out \texttt{accumulated} frames from the \texttt{val} split, disjoint from the frames used as the nominal portion of any monitored stream, at target miscoverage $\alpha = 0.2$. Each onset stream has scene length 20 with the true onset at frame 8 (nominal frames $t < 8$, degraded frames $t \ge 8$); we sweep the false-alarm budget $\delta \in \{0.3, 0.1, 0.05\}$ and report, at each $\delta$, the empirical false-alarm rate (fraction of ``clear'' replicates that alarm at all) and the mean detection delay (alarm time minus true onset frame, among replicates that alarm; the count that never alarm within the 20-frame window is reported separately as censored rather than silently dropped). We use 5 onset replicates and 5 ``clear'' replicates per condition, and the covariate-informed bettor's gain is fixed at $\kappa = 2.0$ -- both replicate count and $\kappa$ are small-scale defaults inherited from our earlier mock-data smoke testing rather than values tuned against real data, and we say so explicitly in Section~\ref{sec:conclusion} rather than presenting them as optimized. We are equally direct about what this replicate count can and cannot support statistically: $n=5$ is a pilot-scale demonstration, not a powered comparison, and we do not report a significance test between bettors' detection-delay distributions in Section~\ref{sec:results} -- an observed gap at this $n$ should be read as suggestive, not decisive. One property of our evaluation does partially mitigate this: because each replicate's wealth trajectory is computed once and is delta-independent (Section~\ref{sec:eprocess}), every $\delta$ in the sweep and both bettors are evaluated against the identical five sampled onset streams rather than independently resampled ones, so the comparison across bettors at fixed $\delta$ is a paired comparison on shared random draws, not two independent samples -- a real if partial source of variance reduction, though not a substitute for a larger $n$. The calibration set size ($n=40$) is likewise small enough that the finite-sample conformal guarantee, while still formally valid at any $n$, is loose in practice at $\alpha=0.2$; we do not correct for this and report $\hat{q}_\alpha$ as computed, rather than presenting it as a tight threshold.
+
+\subsection{Operating Curve on Real Data}
+\label{sec:results}
+
+Table~\ref{tab:operating-curve} reports the operating curve against the corrected checkpoint (Section~\ref{sec:training}), evaluated on held-out \texttt{val}-split frames the detector never saw during training.
+
+% RESULTS-PLACEHOLDER: fill in with the corrected real_operating_curve_run.json
+% once checkpoints/snowy_scenes_fixed/checkpoint_final.pth finishes training
+% and scripts/run_real_operating_curve.py has been re-run against it. Do not
+% report the stale collapsed-CCP numbers here.
+
+\begin{table}[t]
+\centering
+\caption{Operating curve on the real Snowy Scenes onset stream (accumulated $\to$ falling), 5 onset + 5 stationary-accumulated replicates per condition, corrected checkpoint. FAR = false-alarm rate; delay is in frames relative to the true onset at $t=8$; censored = replicates that never alarmed within the 20-frame window.}
+\label{tab:operating-curve}
+\begin{threeparttable}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Bettor & $\delta$ & FAR & Mean delay & Censored \\
+\midrule
+Covariate-blind (aGRAPA) & 0.30 & -- & -- & --/5 \\
+Covariate-blind (aGRAPA) & 0.10 & -- & -- & --/5 \\
+Covariate-blind (aGRAPA) & 0.05 & -- & -- & --/5 \\
+CCP-informed & 0.30 & -- & -- & --/5 \\
+CCP-informed & 0.10 & -- & -- & --/5 \\
+CCP-informed & 0.05 & -- & -- & --/5 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item[] Placeholder: table populated after the corrected retrain (Section~\ref{sec:training}) completes and \texttt{scripts/run\_real\_operating\_curve.py} is re-run against \texttt{checkpoints/snowy\_scenes\_fixed/checkpoint\_final.pth}.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+% DISCUSSION-PLACEHOLDER: once the table above is filled in, discuss here
+% whether the CCP-informed bettor now shows a real advantage over the
+% covariate-blind baseline at matched delta, or whether the fix did not
+% restore one -- report the honest outcome either way and connect it back
+% to the collapse story in Section~\ref{sec:training}.

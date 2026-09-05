@@ -1,0 +1,86 @@
+\relax 
+\@writefile{toc}{\contentsline {title}{Anytime-Valid Conformal Monitoring for Weather-Onset Detection in Multimodal 3D Perception}{1}{}\protected@file@percent }
+\@writefile{toc}{\authcount {1}}
+\@writefile{toc}{\contentsline {author}{Anonymous Author(s)}{1}{}\protected@file@percent }
+\citation{Ramdas2023GameTheoretic,WaudbySmithRamdas2024JRSSB}
+\citation{MonroyMunoz2026WACV}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{2}{}{section.1}{}}
+\citation{WangRamdas2022JRSSB}
+\citation{VovkGammermanShafer2005,Lei2018JASA}
+\citation{WaudbySmithRamdas2024JRSSB,Ramdas2023GameTheoretic}
+\citation{MonroyMunoz2026WACV}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{4}{}\protected@file@percent }
+\newlabel{sec:related}{{2}{4}{}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Conformal Prediction and Its Sequential Extensions}{4}{}\protected@file@percent }
+\citation{Geng2025StateDependent}
+\citation{Kumar2025ContextAware}
+\citation{Liu2026ValueGated}
+\citation{Antonante2020Monitoring}
+\citation{MonroyMunoz2026WACV}
+\citation{WangRamdas2022JRSSB}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Anytime-Valid Failure Detection for Streaming Vision}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Online Multiplicity Control}{5}{}\protected@file@percent }
+\citation{Pitropov2021CADC}
+\citation{Bijelic2020SeeingThroughFog}
+\citation{SnowyScenes2026}
+\citation{CRAFXTechReport2026}
+\citation{CRAFXTechReport2026}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Adverse-Weather Perception Data and Multimodal Fusion}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Method}{6}{}\protected@file@percent }
+\newlabel{sec:method}{{3}{6}{}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Problem Setup}{6}{}\protected@file@percent }
+\newlabel{sec:setup}{{3.1}{6}{}{subsection.3.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Per-frame monitoring pipeline (global monitor; the spatial variant, Section~\ref {sec:spatial}, replicates the conformal-through-wealth path once per BEV cell-cluster). Solid arrows are computed every frame; the betting rule is either covariate-blind (uses only the $m(t)$ path) or CCP-informed (also uses the disagreement path).}}{7}{}\protected@file@percent }
+\newlabel{fig:pipeline}{{1}{7}{}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}The e-Process and Ville's Inequality}{7}{}\protected@file@percent }
+\newlabel{sec:eprocess}{{3.2}{7}{}{subsection.3.2}{}}
+\citation{MonroyMunoz2026WACV}
+\citation{MonroyMunoz2026WACV}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Covariate-Blind Baselines}{8}{}\protected@file@percent }
+\newlabel{sec:blind}{{3.3}{8}{}{subsection.3.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Covariate-Informed Betting}{8}{}\protected@file@percent }
+\newlabel{sec:informed}{{3.4}{8}{}{subsection.3.4}{}}
+\citation{WangRamdas2022JRSSB}
+\citation{SnowyScenes2026}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Spatially Resolved Monitoring with Online Multiplicity Control}{9}{}\protected@file@percent }
+\newlabel{sec:spatial}{{3.5}{9}{}{subsection.3.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Evaluation}{9}{}\protected@file@percent }
+\newlabel{sec:experiments}{{4}{9}{}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Dataset: Snowy Scenes}{9}{}\protected@file@percent }
+\newlabel{sec:dataset}{{4.1}{9}{}{subsection.4.1}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Per-frame spatial monitoring update}}{10}{}\protected@file@percent }
+\newlabel{alg:spatial-monitor}{{1}{10}{}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Constructing a Real Onset Stream Without a Clear-Weather Split}{10}{}\protected@file@percent }
+\newlabel{sec:onset-stream}{{4.2}{10}{}{subsection.4.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Detector Training and a Real Negative Result}{11}{}\protected@file@percent }
+\newlabel{sec:training}{{4.3}{11}{}{subsection.4.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Evaluation Protocol}{12}{}\protected@file@percent }
+\newlabel{sec:protocol}{{4.4}{12}{}{subsection.4.4}{}}
+\citation{MonroyMunoz2026WACV,WaudbySmithRamdas2024JRSSB}
+\citation{WangRamdas2022JRSSB}
+\citation{SnowyScenes2026}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Operating curve on the real Snowy Scenes onset stream (accumulated $\to $ falling), 5 onset + 5 stationary-accumulated replicates per condition, corrected checkpoint. FAR = false-alarm rate; delay is in frames relative to the true onset at $t=8$; censored = replicates that never alarmed within the 20-frame window.}}{13}{}\protected@file@percent }
+\newlabel{tab:operating-curve}{{1}{13}{}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Operating Curve on Real Data}{13}{}\protected@file@percent }
+\newlabel{sec:results}{{4.5}{13}{}{subsection.4.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{13}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{5}{13}{}{section.5}{}}
+\citation{MonroyMunoz2026WACV}
+\bibstyle{splncs04}
+\bibdata{sn-bibliography}
+\bibcite{CRAFXTechReport2026}{1}
+\bibcite{Antonante2020Monitoring}{2}
+\bibcite{Bijelic2020SeeingThroughFog}{3}
+\bibcite{Geng2025StateDependent}{4}
+\bibcite{Kumar2025ContextAware}{5}
+\bibcite{Lei2018JASA}{6}
+\bibcite{Liu2026ValueGated}{7}
+\bibcite{MonroyMunoz2026WACV}{8}
+\bibcite{SnowyScenes2026}{9}
+\bibcite{Pitropov2021CADC}{10}
+\bibcite{Ramdas2023GameTheoretic}{11}
+\bibcite{VovkGammermanShafer2005}{12}
+\bibcite{WangRamdas2022JRSSB}{13}
+\bibcite{WaudbySmithRamdas2024JRSSB}{14}
+\gdef \@abspage@last{15}
