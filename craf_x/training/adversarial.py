@@ -96,8 +96,8 @@ def act_training_step(
     preds_clean = {'H': h, 'B': b, 'V': v}
     
     l_det_clean = compute_det_loss(preds_clean, targets)
-    l_ccp = compute_ccp_loss(s_clean, m)
-    
+    l_ccp_clean = compute_ccp_loss(s_clean, m)
+
     # ── ADVERSARIAL AUGMENTATION — ATTACK CAMERA ──
     delta_cam = pgd_attack(model, f_cam, f_lid, targets, 'cam', config.epsilon_cam, config.pgd_k)
     f_cam_adv = f_cam + delta_cam
@@ -113,7 +113,21 @@ def act_training_step(
     f_fused_adv_lid = model.gafm(f_cam, f_lid_adv, a_adv_lid, s_adv_lid)
     h_l, b_l, v_l = model.head(f_fused_adv_lid)
     l_det_adv_lid = compute_det_loss({'H': h_l, 'B': b_l, 'V': v_l}, targets)
-    
+
+    # ── CCP MISMATCH SUPERVISION ──
+    # compute_ccp_loss was previously only ever called on the clean,
+    # synchronized branch with an all-ones "matched" mask, so nothing in
+    # training taught S to output anything but "agree" -- it collapses to
+    # S≈1 everywhere (confirmed empirically: see
+    # papers/conformal-snow-icra2027/README.md, "First trained run and a
+    # real negative result"). The two adversarially-perturbed branches are a
+    # real cross-modal mismatch by construction, so supervise them as m=0
+    # (mismatched) targets for the same loss.
+    zero_mask = torch.zeros_like(m)
+    l_ccp_adv_cam = compute_ccp_loss(s_adv_cam, zero_mask)
+    l_ccp_adv_lid = compute_ccp_loss(s_adv_lid, zero_mask)
+    l_ccp = l_ccp_clean + l_ccp_adv_cam + l_ccp_adv_lid
+
     # ── ACT LOSS ──
     kl_cam = compute_kl_divergence(a_clean, a_adv_cam)
     kl_lid = compute_kl_divergence(a_clean, a_adv_lid)
@@ -129,6 +143,8 @@ def act_training_step(
         'loss': loss.item(),
         'l_det_clean': l_det_clean.item(),
         'l_ccp': l_ccp.item(),
+        'l_ccp_clean': l_ccp_clean.item(),
+        'l_ccp_adv': (l_ccp_adv_cam + l_ccp_adv_lid).item(),
         'l_act': l_act.item(),
         'l_mar': l_mar.item()
     }
