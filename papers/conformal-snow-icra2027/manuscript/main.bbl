@@ -110,7 +110,10 @@ M.~Bijelic, T.~Gruber, F.~Mannan, F.~Kraus, W.~Ritter, K.~Dietmayer, and
   Vision and Pattern Recognition (CVPR)}, 2020.
 
 \bibitem{SnowyScenes2026}
-T.~Ngo, A.~M. Raisuddin \emph{et~al.}, ``Snowy scenes: A multimodal multitask
-  dataset toward snow-tonomous vehicles,'' \emph{IEEE}, 2026.
+T.-T. Ngo, A.~M. Raisuddin, I.~Gouigah, P.~Litkey, P.~Manninen, H.~Hyyti,
+  J.~Maanp{\"a}{\"a}, H.~Tuomas, V.~Sofie, N.~Kalle, L.~Pernickel, and E.~E.
+  Aksoy, ``Snowy scenes: A multimodal multitask dataset toward snow-tonomous
+  vehicles,'' \emph{IEEE Robotics and Automation Letters}, vol.~11, no.~9, pp.
+  10\,863--10\,870, 2026.
 
 \end{thebibliography}
