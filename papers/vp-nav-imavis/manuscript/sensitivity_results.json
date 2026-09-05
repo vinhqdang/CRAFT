@@ -1,0 +1,458 @@
+{
+  "kappa_sweep": {
+    "0.5": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 9.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    },
+    "1.0": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 4.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 9.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    },
+    "2.0": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    },
+    "4.0": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    },
+    "8.0": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    }
+  },
+  "calibration_size_sweep": {
+    "20": {
+      "q_hat": 9.94084358215332,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 1.0,
+            "mean_detection_delay": -5.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 1.0,
+            "mean_detection_delay": -4.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 1.0,
+            "mean_detection_delay": -3.0,
+            "n_censored": 0
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 1.0,
+            "mean_detection_delay": -6.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 1.0,
+            "mean_detection_delay": -5.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 1.0,
+            "mean_detection_delay": -4.0,
+            "n_censored": 0
+          }
+        ]
+      }
+    },
+    "40": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    },
+    "80": {
+      "q_hat": 10.24806022644043,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    }
+  },
+  "scene_length_sweep": {
+    "20": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    },
+    "40": {
+      "q_hat": 10.188347816467285,
+      "results": {
+        "covariate_blind_agrapa": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 3.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": 10.0,
+            "n_censored": 0
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ],
+        "ccp_informed": [
+          {
+            "delta": 0.3,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.1,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          },
+          {
+            "delta": 0.05,
+            "false_alarm_rate": 0.0,
+            "mean_detection_delay": null,
+            "n_censored": 5
+          }
+        ]
+      }
+    }
+  }
+}

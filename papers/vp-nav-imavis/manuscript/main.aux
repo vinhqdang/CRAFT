@@ -10,14 +10,14 @@
 \def\@LN@column{1}
 \def\@LN@column{1}
 \def\@LN@column{1}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{5}{section.2}\protected@file@percent }
-\newlabel{sec:related}{{2}{5}{Related Work}{section.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Robust Multimodal Fusion for Autonomous Perception}{5}{subsection.2.1}\protected@file@percent }
-\newlabel{sec:related-fusion}{{2.1}{5}{Robust Multimodal Fusion for Autonomous Perception}{subsection.2.1}{}}
 \citation{VovkGammermanShafer2005,Lei2018JASA}
 \citation{Ramdas2023GameTheoretic,WaudbySmithRamdas2024JRSSB}
 \citation{MonroyMunoz2026WACV}
 \def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{6}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{6}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Robust Multimodal Fusion for Autonomous Perception}{6}{subsection.2.1}\protected@file@percent }
+\newlabel{sec:related-fusion}{{2.1}{6}{Robust Multimodal Fusion for Autonomous Perception}{subsection.2.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Conformal Prediction and Anytime-Valid Sequential Testing}{6}{subsection.2.2}\protected@file@percent }
 \newlabel{sec:related-conformal}{{2.2}{6}{Conformal Prediction and Anytime-Valid Sequential Testing}{subsection.2.2}{}}
 \citation{Geng2025StateDependent}
@@ -34,100 +34,103 @@
 \newlabel{sec:method}{{3}{8}{Method}{section.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Background: The Monitored Detector}{8}{subsection.3.1}\protected@file@percent }
 \newlabel{sec:background-detector}{{3.1}{8}{Background: The Monitored Detector}{subsection.3.1}{}}
-\newlabel{eq:ccp}{{1}{8}{Background: The Monitored Detector}{equation.1}{}}
 \def\@LN@column{1}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Per-frame monitoring pipeline. The detector $f_\theta $ (dashed conceptually from the rest, since it is background infrastructure -- Section~\ref {sec:background-detector}) produces box predictions and the CCP score $S_t$; everything downstream of it is this paper's own contribution. The spatial variant (Section~\ref {sec:spatial}) replicates the conformal-through-wealth path once per BEV cell-cluster. The betting rule is either covariate-blind (uses only the $m(t)$ path) or CCP-informed (also uses the disagreement path).}}{9}{figure.1}\protected@file@percent }
-\newlabel{fig:pipeline}{{1}{9}{Per-frame monitoring pipeline. The detector $f_\theta $ (dashed conceptually from the rest, since it is background infrastructure -- Section~\ref {sec:background-detector}) produces box predictions and the CCP score $S_t$; everything downstream of it is this paper's own contribution. The spatial variant (Section~\ref {sec:spatial}) replicates the conformal-through-wealth path once per BEV cell-cluster. The betting rule is either covariate-blind (uses only the $m(t)$ path) or CCP-informed (also uses the disagreement path)}{figure.1}{}}
+\newlabel{eq:ccp}{{1}{9}{Background: The Monitored Detector}{equation.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Problem Setup}{9}{subsection.3.2}\protected@file@percent }
 \newlabel{sec:setup}{{3.2}{9}{Problem Setup}{subsection.3.2}{}}
 \def\@LN@column{1}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}The e-Process and Ville's Inequality}{10}{subsection.3.3}\protected@file@percent }
-\newlabel{sec:eprocess}{{3.3}{10}{The e-Process and Ville's Inequality}{subsection.3.3}{}}
-\newlabel{eq:wealth}{{2}{10}{The e-Process and Ville's Inequality}{equation.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Per-frame monitoring pipeline. The detector $f_\theta $ (dashed conceptually from the rest, since it is background infrastructure -- Section~\ref {sec:background-detector}) produces box predictions and the CCP score $S_t$; everything downstream of it is this paper's own contribution. The spatial variant (Section~\ref {sec:spatial}) replicates the conformal-through-wealth path once per BEV cell-cluster. The betting rule is either covariate-blind (uses only the $m(t)$ path) or CCP-informed (also uses the disagreement path).}}{10}{figure.1}\protected@file@percent }
+\newlabel{fig:pipeline}{{1}{10}{Per-frame monitoring pipeline. The detector $f_\theta $ (dashed conceptually from the rest, since it is background infrastructure -- Section~\ref {sec:background-detector}) produces box predictions and the CCP score $S_t$; everything downstream of it is this paper's own contribution. The spatial variant (Section~\ref {sec:spatial}) replicates the conformal-through-wealth path once per BEV cell-cluster. The betting rule is either covariate-blind (uses only the $m(t)$ path) or CCP-informed (also uses the disagreement path)}{figure.1}{}}
 \def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}The e-Process and Ville's Inequality}{11}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:eprocess}{{3.3}{11}{The e-Process and Ville's Inequality}{subsection.3.3}{}}
+\newlabel{eq:wealth}{{2}{11}{The e-Process and Ville's Inequality}{equation.2}{}}
 \@writefile{toc}{\contentsline {paragraph}{Step 1: $K_t$ is a nonnegative supermartingale under $H_0$.}{11}{section*.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Step 2: Ville's inequality bounds the running maximum.}{11}{section*.2}\protected@file@percent }
 \def\@LN@column{1}
+\@writefile{toc}{\contentsline {paragraph}{Step 2: Ville's inequality bounds the running maximum.}{12}{section*.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}A Worked Numeric Example}{12}{subsubsection.3.3.1}\protected@file@percent }
 \newlabel{sec:worked-example}{{3.3.1}{12}{A Worked Numeric Example}{subsubsection.3.3.1}{}}
-\citation{MonroyMunoz2026WACV}
 \citation{MonroyMunoz2026WACV}
 \def\@LN@column{1}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Covariate-Blind Baselines}{13}{subsection.3.4}\protected@file@percent }
 \newlabel{sec:blind}{{3.4}{13}{Covariate-Blind Baselines}{subsection.3.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Covariate-Informed Betting}{13}{subsection.3.5}\protected@file@percent }
-\newlabel{sec:informed}{{3.5}{13}{Covariate-Informed Betting}{subsection.3.5}{}}
+\citation{MonroyMunoz2026WACV}
 \citation{WangRamdas2022JRSSB}
 \def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Covariate-Informed Betting}{14}{subsection.3.5}\protected@file@percent }
+\newlabel{sec:informed}{{3.5}{14}{Covariate-Informed Betting}{subsection.3.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Spatially Resolved Monitoring with Online Multiplicity Control}{14}{subsection.3.6}\protected@file@percent }
 \newlabel{sec:spatial}{{3.6}{14}{Spatially Resolved Monitoring with Online Multiplicity Control}{subsection.3.6}{}}
+\def\@LN@column{1}
 \citation{MonroyMunoz2026WACV}
 \def\@LN@column{1}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.1}Betting-Rule Comparison: Theoretical Properties and Tradeoffs}{15}{subsubsection.3.6.1}\protected@file@percent }
-\newlabel{sec:betting-comparison}{{3.6.1}{15}{Betting-Rule Comparison: Theoretical Properties and Tradeoffs}{subsubsection.3.6.1}{}}
-\def\@LN@column{1}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Per-frame spatial monitoring update}}{16}{algorithm.1}\protected@file@percent }
-\newlabel{alg:spatial-monitor}{{1}{16}{Betting-Rule Comparison: Theoretical Properties and Tradeoffs}{algorithm.1}{}}
-\citation{SnowyScenes2026}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.6.1}Betting-Rule Comparison: Theoretical Properties and Tradeoffs}{16}{subsubsection.3.6.1}\protected@file@percent }
+\newlabel{sec:betting-comparison}{{3.6.1}{16}{Betting-Rule Comparison: Theoretical Properties and Tradeoffs}{subsubsection.3.6.1}{}}
 \def\@LN@column{1}
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Betting rules compared in this paper. All three are valid choices of $\lambda _t$ in Equation~\ref {eq:wealth} and inherit the same anytime-valid guarantee unconditionally (Section~\ref {sec:eprocess}); they differ in statistical power, not validity.}}{17}{table.1}\protected@file@percent }
 \newlabel{tab:betting-comparison}{{1}{17}{Betting rules compared in this paper. All three are valid choices of $\lambda _t$ in Equation~\ref {eq:wealth} and inherit the same anytime-valid guarantee unconditionally (Section~\ref {sec:eprocess}); they differ in statistical power, not validity}{table.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4}Experimental Setup and Results}{17}{section.4}\protected@file@percent }
-\newlabel{sec:experiments}{{4}{17}{Experimental Setup and Results}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Dataset 1: Snowy Scenes}{17}{subsection.4.1}\protected@file@percent }
-\newlabel{sec:dataset-snowy}{{4.1}{17}{Dataset 1: Snowy Scenes}{subsection.4.1}{}}
+\citation{SnowyScenes2026}
 \def\@LN@column{1}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.1.1}A Real Negative Result: the CCP Covariate}{18}{subsubsection.4.1.1}\protected@file@percent }
-\newlabel{sec:ccp-negative}{{4.1.1}{18}{A Real Negative Result: the CCP Covariate}{subsubsection.4.1.1}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Per-frame spatial monitoring update}}{18}{algorithm.1}\protected@file@percent }
+\newlabel{alg:spatial-monitor}{{1}{18}{Betting-Rule Comparison: Theoretical Properties and Tradeoffs}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experimental Setup and Results}{18}{section.4}\protected@file@percent }
+\newlabel{sec:experiments}{{4}{18}{Experimental Setup and Results}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Dataset 1: Snowy Scenes}{18}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:dataset-snowy}{{4.1}{18}{Dataset 1: Snowy Scenes}{subsection.4.1}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.1.1}A Real Negative Result: the CCP Covariate}{19}{subsubsection.4.1.1}\protected@file@percent }
+\newlabel{sec:ccp-negative}{{4.1.1}{19}{A Real Negative Result: the CCP Covariate}{subsubsection.4.1.1}{}}
 \def\@LN@column{1}
 \def\@LN@column{1}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Real Snowy Scenes operating curve (calibration: 40 held-out \texttt  {accumulated} frames, $\alpha =0.2$, 5 onset + 5 ``clear'' replicates per condition, scene length 20, onset frame 8). ``--'' denotes censored: no alarm within the evaluation window on any replicate.}}{20}{table.2}\protected@file@percent }
-\newlabel{tab:snowy-results}{{2}{20}{Real Snowy Scenes operating curve (calibration: 40 held-out \texttt {accumulated} frames, $\alpha =0.2$, 5 onset + 5 ``clear'' replicates per condition, scene length 20, onset frame 8). ``--'' denotes censored: no alarm within the evaluation window on any replicate}{table.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Sensitivity Analysis}{20}{subsection.4.2}\protected@file@percent }
-\newlabel{sec:sensitivity}{{4.2}{20}{Sensitivity Analysis}{subsection.4.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Real Snowy Scenes operating curve (calibration: 40 held-out \texttt  {accumulated} frames, $\alpha =0.2$, 5 onset + 5 ``clear'' replicates per condition, scene length 20, onset frame 8). ``--'' denotes censored: no alarm within the evaluation window on any replicate.}}{21}{table.2}\protected@file@percent }
+\newlabel{tab:snowy-results}{{2}{21}{Real Snowy Scenes operating curve (calibration: 40 held-out \texttt {accumulated} frames, $\alpha =0.2$, 5 onset + 5 ``clear'' replicates per condition, scene length 20, onset frame 8). ``--'' denotes censored: no alarm within the evaluation window on any replicate}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Sensitivity Analysis}{21}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:sensitivity}{{4.2}{21}{Sensitivity Analysis}{subsection.4.2}{}}
 \def\@LN@column{1}
 \citation{Pitropov2021CADC}
 \def\@LN@column{1}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Sensitivity analysis, all against the real corrected Snowy Scenes checkpoint and val-split data (same protocol as Table~\ref {tab:snowy-results} otherwise). \emph  {[Table to be completed as the real sweep, launched against the actual checkpoint, finishes -- see the note immediately below; every value here will come from an actual run, not a projection.]}}}{22}{table.3}\protected@file@percent }
-\newlabel{tab:sensitivity}{{3}{22}{Sensitivity analysis, all against the real corrected Snowy Scenes checkpoint and val-split data (same protocol as Table~\ref {tab:snowy-results} otherwise). \emph {[Table to be completed as the real sweep, launched against the actual checkpoint, finishes -- see the note immediately below; every value here will come from an actual run, not a projection.]}}{table.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Dataset 2: Canadian Adverse Driving Conditions (CADC)}{22}{subsection.4.3}\protected@file@percent }
-\newlabel{sec:dataset-cadc}{{4.3}{22}{Dataset 2: Canadian Adverse Driving Conditions (CADC)}{subsection.4.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Dataset 2: Canadian Adverse Driving Conditions (CADC)}{23}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:dataset-cadc}{{4.3}{23}{Dataset 2: Canadian Adverse Driving Conditions (CADC)}{subsection.4.3}{}}
 \def\@LN@column{1}
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces CADC operating curve -- \emph  {placeholder, evaluation in progress}. Structure matches Table~\ref {tab:snowy-results}; values to be filled in from the real, completed evaluation before submission.}}{23}{table.4}\protected@file@percent }
-\newlabel{tab:cadc-results}{{4}{23}{CADC operating curve -- \emph {placeholder, evaluation in progress}. Structure matches Table~\ref {tab:snowy-results}; values to be filled in from the real, completed evaluation before submission}{table.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion and Limitations}{23}{section.5}\protected@file@percent }
-\newlabel{sec:discussion}{{5}{23}{Discussion and Limitations}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}What the Real-Data Evaluation Supports, and What It Does Not}{23}{subsection.5.1}\protected@file@percent }
-\newlabel{sec:discuss-support}{{5.1}{23}{What the Real-Data Evaluation Supports, and What It Does Not}{subsection.5.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Sensitivity analysis, all against the real corrected Snowy Scenes checkpoint and val-split data (same protocol as Table~\ref {tab:snowy-results} otherwise: 5 onset + 5 clear replicates per point). Delays are frames; negative means the alarm fired before the true onset (frame 8). ``--'' denotes censored (no alarm in the window on any replicate). $\delta {=}0.05$ is omitted from the covariate-blind column of the $\kappa $ sweep since it is unaffected by $\kappa $ and already appears in Table~\ref {tab:snowy-results} (censored there too).}}{24}{table.3}\protected@file@percent }
+\newlabel{tab:sensitivity}{{3}{24}{Sensitivity analysis, all against the real corrected Snowy Scenes checkpoint and val-split data (same protocol as Table~\ref {tab:snowy-results} otherwise: 5 onset + 5 clear replicates per point). Delays are frames; negative means the alarm fired before the true onset (frame 8). ``--'' denotes censored (no alarm in the window on any replicate). $\delta {=}0.05$ is omitted from the covariate-blind column of the $\kappa $ sweep since it is unaffected by $\kappa $ and already appears in Table~\ref {tab:snowy-results} (censored there too)}{table.3}{}}
 \def\@LN@column{1}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}The CCP-Covariate Negative Result, Generalized}{24}{subsection.5.2}\protected@file@percent }
-\newlabel{sec:discuss-ccp}{{5.2}{24}{The CCP-Covariate Negative Result, Generalized}{subsection.5.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces CADC operating curve -- \emph  {placeholder, evaluation in progress}. Structure matches Table~\ref {tab:snowy-results}; values to be filled in from the real, completed evaluation before submission.}}{25}{table.4}\protected@file@percent }
+\newlabel{tab:cadc-results}{{4}{25}{CADC operating curve -- \emph {placeholder, evaluation in progress}. Structure matches Table~\ref {tab:snowy-results}; values to be filled in from the real, completed evaluation before submission}{table.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion and Limitations}{25}{section.5}\protected@file@percent }
+\newlabel{sec:discussion}{{5}{25}{Discussion and Limitations}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}What the Real-Data Evaluation Supports, and What It Does Not}{25}{subsection.5.1}\protected@file@percent }
+\newlabel{sec:discuss-support}{{5.1}{25}{What the Real-Data Evaluation Supports, and What It Does Not}{subsection.5.1}{}}
 \def\@LN@column{1}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}What the Sensitivity Analysis Adds}{25}{subsection.5.3}\protected@file@percent }
-\newlabel{sec:discuss-sensitivity}{{5.3}{25}{What the Sensitivity Analysis Adds}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}The CCP-Covariate Negative Result, Generalized}{26}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:discuss-ccp}{{5.2}{26}{The CCP-Covariate Negative Result, Generalized}{subsection.5.2}{}}
 \def\@LN@column{1}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Relationship to the Underlying Detector}{26}{subsection.5.4}\protected@file@percent }
-\newlabel{sec:discuss-detector}{{5.4}{26}{Relationship to the Underlying Detector}{subsection.5.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{26}{section.6}\protected@file@percent }
-\newlabel{sec:conclusion}{{6}{26}{Conclusion}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}What the Sensitivity Analysis Adds}{27}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:discuss-sensitivity}{{5.3}{27}{What the Sensitivity Analysis Adds}{subsection.5.3}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Relationship to the Underlying Detector}{28}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:discuss-detector}{{5.4}{28}{Relationship to the Underlying Detector}{subsection.5.4}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{29}{section.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{6}{29}{Conclusion}{section.6}{}}
 \bibstyle{elsarticle-num}
 \bibdata{references}
-\def\@LN@column{1}
 \bibcite{MonroyMunoz2026WACV}{{1}{}{{}}{{}}}
 \bibcite{VovkGammermanShafer2005}{{2}{}{{}}{{}}}
 \bibcite{Lei2018JASA}{{3}{}{{}}{{}}}
 \bibcite{Ramdas2023GameTheoretic}{{4}{}{{}}{{}}}
+\def\@LN@column{1}
 \bibcite{WaudbySmithRamdas2024JRSSB}{{5}{}{{}}{{}}}
 \bibcite{Geng2025StateDependent}{{6}{}{{}}{{}}}
 \bibcite{Kumar2025ContextAware}{{7}{}{{}}{{}}}
 \bibcite{Liu2026ValueGated}{{8}{}{{}}{{}}}
 \bibcite{Pitropov2021CADC}{{9}{}{{}}{{}}}
-\def\@LN@column{1}
 \bibcite{Bijelic2020SeeingThroughFog}{{10}{}{{}}{{}}}
 \bibcite{SnowyScenes2026}{{11}{}{{}}{{}}}
 \bibcite{WangRamdas2022JRSSB}{{12}{}{{}}{{}}}
+\def\@LN@column{1}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
 \def\@LN@column{1}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Six real Snowy Scenes val-split frames run through the corrected checkpoint: three \texttt  {accumulated} (nominal) and three \texttt  {falling} (degraded), each showing the camera image, LiDAR BEV occupancy channel, and the CCP disagreement map $1-S$. Mean disagreement is consistently \emph  {higher} for the visually milder \texttt  {accumulated} frames (category mean $0.590$) than the visually more severe \texttt  {falling} frames (category mean $0.565$) -- the wrong-direction pattern Section~\ref {sec:ccp-negative} diagnoses from the full stream, visible here across six independent real frames rather than only in aggregate statistics or a single pair.}}{30}{figure.2}\protected@file@percent }
-\newlabel{fig:qualitative-multi}{{2}{30}{Six real Snowy Scenes val-split frames run through the corrected checkpoint: three \texttt {accumulated} (nominal) and three \texttt {falling} (degraded), each showing the camera image, LiDAR BEV occupancy channel, and the CCP disagreement map $1-S$. Mean disagreement is consistently \emph {higher} for the visually milder \texttt {accumulated} frames (category mean $0.590$) than the visually more severe \texttt {falling} frames (category mean $0.565$) -- the wrong-direction pattern Section~\ref {sec:ccp-negative} diagnoses from the full stream, visible here across six independent real frames rather than only in aggregate statistics or a single pair}{figure.2}{}}
-\gdef \@abspage@last{30}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Six real Snowy Scenes val-split frames run through the corrected checkpoint: three \texttt  {accumulated} (nominal) and three \texttt  {falling} (degraded), each showing the camera image, LiDAR BEV occupancy channel, and the CCP disagreement map $1-S$. Mean disagreement is consistently \emph  {higher} for the visually milder \texttt  {accumulated} frames (category mean $0.590$) than the visually more severe \texttt  {falling} frames (category mean $0.565$) -- the wrong-direction pattern Section~\ref {sec:ccp-negative} diagnoses from the full stream, visible here across six independent real frames rather than only in aggregate statistics or a single pair.}}{33}{figure.2}\protected@file@percent }
+\newlabel{fig:qualitative-multi}{{2}{33}{Six real Snowy Scenes val-split frames run through the corrected checkpoint: three \texttt {accumulated} (nominal) and three \texttt {falling} (degraded), each showing the camera image, LiDAR BEV occupancy channel, and the CCP disagreement map $1-S$. Mean disagreement is consistently \emph {higher} for the visually milder \texttt {accumulated} frames (category mean $0.590$) than the visually more severe \texttt {falling} frames (category mean $0.565$) -- the wrong-direction pattern Section~\ref {sec:ccp-negative} diagnoses from the full stream, visible here across six independent real frames rather than only in aggregate statistics or a single pair}{figure.2}{}}
+\gdef \@abspage@last{33}
