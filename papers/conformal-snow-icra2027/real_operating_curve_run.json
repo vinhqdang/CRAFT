@@ -1,6 +1,6 @@
 {
   "note": "Real Snowy Scenes data + trained CRAFX_Net checkpoint -- first real evidence, not a mechanics smoke run. 'Clear' replicates use accumulated frames on both sides of the splice (no real clear-weather split exists).",
-  "checkpoint": "../../../checkpoints/snowy_scenes/checkpoint_final.pth",
+  "checkpoint": "../../../checkpoints/snowy_scenes_fixed/checkpoint_final.pth",
   "checkpoint_epoch": 4,
   "split": "val",
   "config": {
@@ -16,7 +16,7 @@
     "n_clear_replicates": 5,
     "kappa": 2.0,
     "n_calibration_frames": 40,
-    "q_hat": 10.186078071594238,
+    "q_hat": 10.188347816467285,
     "bev_size": 128
   },
   "results": {
@@ -44,14 +44,14 @@
       {
         "delta": 0.3,
         "false_alarm_rate": 0.0,
-        "mean_detection_delay": 3.0,
-        "n_censored": 0
+        "mean_detection_delay": null,
+        "n_censored": 5
       },
       {
         "delta": 0.1,
         "false_alarm_rate": 0.0,
-        "mean_detection_delay": 10.0,
-        "n_censored": 0
+        "mean_detection_delay": null,
+        "n_censored": 5
       },
       {
         "delta": 0.05,

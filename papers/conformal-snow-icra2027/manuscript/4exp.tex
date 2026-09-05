@@ -36,39 +36,37 @@ Calibration uses 40 held-out \texttt{accumulated} frames from the \texttt{val} s
 \subsection{Operating Curve on Real Data}
 \label{sec:results}
 
-Table~\ref{tab:operating-curve} reports the operating curve against the corrected checkpoint (Section~\ref{sec:training}), evaluated on held-out \texttt{val}-split frames the detector never saw during training.
-
-% RESULTS-PLACEHOLDER: fill in with the corrected real_operating_curve_run.json
-% once checkpoints/snowy_scenes_fixed/checkpoint_final.pth finishes training
-% and scripts/run_real_operating_curve.py has been re-run against it. Do not
-% report the stale collapsed-CCP numbers here.
+Table~\ref{tab:operating-curve} reports the operating curve against the corrected checkpoint (Section~\ref{sec:training}), evaluated on held-out \texttt{val}-split frames the detector never saw during training. We report this exactly as obtained; the result is not the one our method's stated rationale predicts, and Section~\ref{sec:discussion} explains why in detail rather than qualifying it away.
 
 \begin{table}[t]
 \centering
-\caption{Operating curve on the real Snowy Scenes onset stream (accumulated $\to$ falling), 5 onset + 5 stationary-accumulated replicates per condition, corrected checkpoint. FAR = false-alarm rate; delay is in frames relative to the true onset at $t=8$; censored = replicates that never alarmed within the 20-frame window.}
+\caption{Operating curve on the real Snowy Scenes onset stream (accumulated $\to$ falling), 5 onset + 5 stationary-accumulated replicates per condition, corrected checkpoint (\texttt{checkpoint\_final.pth}, epoch 4). FAR = false-alarm rate; delay is in frames relative to the true onset at $t=8$; censored = replicates that never alarmed within the 20-frame window.}
 \label{tab:operating-curve}
 \begin{threeparttable}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
 Bettor & $\delta$ & FAR & Mean delay & Censored \\
 \midrule
-Covariate-blind (aGRAPA) & 0.30 & -- & -- & --/5 \\
-Covariate-blind (aGRAPA) & 0.10 & -- & -- & --/5 \\
-Covariate-blind (aGRAPA) & 0.05 & -- & -- & --/5 \\
-CCP-informed & 0.30 & -- & -- & --/5 \\
-CCP-informed & 0.10 & -- & -- & --/5 \\
-CCP-informed & 0.05 & -- & -- & --/5 \\
+Covariate-blind (aGRAPA) & 0.30 & 0.00 & 3.0 & 0/5 \\
+Covariate-blind (aGRAPA) & 0.10 & 0.00 & 10.0 & 0/5 \\
+Covariate-blind (aGRAPA) & 0.05 & 0.00 & -- & 5/5 \\
+CCP-informed & 0.30 & 0.00 & -- & 5/5 \\
+CCP-informed & 0.10 & 0.00 & -- & 5/5 \\
+CCP-informed & 0.05 & 0.00 & -- & 5/5 \\
 \bottomrule
 \end{tabular}
 \begin{tablenotes}
 \small
-\item[] Placeholder: table populated after the corrected retrain (Section~\ref{sec:training}) completes and \texttt{scripts/run\_real\_operating\_curve.py} is re-run against \texttt{checkpoints/snowy\_scenes\_fixed/checkpoint\_final.pth}.
+\item[] $q_{\hat\alpha} = 10.19$ (40 calibration frames, $\alpha=0.2$). Covariate-blind numbers are numerically unchanged from the pre-fix checkpoint (the bettor never consumes the CCP score, so this is expected, not evidence the retrain had no effect elsewhere). CCP-informed alarms on \emph{zero} of 15 onset-replicate/$\delta$ combinations after the fix, versus alarming at every $\delta$ before it (Section~\ref{sec:training}) -- the fix changed the outcome substantially, in the opposite direction from the one motivating this paper.
 \end{tablenotes}
 \end{threeparttable}
 \end{table}
 
-% DISCUSSION-PLACEHOLDER: once the table above is filled in, discuss here
-% whether the CCP-informed bettor now shows a real advantage over the
-% covariate-blind baseline at matched delta, or whether the fix did not
-% restore one -- report the honest outcome either way and connect it back
-% to the collapse story in Section~\ref{sec:training}.
+\subsection{Discussion: the Fix Did Not Help, and Why}
+\label{sec:discussion}
+
+Fixing the CCP-collapse bug did what it was supposed to do at the level of the covariate itself: sampling $S$ across the same real onset stream with the corrected checkpoint shows real, non-degenerate variation ($S \approx 0.40$, std $\approx 0.08$, in the nominal regime; $S \approx 0.44$, std $\approx 0.03$, in the degraded regime) in place of the pre-fix collapse to $S \approx 0.9993$ uniformly. The covariate is no longer constant. It is, however, informative in the wrong direction for this task: mean disagreement $\overline{(1-S)}$ is \emph{higher} in the nominal (\texttt{accumulated}) regime ($\approx 0.599$ at $t=0$, declining slightly to $\approx 0.585$ by $t=7$) than in the degraded (\texttt{falling}) regime ($\approx 0.564$, roughly flat from $t=8$ onward) -- the opposite ordering from what a leading indicator of degradation would need. Since $\text{CCPInformedBettor}$'s update, $\lambda_t = \lambda_t^{\text{base}} \cdot (1 + \kappa \cdot \overline{(1-S_t)})$, can only scale the base bettor's stake \emph{up} (Section~\ref{sec:informed}), and disagreement here sits around $0.56$--$0.60$ throughout \emph{both} regimes rather than rising specifically at onset, the covariate-informed bettor bets aggressively for the entire stream, calibration set included. A wealth process betting aggressively on frames where the true miscoverage rate $m(t)$ happens to sit below $\alpha$ loses wealth faster than a conservatively betting one does (the factor $1 + \lambda(m(t)-\alpha)$ shrinks toward zero as $\lambda$ grows whenever $m(t) < \alpha$), and that appears to be exactly what happens here: the covariate-informed process never accumulates enough wealth within the 20-frame window to cross even the most permissive alarm threshold we tested ($\delta = 0.3$), across all 5 onset replicates.
+
+We think the most defensible explanation is a mismatch between what the fix taught the CCP score and what this paper needs it to detect. The fix supervises $S$ using PGD-adversarially-perturbed features as the mismatched-target examples (Section~\ref{sec:training}) -- a natural and, for CRAF-X's own adversarial-robustness objective, an appropriate choice, since PGD perturbations are a real cross-modal mismatch by construction. But an adversarial perturbation crafted to maximize the detector's box-regression loss under an $\ell_\infty$ budget is a qualitatively different kind of feature-space disturbance than the one real snowfall actually produces on LiDAR returns and camera contrast. Teaching $S$ to recognize the former does not obviously transfer to recognizing the latter, and our post-fix measurement suggests it did not: whatever pattern the corrected CCP head is now picking up on correlates with something in the \texttt{accumulated}-vs-\texttt{falling} contrast, but not with which side of that contrast is actually more degraded from the detector's perspective. This is a substantive negative result about the specific mechanism this paper proposed, not a bug in the monitoring code -- the identical experiment, run twice (Section~\ref{sec:training} and here), surfaced two different real problems in two different places (the training objective, then the covariate's transfer properties), and we report both rather than stopping at the first one that looked fixed.
+
+We are not able, within this evaluation, to distinguish between two explanations for that transfer failure: that adversarial-perturbation-based CCP supervision is fundamentally the wrong kind of covariate for a naturally-occurring weather shift regardless of how it is tuned, or that $\kappa=2.0$ and the untuned architecture we trained are simply the wrong operating point and a different $\kappa$, more training data, or a covariate computed differently (e.g., a discrepancy measure between the two modalities' own predicted object locations, rather than a jointly-trained consistency head) would recover an advantage. Section~\ref{sec:conclusion} treats this as the open problem it is, rather than resolving it by assertion.
