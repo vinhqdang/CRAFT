@@ -72,7 +72,7 @@ Both are exact reimplementations of the adaptive betting rules \cite{MonroyMunoz
 \subsection{Covariate-Informed Betting}
 \label{sec:informed}
 
-Our primary contribution conditions the betting rate on an external signal available at the same timestep as $m(t)$ but computed from independent evidence: the disagreement output of CRAF-X's Cross-modal Consistency Probe (CCP). The CCP computes, per BEV grid cell, a consistency score
+Alongside the two contributions in Sections~\ref{sec:spatial} and~\ref{sec:experiments}, we also investigated conditioning the betting rate on an external signal available at the same timestep as $m(t)$ but computed from independent evidence: the disagreement output of CRAF-X's Cross-modal Consistency Probe (CCP). We describe the mechanism in full because Section~\ref{sec:experiments} reports, in equal detail, why it did not deliver the advantage motivating it -- an outcome worth understanding precisely rather than skipping past. The CCP computes, per BEV grid cell, a consistency score
 \[
 S(i,j) = \sigma\!\left(\mathrm{MLP}_S\!\left[F_{\mathrm{cam}}(i,j) \oplus F_{\mathrm{lid}}(i,j) \oplus |F_{\mathrm{cam}}(i,j) - F_{\mathrm{lid}}(i,j)|\right]\right) \in [0,1]
 \]
