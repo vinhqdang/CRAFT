@@ -1,0 +1,65 @@
+\section{Experimental Setup and Results}
+\label{sec:experiments}
+
+\subsection{Dataset 1: Snowy Scenes}
+\label{sec:dataset-snowy}
+
+We evaluate on Snowy Scenes~\cite{SnowyScenes2026}, a multimodal driving dataset captured entirely in real winter conditions and distributed as a single $\sim$49\,GB archive, read lazily rather than extracted to disk given its $\sim$93\,GB uncompressed footprint. It contains 5{,}027 frames across three splits (3{,}016 train / 1{,}005 val / 1{,}006 test), with per-frame RGB camera images, 128-beam LiDAR point clouds, 3D object boxes, and per-point semantic segmentation labels across 29 classes (not consumed here, since the detector's head has no segmentation output).
+
+Snowy Scenes' three weather categories -- \texttt{accumulated}, \texttt{highway}, and \texttt{falling} -- are all already-snowy driving, so no dry/clear split exists to serve as a calibration baseline or as the nominal side of an onset transition. Severity also does not ramp monotonically within a category: sampling the ground-truth per-point ``snow'' semantic class fraction across a timestamp-ordered \texttt{falling} sequence shows real but noisy fluctuation ($0.002$--$0.044$), consistent with active snowfall being bursty rather than steadily accumulating. What the data does support is a real, physically grounded severity contrast \emph{across} categories: the mean per-point ``snow''-class fraction per category gives $\texttt{accumulated} = 0.0001 < \texttt{highway} = 0.0041 < \texttt{falling} = 0.0119$, an ordering with a clear physical explanation -- \texttt{falling} captures active, airborne snowfall, which LiDAR registers as spurious near-range returns, while \texttt{accumulated} is settled snow on surfaces rather than particles in the air. We use this cross-category contrast, rather than a within-sequence transition, as the basis for the onset construction: a nominal (held-out \texttt{accumulated}) prefix spliced with a degraded (\texttt{falling}) suffix at a known onset index. Every individual frame on both sides of the transition is real sensor data; only the splice point itself is a construction, since Snowy Scenes' own sequences do not contain a within-sequence weather transition -- an assembled proxy for a naturally occurring onset, and we flag that openly as a limitation of the evaluation protocol.
+
+We train the detector for 5 epochs on the real train split under its Adversarial Consistency Training objective, on a single local NVIDIA RTX 5000 Ada GPU, at $128\times128$ BEV resolution, batch size 4, Adam with learning rate $10^{-4}$; training loss converges from $\approx 2.3$ to $\approx 0.008$.
+
+\subsubsection{A Real Negative Result: the CCP Covariate}
+\label{sec:ccp-negative}
+
+Running the calibration-and-monitoring pipeline against the first trained checkpoint produced a false-alarm rate of $0.0$ across every tested $\delta$ and detection delays that were numerically identical between the covariate-informed and covariate-blind bettors, to every digit the operating curve reports. Sampling the CCP consistency score $S$ directly across a real onset stream with the trained model showed why: $S$ had collapsed to $\approx 0.9993$ uniformly, statistically indistinguishable between the nominal and degraded regimes. Tracing the cause led to the training code rather than to anything in the monitoring code itself: the CCP contrastive loss was being computed once per training step, on the clean forward pass, against an all-ones mask -- real, synchronized frames have no annotated camera$\leftrightarrow$LiDAR mismatch to supervise against -- and the two additional CCP forward passes the training loop already computes, on adversarially perturbed features, were never fed into that loss with a mismatched target. Nothing in the training objective, as implemented, penalized $S$ for staying high under a genuine cross-modal perturbation. We fixed this by also supervising the two adversarial branches with the same CCP loss against a mismatched target, since a perturbed feature pair is a real cross-modal mismatch by construction, and retrained from scratch.
+
+After the fix, $S$ varies again -- but in the wrong direction for this task: sampling it across a real onset stream from the corrected checkpoint gives a mean disagreement of $0.611$ on a real \texttt{accumulated} (nominal, visually milder) frame versus $0.564$ on a real \texttt{falling} (degraded, visually more severe) frame, the opposite of the ordering the covariate is meant to provide. Table~\ref{tab:snowy-results} reports the full operating curve this produces: the covariate-blind backbone detects the true weather onset within 3 to 10 frames depending on the false-alarm budget, with zero false alarms at every budget tested, while the covariate-informed bettor -- with disagreement now uniformly high across both regimes rather than rising specifically at onset -- bets aggressively throughout the stream and never accumulates enough evidence to alarm within the evaluation window, at any of the three $\delta$ tested. Our best explanation is that the fix supervises $S$ using adversarially perturbed features as the mismatch target, appropriate for the detector's own adversarial-robustness objective, but an $\ell_\infty$-bounded adversarial perturbation is a qualitatively different feature-space disturbance than real snowfall produces, and teaching $S$ to recognize the former does not obviously transfer to the latter. This generalizes beyond one architecture: a signal trained under an invariance objective is, by construction, in tension with reusing it as a leading indicator of degradation, which needs exactly the sensitivity the training objective suppressed -- a caution worth stating plainly for any future work that considers repurposing an internal robustness or consistency signal as an external monitoring covariate.
+
+\begin{table}[t]
+\centering
+\caption{Real Snowy Scenes operating curve (calibration: 40 held-out \texttt{accumulated} frames, $\alpha=0.2$, 5 onset + 5 ``clear'' replicates per condition, scene length 20, onset frame 8). ``--'' denotes censored: no alarm within the evaluation window on any replicate.}
+\label{tab:snowy-results}
+\begin{threeparttable}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+$\delta$ & Bettor & False-alarm rate & Mean detection delay \\
+\midrule
+0.30 & covariate-blind & 0.00 & 3 frames \\
+0.30 & CCP-informed & 0.00 & -- (5/5 censored) \\
+0.10 & covariate-blind & 0.00 & 10 frames \\
+0.10 & CCP-informed & 0.00 & -- (5/5 censored) \\
+0.05 & covariate-blind & 0.00 & -- (5/5 censored) \\
+0.05 & CCP-informed & 0.00 & -- (5/5 censored) \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}
+
+\subsection{Dataset 2: Canadian Adverse Driving Conditions (CADC)}
+\label{sec:dataset-cadc}
+
+To test whether the covariate-blind monitor's real-data behavior generalizes beyond a single dataset -- rather than being an artifact of Snowy Scenes' specific sensor suite, annotation convention, or severity distribution -- we replicate the calibration-and-monitoring evaluation on a second, independent real adverse-weather dataset, CADC~\cite{Pitropov2021CADC}. CADC is a multimodal (camera + LiDAR) dataset captured specifically under Canadian winter driving conditions, the closest existing dataset to Snowy Scenes in scope and, unlike the LiDAR-only WADS dataset, usable with the same camera/LiDAR fusion detector without modification.
+
+\textbf{This evaluation is in progress at the time of this draft.} We report the protocol here and will complete Table~\ref{tab:cadc-results} (structured identically to Table~\ref{tab:snowy-results}, with the same calibration protocol, replicate counts, and $\delta$ sweep, adapted to whatever real severity structure CADC's own metadata supports -- following the same principle used for Snowy Scenes of measuring the real severity contrast the data actually contains rather than assuming a clear/degraded split exists) before submission. We report whatever the real numbers turn out to be, including a repeat of the covariate-informed negative finding if it replicates, or its absence if it does not -- a second dataset showing the same wrong-direction pattern would strengthen the generalizability of Section~\ref{sec:ccp-negative}'s diagnosis; a second dataset \emph{not} showing it would itself be an interesting result, suggesting the failure is more specific to Snowy Scenes' particular snow characteristics than to adversarially-supervised CCP covariates in general.
+
+\begin{table}[t]
+\centering
+\caption{CADC operating curve -- \emph{placeholder, evaluation in progress}. Structure matches Table~\ref{tab:snowy-results}; values to be filled in from the real, completed evaluation before submission.}
+\label{tab:cadc-results}
+\begin{threeparttable}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+$\delta$ & Bettor & False-alarm rate & Mean detection delay \\
+\midrule
+0.30 & covariate-blind & \emph{TBD} & \emph{TBD} \\
+0.30 & CCP-informed & \emph{TBD} & \emph{TBD} \\
+0.10 & covariate-blind & \emph{TBD} & \emph{TBD} \\
+0.10 & CCP-informed & \emph{TBD} & \emph{TBD} \\
+0.05 & covariate-blind & \emph{TBD} & \emph{TBD} \\
+0.05 & CCP-informed & \emph{TBD} & \emph{TBD} \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}

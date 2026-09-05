@@ -5,7 +5,8 @@ This directory holds one subdirectory per research paper built on the shared [`c
 | Directory | Paper | Status |
 |---|---|---|
 | [`craf-x-tvc/`](craf-x-tvc/) | CRAF-X: Cross-modal Robust Adaptive Fusion with eXplainability | Under review at *The Visual Computer* |
-| [`conformal-snow-icra2027/`](conformal-snow-icra2027/) | Anytime-Valid Conformal Monitoring for Weather-Onset Detection | Prototype implemented, not yet evaluated — targeting ICRA 2027 |
+| [`conformal-snow-icra2027/`](conformal-snow-icra2027/) | Anytime-Valid Conformal Monitoring for Weather-Onset Detection | Submitted to ICRA 2027 |
+| [`vp-nav-imavis/`](vp-nav-imavis/) | From Robust Fusion to Statistically Valid Monitoring (synthesizes the two papers above) | First draft complete — targeting *Image and Vision Computing* VP-NAV special issue |
 
 ## Adding a new paper
 

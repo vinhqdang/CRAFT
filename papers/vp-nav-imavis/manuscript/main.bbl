@@ -1,0 +1,78 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{MonroyMunoz2026WACV}
+A.~M. Mu{\~n}oz, R.~Verma, A.~Timans, Detecting object tracking failure via
+  sequential hypothesis testing, in: IEEE/CVF Winter Conference on Applications
+  of Computer Vision (WACV) Workshops -- 6th Workshop on Real-World
+  Surveillance: Applications and Challenges, 2026.
+\newblock \href {http://arxiv.org/abs/2602.12983} {\path{arXiv:2602.12983}}.
+
+\bibitem{CRAFXUnderReview2026}
+Anonymous, {CRAF-X}: Cross-modal robust adaptive fusion with explainability for
+  autonomous perception, under review at The Visual Computer, 2026 (2026).
+
+\bibitem{VovkGammermanShafer2005}
+V.~Vovk, A.~Gammerman, G.~Shafer, Algorithmic Learning in a Random World,
+  Springer, 2005.
+
+\bibitem{Lei2018JASA}
+J.~Lei, M.~G'Sell, A.~Rinaldo, R.~J. Tibshirani, L.~Wasserman,
+  Distribution-free predictive inference for regression, Journal of the
+  American Statistical Association 113~(523) (2018) 1094--1111.
+
+\bibitem{Ramdas2023GameTheoretic}
+A.~Ramdas, P.~Gr{\"u}nwald, V.~Vovk, G.~Shafer, Game-theoretic statistics and
+  safe anytime-valid inference, Statistical Science 38~(4) (2023) 576--601.
+
+\bibitem{WaudbySmithRamdas2024JRSSB}
+I.~Waudby-Smith, A.~Ramdas, Estimating means of bounded random variables by
+  betting, Journal of the Royal Statistical Society Series B: Statistical
+  Methodology 86~(1) (2024) 1--27, preprint: arXiv:2010.09686 (2020).
+
+\bibitem{Geng2025StateDependent}
+Y.~Geng, T.~Waite, T.~Turnquist, R.~Ivanov, I.~Ruchkin, Statistical-symbolic
+  verification of perception-based autonomous systems using state-dependent
+  conformal prediction, arXiv preprintRevised April 2026 (2025).
+\newblock \href {http://arxiv.org/abs/2512.02893} {\path{arXiv:2512.02893}}.
+
+\bibitem{Kumar2025ContextAware}
+D.~Kumar, S.~Tayebati, F.~Migliarba, R.~Krishnan, A.~R. Trivedi, Learnable
+  conformal prediction with context-aware nonconformity functions for robotic
+  planning and perception, arXiv preprint (2025).
+\newblock \href {http://arxiv.org/abs/2509.21955} {\path{arXiv:2509.21955}}.
+
+\bibitem{Liu2026ValueGated}
+J.~Liu, L.~N. Zheng, W.~E. Zhang, X.~Wang, W.~Chen, Before fusion, ask what to
+  keep: Contextual calibration of multimodal signals, arXiv preprint (2026).
+\newblock \href {http://arxiv.org/abs/2606.02679} {\path{arXiv:2606.02679}}.
+
+\bibitem{Pitropov2021CADC}
+M.~Pitropov, D.~E. Garcia, J.~Rebello, M.~Smart, C.~Wang, K.~Czarnecki,
+  S.~Waslander, Canadian adverse driving conditions dataset, The International
+  Journal of Robotics Research 40~(4-5) (2021) 681--690.
+
+\bibitem{Bijelic2020SeeingThroughFog}
+M.~Bijelic, T.~Gruber, F.~Mannan, F.~Kraus, W.~Ritter, K.~Dietmayer, F.~Heide,
+  Seeing through fog without seeing fog: Deep multimodal sensor fusion in
+  unseen adverse weather, in: IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition (CVPR), 2020.
+
+\bibitem{SnowyScenes2026}
+T.-T. Ngo, A.~M. Raisuddin, I.~Gouigah, P.~Litkey, P.~Manninen, H.~Hyyti,
+  J.~Maanp{\"a}{\"a}, H.~Tuomas, V.~Sofie, N.~Kalle, L.~Pernickel, E.~E. Aksoy,
+  Snowy scenes: A multimodal multitask dataset toward snow-tonomous vehicles,
+  IEEE Robotics and Automation Letters 11~(9) (2026) 10863--10870.
+\newblock \href {https://doi.org/10.1109/LRA.2026.3717187}
+  {\path{doi:10.1109/LRA.2026.3717187}}.
+
+\bibitem{WangRamdas2022JRSSB}
+R.~Wang, A.~Ramdas, False discovery rate control with e-values, Journal of the
+  Royal Statistical Society Series B: Statistical Methodology 84~(3) (2022)
+  822--852.
+
+\end{thebibliography}

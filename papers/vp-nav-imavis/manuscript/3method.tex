@@ -1,0 +1,115 @@
+\section{Method}
+\label{sec:method}
+
+\subsection{Background: The Monitored Detector}
+\label{sec:background-detector}
+
+The detector this paper monitors is a camera/LiDAR BEV fusion architecture whose design and training objective are developed and evaluated in full in a companion manuscript currently under review at \emph{The Visual Computer}~\cite{CRAFXUnderReview2026}; we summarize only the components this paper's monitoring layer directly depends on, and attribute the architecture, its training objective, and any performance claims about the detector itself to that manuscript rather than restating them here as this paper's own contribution.
+
+Camera and LiDAR streams are each encoded into a shared bird's-eye-view (BEV) feature grid, $F_{\mathrm{cam}}, F_{\mathrm{lid}} \in \mathbb{R}^{H_b \times W_b \times C}$. A Cross-modal Consistency Probe (CCP) computes, per BEV grid cell $(i,j)$, a consistency score
+\begin{equation}
+S(i,j) = \sigma\Big(\mathrm{MLP}_S\big[F_{\mathrm{cam}}(i,j) \oplus F_{\mathrm{lid}}(i,j) \oplus |F_{\mathrm{cam}}(i,j) - F_{\mathrm{lid}}(i,j)|\big]\Big) \in [0,1],
+\label{eq:ccp}
+\end{equation}
+from the concatenated ($\oplus$) camera and LiDAR feature vectors at that cell and their absolute difference, so that $1 - S(i,j)$ is a cross-modal disagreement signal intended to flag localized geometric or semantic mismatch between the two modalities. A Gated Adaptive Fusion Module (GAFM) uses $S$ to weight each modality's contribution to the fused BEV representation at the grid-cell level, and an Adversarial Consistency Training (ACT) objective trains the detector, the CCP, and the fusion gate jointly under a loss combining detection accuracy, a CCP contrastive-consistency term, and an attribution-regularization term, with adversarially perturbed camera and LiDAR branches included in the training loop to encourage $S$ to remain informative under perturbation. This paper's own contribution begins with the next subsection: everything from here on -- the conformal calibration, the sequential test, the spatial multiplicity control, and the use (and, as Section~\ref{sec:experiments} reports, the eventual disuse) of $S$ as a monitoring covariate -- is this paper's method, evaluated against real data in Section~\ref{sec:experiments}.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    box/.style={draw, rounded corners, align=center, minimum height=8mm, text width=1.55cm, inner sep=2pt, font=\scriptsize},
+    wbox/.style={draw, rounded corners, align=center, minimum height=7mm, text width=3.55cm, inner sep=2pt, font=\scriptsize},
+    arr/.style={-{Stealth[length=1.6mm]}, thick}
+  ]
+  \node[box] (frame) at (0, 0) {Frame $t$\\(image, LiDAR)};
+  \node[box] (det) at (2.1, 0) {Detector\\$f_\theta$ (background)};
+  \node[box] (conf) at (0, -1.5) {Conformal\\$m(t)$ vs.\ $\hat{q}_\alpha$};
+  \node[box] (ccp) at (2.1, -1.5) {CCP $S_t$\\disagree.\ $\overline{1-S_t}$};
+  \node[wbox] (bet) at (1.05, -3.0) {Betting rule $\lambda_t$\\(blind or CCP-informed)};
+  \node[box] (wealth) at (0, -4.5) {Wealth\\$K_t$};
+  \node[box] (alarm) at (2.1, -4.5) {Alarm if\\$K_t \ge 1/\delta$};
+
+  \draw[arr] (frame) -- (det);
+  \draw[arr] (det) -- (conf);
+  \draw[arr] (det) -- (ccp);
+  \draw[arr] (conf) -- (bet) node[midway, left, font=\tiny] {$m(t)$};
+  \draw[arr] (ccp) -- (bet) node[midway, right, font=\tiny] {$\overline{1-S_t}$};
+  \draw[arr] (bet) -- (wealth);
+  \draw[arr] (wealth) -- (alarm);
+\end{tikzpicture}
+\caption{Per-frame monitoring pipeline. The detector $f_\theta$ (dashed conceptually from the rest, since it is background infrastructure -- Section~\ref{sec:background-detector}) produces box predictions and the CCP score $S_t$; everything downstream of it is this paper's own contribution. The spatial variant (Section~\ref{sec:spatial}) replicates the conformal-through-wealth path once per BEV cell-cluster. The betting rule is either covariate-blind (uses only the $m(t)$ path) or CCP-informed (also uses the disagreement path).}
+\label{fig:pipeline}
+\end{figure}
+
+Figure~\ref{fig:pipeline} sketches the full per-frame pipeline before we define each stage precisely.
+
+\subsection{Problem Setup}
+\label{sec:setup}
+
+We observe a stream of driving frames indexed by $t = 1, 2, \ldots$, one per LiDAR sweep. At every $t$, the base 3D detector $f_\theta$ described above produces per-object box predictions from the frame's fused camera/LiDAR BEV features; the monitor itself is detector-agnostic and does not depend on $f_\theta$'s specific architecture. We wrap those predictions in split conformal prediction, calibrated once on a held-out set of frames drawn from the nominal (least-degraded) regime available in the data. For object $i$ in frame $t$, the nonconformity score is the $\ell_1$ box-regression residual restricted to grid cells a ground-truth object actually occupies,
+\[
+s_i(t) = \big\| \hat{B}_i(t) - B_i(t) \big\|_1 ,
+\]
+and the calibrated threshold $\hat{q}_\alpha$ is the usual finite-sample-valid split-conformal quantile: the $\lceil (n+1)(1-\alpha) \rceil / n$ empirical quantile of the calibration set's nonconformity scores $\{s_i\}_{i=1}^{n}$, so that a new object is covered iff $s_i(t) \le \hat{q}_\alpha$. The frame-level miscoverage rate is
+\[
+m(t) = \frac{1}{n_t} \sum_{i=1}^{n_t} \mathbf{1}\{s_i(t) > \hat{q}_\alpha\},
+\]
+with $m(t) := 0$ defined for frames with no matched objects, since an empty frame carries no evidence of miscoverage. The null hypothesis the monitor tests is that the pipeline is still operating nominally, $H_0: \mathbb{E}[m(t) \mid \mathcal{F}_{t-1}] \le \alpha$ for all $t$; the goal is to detect the first violation -- weather-onset degradation -- with an anytime-valid false-alarm guarantee, not merely a guarantee at one fixed check time.
+
+\subsection{The e-Process and Ville's Inequality}
+\label{sec:eprocess}
+
+The wealth process
+\begin{align*}
+K_t &= \prod_{s=1}^{t} \big(1 + \lambda_s (m(s) - \alpha)\big), \\
+&\lambda_s \in \left[0, \tfrac{1}{\alpha}\right] \text{ chosen } \mathcal{F}_{s-1}\text{-measurably,}
+\end{align*}
+is, under $H_0$, a nonnegative supermartingale, because $1 + \lambda(m-\alpha)$ is linear and increasing in $m \in [0,1]$, so its worst case over that range occurs at $m=0$, giving $1 - \lambda\alpha \ge 0$ exactly when $\lambda \le 1/\alpha$ -- the bound our implementation enforces on every betting rule. Ville's inequality then gives $\mathbb{P}_{H_0}\!\left(\sup_t K_t \ge 1/\delta\right) \le \delta$, so alarming the first time $K_t \ge 1/\delta$ controls the false-alarm rate at level $\delta$ regardless of how long the stream runs or how many times the process is checked. This backbone -- the wealth process and its Ville's-inequality guarantee -- is the established part of the method and is not our contribution; what varies across the rest of this section is how $\lambda_t$ is chosen.
+
+\subsection{Covariate-Blind Baselines}
+\label{sec:blind}
+
+Two covariate-blind betting rules choose $\lambda_t$ purely from the history of $m(t)$ itself, reproducing~\cite{MonroyMunoz2026WACV} as the baseline to beat. Approximate GRAPA, with $X_t = m(t) - \alpha$, sets
+\begin{align*}
+\lambda_t = \operatorname{clip}\!\left(\frac{\overline{X}_{<t}}{\mathbb{E}[X_{<t}^2] + \varepsilon}, \, 0, \, \lambda_{\max}\right),
+\end{align*}
+tracking the running first and second moments of the centered miscoverage. Scale-Free Online Gradient Descent instead performs AdaGrad-style updates on the log-wealth gradient, with $g_t = X_t / (1 + \lambda_t X_t)$ and $\eta_t = \lambda_{\max} / \sqrt{1 + \sum_{s \le t} g_s^2}$,
+\begin{align*}
+\lambda_{t+1} = \operatorname{clip}\!\left(\lambda_t + \eta_t \, g_t, \, 0, \, \lambda_{\max}\right).
+\end{align*}
+Both are exact reimplementations of the adaptive betting rules \cite{MonroyMunoz2026WACV} uses, run here against a different sensing modality and detection task than the 2D visual tracking they were originally evaluated on.
+
+\subsection{Covariate-Informed Betting}
+\label{sec:informed}
+
+Alongside the two contributions in Sections~\ref{sec:spatial} and~\ref{sec:experiments}, we also investigated conditioning the betting rate on an external signal available at the same timestep as $m(t)$ but computed from independent evidence: the disagreement output of the monitored detector's own CCP, $1-S$ (Equation~\ref{eq:ccp}). We describe the mechanism in full because Section~\ref{sec:experiments} reports, in equal detail, why it did not deliver the advantage motivating it -- an outcome worth understanding precisely rather than skipping past. Our covariate-informed bettor wraps either covariate-blind base bettor and scales its stake by the frame's mean disagreement,
+\[
+\lambda_t = \operatorname{clip}\!\Big(\lambda_t^{\text{base}} \cdot \big(1 + \kappa \cdot \overline{(1 - S_t)}\big), \, 0, \, \lambda_{\max}\Big),
+\]
+where $\kappa \ge 0$ gates the covariate's influence ($\kappa = 0$ recovers the base bettor exactly) and $\overline{(1-S_t)}$ is the frame- (or cell-)averaged disagreement. The intended mechanism is that a scene beginning to degrade shows rising cross-modal disagreement before enough individual object detections have actually missed coverage for $m(t)$ to move -- disagreement as a leading indicator, miscoverage as the lagging one the covariate-blind rules are stuck reacting to. Section~\ref{sec:experiments} reports what we found when we tested that mechanism against real data: two distinct failures, neither in the betting-rule mathematics itself, that between them mean this specific mechanism does not yet deliver the advantage it is designed to.
+
+\subsection{Spatially Resolved Monitoring with Online Multiplicity Control}
+\label{sec:spatial}
+
+A single global wealth process answers only "has anything, anywhere, gone wrong" -- not useful to a downstream planner that needs to know \emph{which} region of the scene to distrust. We instead partition the BEV grid into an $(n_h \times n_w)$ layout of cell-clusters (average-pooling per-cell miscoverage and disagreement down to this resolution) and run one independent sequential tester per cluster, each with its own wealth process and its own instance of whichever bettor is under test. Testing $n = n_h n_w$ hypotheses simultaneously, every frame, requires multiplicity control or the overall false-alarm rate inflates with $n$; we support two regimes. Bonferroni allocates each cell a fixed budget $\delta/n$ and, once a cell alarms, marks it permanently flagged -- valid under arbitrary dependence but conservative, and the sticky-once-alarmed semantics is what we use for the per-cell detection-delay evaluation regardless of which regime produced the alarm. The e-BH alternative treats each cell's current wealth $K_t^{(i)}$ as an e-value (valid because $\mathbb{E}_{H_0}[K_t^{(i)}] \le 1$ for a nonnegative supermartingale evaluated at any fixed $t$) and applies the e-BH rejection rule at every timestep: sort the $n$ e-values descending, find the largest $k^\ast$ such that the $k^\ast$-th largest e-value satisfies $e_{(k^\ast)} \ge n/(k^\ast q)$, and flag exactly that top-$k^\ast$ set. This controls the false discovery rate at level $q$ under arbitrary dependence across cells~\cite{WangRamdas2022JRSSB} -- an important guarantee here, since spatially adjacent BEV cells' e-values are certainly not independent -- and, unlike Bonferroni's sticky flags, produces a live, non-sticky map that can un-flag a cell once its local evidence subsides. Algorithm~\ref{alg:spatial-monitor} summarizes the per-frame update.
+
+\begin{algorithm}[t]
+\caption{Per-frame spatial monitoring update}
+\label{alg:spatial-monitor}
+\footnotesize
+\begin{algorithmic}[1]
+\Require frame $t$; detector output; calibrated quantile $\hat{q}_\alpha$; grid shape $(n_h, n_w)$; correction mode
+\State compute per-cell nonconformity, coverage, and miscoverage $m^{(i)}(t)$ for each cluster $i$
+\State compute per-cell CCP disagreement $\overline{(1-S)}^{(i)}(t)$
+\For{each cluster $i = 1, \ldots, n_h n_w$}
+    \State $\lambda_t^{(i)} \gets$ bettor.\Call{next\_lambda}{$\overline{(1-S)}^{(i)}(t)$}
+    \State $K_t^{(i)} \gets K_{t-1}^{(i)} \cdot \big(1 + \lambda_t^{(i)}(m^{(i)}(t) - \alpha)\big)$
+    \State bettor.\Call{update}{$m^{(i)}(t)$, $\overline{(1-S)}^{(i)}(t)$}
+\EndFor
+\If{correction = Bonferroni}
+    \State flag cell $i$ (permanently) if $K_t^{(i)} \ge n_h n_w / \delta$
+\Else \Comment{e-BH}
+    \State flag the top-$k^\ast$ cells by $K_t^{(i)}$, $k^\ast$ = largest $k$ with $K_{(k)} \ge (n_h n_w) / (k\,\delta)$
+\EndIf
+\State \Return flagged-cell map (untrustworthy regions at time $t$)
+\end{algorithmic}
+\end{algorithm}

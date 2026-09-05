@@ -1,0 +1,62 @@
+\documentclass[review]{elsarticle}
+% NOTE (author, before submission): "review" option gives double-spaced,
+% line-numbered output for review copies per Elsevier's LaTeX instructions.
+% Drop the [review] option for the camera-ready version once accepted.
+
+\usepackage{lineno,hyperref}
+\modulolinenumbers[5]
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{mathrsfs}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{threeparttable}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc}
+\usepackage{placeins}
+
+\journal{Image and Vision Computing}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{From Robust Fusion to Statistically Valid Monitoring: An Anytime-Valid Conformal Layer for Detecting Real-World Weather-Onset Degradation in Multimodal 3D Perception}
+
+%% Author block withheld pending the corresponding author's confirmation of
+%% IMAVIS's anonymity requirements for this special issue (VP-NAV does not
+%% appear to mandate double-anonymous review the way ICRA did, but this
+%% should be confirmed against the Guide for Authors before submission --
+%% see the Disclosure & Differentiation note, plan.md, for what was and was
+%% not independently verified for this draft).
+\author{Author names withheld pending anonymity-policy confirmation}
+\address{Affiliation withheld pending anonymity-policy confirmation}
+
+\begin{abstract}
+Autonomous-vehicle perception stacks are increasingly built around multimodal fusion detectors engineered for robustness against sensor corruption and adversarial interference, yet a robust detector is not the same thing as a detector whose reliability can be verified, statistically, while it operates. We present a two-layer contribution toward closing that gap. The first layer, a cross-modal fusion detector with a verify-then-fuse design (a Cross-modal Consistency Probe that flags camera/LiDAR geometric disagreement, a Gated Adaptive Fusion Module that quarantines the disagreeing modality at the grid-cell level, and an Adversarial Consistency Training objective), is background to this paper, developed and reported in a companion manuscript currently under review at \emph{The Visual Computer}; we summarize its architecture here only to the depth needed to make this paper self-contained, and do not restate or re-derive its reported performance claims. The second layer, this paper's own contribution, wraps that detector's outputs in split conformal prediction and tracks the resulting miscoverage rate with an anytime-valid sequential test built from testing-by-betting e-processes, extended in two ways beyond the closest prior sequential-testing work: a grid of per-BEV-cell e-processes with online false-discovery-rate control that turns one global alarm into a live, spatially localized map of where the perception stack is currently untrustworthy, and a real-world evaluation against genuine adverse-weather driving data -- Snowy Scenes, and a second, independent adverse-weather dataset (Canadian Adverse Driving Conditions, CADC) evaluated concurrently with this submission -- rather than only synthetic corruption of clear-weather data. On Snowy Scenes, the covariate-blind e-process backbone detects the true weather onset within 3 to 10 frames depending on the false-alarm budget, with zero false alarms across every budget tested. We also report, in full and without a positive spin, a negative finding from testing whether the detector's own Cross-modal Consistency Probe output could serve as a leading-indicator covariate for the betting rate: on real data, the covariate first collapsed to near-constant agreement (a training-objective gap we diagnosed and fixed), and, once corrected, varied in the wrong direction for this task, leaving the covariate-informed bettor's operating curve no better -- and on this run, worse -- than the covariate-blind baseline's. We treat that mechanism as an open problem this paper's own evidence argues against, not a third headline contribution, and discuss what it implies for reusing an invariance-trained internal signal as an external monitoring covariate more generally.
+\end{abstract}
+
+\begin{keyword}
+Multimodal sensor fusion \sep Conformal prediction \sep Anytime-valid sequential testing \sep Testing by betting \sep Distribution shift detection \sep Autonomous vehicle perception \sep Adverse weather perception \sep Benchmark dataset evaluation
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+\input{1intro}
+\input{2relate}
+\input{3method}
+\FloatBarrier
+\input{4exp}
+\input{5discussion}
+\input{6conclusion}
+
+\bibliographystyle{elsarticle-num}
+\bibliography{references}
+
+\end{document}
