@@ -22,6 +22,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import matplotlib
 matplotlib.use("Agg")
+# matplotlib's default PDF font embedding is Type 3, which IEEE/ICRA's
+# submission portal rejects outright ("Type 3 font ... prevents the file
+# from being accepted"). Type 42 (TrueType) is portal-compliant.
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 import torch
 
