@@ -6,6 +6,13 @@
 \usepackage{lineno,hyperref}
 \modulolinenumbers[5]
 
+% lmodern: keeps Computer Modern fonts as scalable Type 1 outlines at any
+% size. Without it, pdfTeX falls back to bitmap Type 3 fonts for the
+% non-standard sizes TikZ's node scaling produces (Section 3's pipeline
+% diagram) -- Type 3 fonts are rejected outright by submission portals
+% (this exact issue hit the sibling ICRA paper's matplotlib figure).
+\usepackage{lmodern}
+
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{mathrsfs}
 \usepackage{graphicx}
