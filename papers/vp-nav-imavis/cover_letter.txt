@@ -9,32 +9,13 @@ We submit our manuscript, "From Robust Fusion to Statistically Valid Monitoring:
 Anytime-Valid Conformal Layer for Detecting Real-World Weather-Onset Degradation in
 Multimodal 3D Perception," for consideration in the VP-NAV special issue.
 
-Disclosure of a related manuscript under review elsewhere
-
-In the interest of full transparency, we disclose that a related manuscript, describing
-a multimodal (camera/LiDAR) fusion detector -- the Cross-modal Consistency Probe (CCP),
-Gated Adaptive Fusion Module (GAFM), and Adversarial Consistency Training (ACT) objective
-summarized as background in Section 3.1 of this submission -- is currently under review
-at The Visual Computer (Springer), and is not yet accepted or published.
-
-This submission is not a duplicate or overlapping submission of that manuscript's
-contribution. The companion manuscript's own contribution is the detector architecture
-itself and its evaluation against adversarial and sensor-degradation scenarios; this
-submission neither restates nor re-derives that manuscript's own reported experimental
-results, and treats the detector strictly as background infrastructure, described only
-to the depth needed to make this submission self-contained for a reader unfamiliar with
-the companion work. This submission's own, independent contribution is a statistically
-principled monitoring layer built on top of that detector's outputs -- anytime-valid
-sequential testing via testing-by-betting e-processes, extended to spatially-resolved
-per-BEV-cell monitoring with online false-discovery-rate control -- together with its
-evaluation against real adverse-weather driving data from two independent datasets
-(Snowy Scenes and the Canadian Adverse Driving Conditions dataset), and an honestly
-reported negative finding concerning one candidate monitoring covariate (Section 4.1.1
-and Section 5.2), none of which appear in the companion manuscript.
-
-We are prepared to provide the companion manuscript, its current review status, or any
-further clarification the editors require to assess the relationship between the two
-submissions.
+This work presents a statistically principled monitoring layer for multimodal 3D
+autonomous-vehicle perception: anytime-valid sequential testing via testing-by-betting
+e-processes, extended to spatially-resolved per-BEV-cell monitoring with online
+false-discovery-rate control, evaluated against real adverse-weather driving data from
+two independent datasets (Snowy Scenes and the Canadian Adverse Driving Conditions
+dataset). We also report, in full and without a positive spin, a negative finding
+concerning one candidate monitoring covariate.
 
 We believe this work aligns closely with the special issue's stated scope: multi-modal
 sensor fusion for autonomous navigation, learning-based perception systems, and robust

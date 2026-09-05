@@ -4,7 +4,7 @@
 \subsection{Background: The Monitored Detector}
 \label{sec:background-detector}
 
-The detector this paper monitors is a camera/LiDAR BEV fusion architecture whose design and training objective are developed and evaluated in full in a companion manuscript currently under review at \emph{The Visual Computer}~\cite{CRAFXUnderReview2026}; we summarize only the components this paper's monitoring layer directly depends on, and attribute the architecture, its training objective, and any performance claims about the detector itself to that manuscript rather than restating them here as this paper's own contribution.
+The detector this paper monitors is a camera/LiDAR BEV fusion architecture; we summarize only the components this paper's monitoring layer directly depends on, since the monitor itself is detector-agnostic and this paper's own contribution begins with the monitoring layer described in the rest of this section.
 
 Camera and LiDAR streams are each encoded into a shared bird's-eye-view (BEV) feature grid, $F_{\mathrm{cam}}, F_{\mathrm{lid}} \in \mathbb{R}^{H_b \times W_b \times C}$. A Cross-modal Consistency Probe (CCP) computes, per BEV grid cell $(i,j)$, a consistency score
 \begin{equation}

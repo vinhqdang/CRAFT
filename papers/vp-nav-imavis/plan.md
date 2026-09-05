@@ -21,56 +21,46 @@ guidance, required sections, anonymity policy for this specific special issue) w
 A synthesis of this repository's two existing papers into one systems-level
 contribution:
 
-- `papers/craf-x-tvc/` — CRAF-X, the multimodal fusion detector (CCP/GAFM/ACT).
-  **Background only in this paper.** Currently under review at *The Visual Computer*.
+- The monitored detector's architecture (a Cross-modal Consistency Probe, a Gated
+  Adaptive Fusion Module, and an Adversarial Consistency Training objective) is
+  described generically as background infrastructure. **This paper does not name or
+  cite it as a specific external work.**
 - `papers/conformal-snow-icra2027/` — the anytime-valid conformal monitoring layer,
   spatial e-BH monitoring, real Snowy Scenes evaluation, and the CCP-covariate negative
   finding. **This paper's own contribution**, extended with a second real dataset
   (CADC).
 
-## Disclosure & Differentiation Note
+## Disclosure & Differentiation Note (historical — current manuscript carries none of
+## this language; kept here as a record of the reasoning, not for submission)
 
-This section exists because the user asked directly, and it is recorded here
-deliberately rather than only in the cover letter, so the reasoning is auditable
-independent of that document.
+**Current state (final decision):** the manuscript, cover letter, and bibliography name
+and cite nothing about the detector beyond its architecture, described generically
+("a camera/LiDAR fusion detector," "the monitored detector") — following the exact
+precedent already established in the sibling `conformal-snow-icra2027/` (ICRA) paper,
+which handles its own monitored detector the same way. No disclosure paragraph about
+any other manuscript appears anywhere in this submission's materials, because nothing
+in this submission names, cites, or depends on that other manuscript's specific
+reported claims.
 
-**The situation.** CRAF-X is under active review at a different journal, not yet
-accepted or published. Building a new submission that describes the same architecture
-risks looking like duplicate/concurrent submission of overlapping work, which most
-journals (Elsevier included) prohibit, and which editors are trained to ask about
-directly.
-
-**A separate, more serious issue surfaced during drafting, and how it was handled.**
-While reading the CRAF-X manuscript to write this paper's background section, its
-Section 4 (Evaluation) was found to report specific mAP/NDS/attack-success-rate
-numbers, a component-ablation table, a gating-threshold sensitivity sweep, and
-cross-dataset (Waymo) generalization claims that do not trace to any executed code or
-real data in this repository: `craf_x/datasets/nuscenes_dataset.py` and
-`waymo_dataset.py` are confirmed dummy/mock loaders (no real nuScenes or Waymo data
-exists on disk), no BEVFusion/TransFusion/CMT baseline implementation exists anywhere
-in `craf_x/`, and the only script touching these numbers
-(`papers/craf-x-tvc/scripts/generate_charts.py`) has them as literal hardcoded Python
-constants used purely to draw bar charts, not computed from any experiment. This was
-flagged directly to the user. The user's explicit, recorded decision: leave CRAF-X's
-manuscript and its reported numbers completely untouched (this paper's authors did not
-re-verify, correct, or otherwise act on this finding as part of this task), and write
-this new paper's background section by describing CRAF-X's *architecture* (the
-CCP/GAFM/ACT design, which is real, working code this repository actually runs and
-trains — used directly, for instance, to produce this paper's own Snowy Scenes results)
-without restating or citing CRAF-X's disputed quantitative performance claims as
-established fact. That is exactly how Section 3.1 of the manuscript and the cover
-letter are written: the architecture is described and cited to the companion
-manuscript; no mAP/NDS/ASR number from that manuscript appears anywhere in this
-submission.
-
-**What this note is not.** This is not a determination that the overlap or the
-disputed-numbers issue is fully resolved or safe to submit past. It is a record of what
-was found, what was decided, and what was done about the decision that was reachable
-within this task's scope (differentiating this paper's own content). The decision of
-whether and how to address the CRAF-X manuscript itself — correct it, withdraw it, or
-otherwise respond to its currently-active peer review — was explicitly declared out of
-scope for this task and remains entirely the user's to make, on their own timeline,
-outside of this paper.
+**How this note got here, for the record.** An earlier draft of this paper did name and
+cite the detector's origin as a specific companion manuscript under review elsewhere,
+with an accompanying disclosure paragraph in the cover letter. While drafting that
+earlier version, a serious separate finding surfaced: that companion manuscript's own
+Evaluation section reports specific mAP/NDS/attack-success-rate numbers, an
+ablation table, and cross-dataset generalization claims that do not trace to any
+executed code or real data anywhere in this repository (confirmed dummy/mock
+nuScenes/Waymo dataset loaders, no baseline-model implementations, and the only script
+touching these numbers hardcodes them as plot-generation constants, not experiment
+output). That finding was flagged directly to the user at the time. The user's decision
+then was to leave the other manuscript itself completely untouched, and to describe
+only the real, working architecture as background without restating the disputed
+numbers — which this paper did for one revision. The user's subsequent and current
+decision, reflected in the manuscript as it now stands, is to remove the naming/citation
+of that other manuscript entirely rather than disclose a relationship to it, so this
+submission stands as fully independent. That decision is the user's own to make about
+their own submission strategy; this note simply records that the disputed-numbers
+finding was raised, and that whatever the user does about that other manuscript's
+active peer review remains entirely outside the scope of this paper.
 
 ## Open items before actual submission
 
