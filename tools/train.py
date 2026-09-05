@@ -1,7 +1,7 @@
 """
 CRAF-X training entrypoint.
 
-Wires together a real dataset (KITTI or Snowy Scenes; extend
+Wires together a real dataset (KITTI, Snowy Scenes, or CADC; extend
 `_build_dataset` for others), CRAFX_Net, and the Adversarial Consistency
 Training (ACT) step from `craf_x/training/adversarial.py` into an actual
 epoch/optimizer loop with checkpointing -- the pieces needed to train on
@@ -14,6 +14,9 @@ Usage:
 
     python tools/train.py --dataset snowy_scenes --zip-path /path/to/ROADVIEW5k.zip \
         --split train --epochs 1 --batch-size 4 --num-workers 4 --device cuda
+
+    python tools/train.py --dataset cadc --data-root /path/to/cadcd \
+        --epochs 5 --batch-size 4 --num-workers 4 --device cuda
 """
 import argparse
 import os
@@ -26,6 +29,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from craf_x.config import CRAFXConfig
+from craf_x.datasets.cadc_dataset import CADC_NUM_CLASSES, CRAFXCADCDataset
 from craf_x.datasets.kitti_dataset import KITTI_CLASSES, CRAFXKittiDataset
 from craf_x.datasets.snowy_scenes_dataset import SNOWY_SCENES_NUM_CLASSES, CRAFXSnowyScenesDataset
 from craf_x.models.crafx_net import CRAFX_Net
@@ -52,6 +56,19 @@ def _build_dataset(args):
         split = args.split or "train"
         config = CRAFXConfig(bev_h=args.bev_size, bev_w=args.bev_size, num_classes=SNOWY_SCENES_NUM_CLASSES)
         dataset = CRAFXSnowyScenesDataset(zip_path=args.zip_path, split=split, config=config)
+        return dataset, config
+
+    if args.dataset == "cadc":
+        if not args.data_root:
+            raise ValueError("--data-root is required for --dataset cadc")
+        config = CRAFXConfig(bev_h=args.bev_size, bev_w=args.bev_size, num_classes=CADC_NUM_CLASSES)
+        dataset = CRAFXCADCDataset(data_root=args.data_root, config=config)
+        if len(dataset) == 0:
+            print(
+                f"WARNING: no CADC drives found under {args.data_root} "
+                "(expected <date>/<drive>/labeled/... + 3d_ann.json).",
+                file=sys.stderr,
+            )
         return dataset, config
 
     raise ValueError(f"Unknown dataset: {args.dataset}")
@@ -132,8 +149,8 @@ def train(args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train CRAF-X on a real dataset.")
-    parser.add_argument("--dataset", choices=["kitti", "snowy_scenes"], default="kitti")
-    parser.add_argument("--data-root", help="Root directory of the dataset (KITTI).")
+    parser.add_argument("--dataset", choices=["kitti", "snowy_scenes", "cadc"], default="kitti")
+    parser.add_argument("--data-root", help="Root directory of the dataset (KITTI, CADC).")
     parser.add_argument("--zip-path", help="Path to the ROADVIEW5k.zip archive (Snowy Scenes).")
     parser.add_argument("--split", default=None, help="Defaults to 'training' for KITTI, 'train' for Snowy Scenes.")
     parser.add_argument("--bev-size", type=int, default=128, help="BEV grid height/width (also image resize size).")
