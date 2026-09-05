@@ -5,8 +5,7 @@
 
 \bibitem{CRAFXTechReport2026}
 Anonymous: Craf-x: Cross-modal robust adaptive fusion with explainability for
-  autonomous perception (2026), companion technical report, this repository,
-  {\tt papers/craf-x-tvc/}
+  autonomous perception (2026), companion submission, under review
 
 \bibitem{Antonante2020Monitoring}
 Antonante, P., Spivak, D.I., Carlone, L.: Monitoring and diagnosability of
@@ -19,14 +18,15 @@ Bijelic, M., Gruber, T., Mannan, F., Kraus, F., Ritter, W., Dietmayer, K.,
   and Pattern Recognition (CVPR) (2020)
 
 \bibitem{Geng2025StateDependent}
-Geng, X., Waite, K., Turnquist, A., Ivanov, I., Ruchkin, Y.: State-dependent
-  conformal prediction for verifiable autonomous systems. arXiv preprint
-  (2025), revised April 2026
+Geng, Y., Waite, T., Turnquist, T., Ivanov, R., Ruchkin, I.:
+  Statistical-symbolic verification of perception-based autonomous systems
+  using state-dependent conformal prediction. arXiv preprint  (2025), revised
+  April 2026
 
 \bibitem{Kumar2025ContextAware}
-Kumar, A., Tayebati, D., Migliarba, A., Krishnan, S., Trivedi, M.:
-  Context-aware nonconformity functions for robotic planning and perception.
-  arXiv preprint  (2025)
+Kumar, D., Tayebati, S., Migliarba, F., Krishnan, R., Trivedi, A.R.: Learnable
+  conformal prediction with context-aware nonconformity functions for robotic
+  planning and perception. arXiv preprint  (2025)
 
 \bibitem{Lei2018JASA}
 Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R.J., Wasserman, L.:
@@ -34,8 +34,8 @@ Lei, J., G'Sell, M., Rinaldo, A., Tibshirani, R.J., Wasserman, L.:
   American Statistical Association  \textbf{113}(523),  1094--1111 (2018)
 
 \bibitem{Liu2026ValueGated}
-Liu, Y., et~al.: Before fusion, ask what to keep: Value-gated modality
-  refinement. arXiv preprint  (2026)
+Liu, J., Zheng, L.N., Zhang, W.E., Wang, X., Chen, W.: Before fusion, ask what
+  to keep: Contextual calibration of multimodal signals. arXiv preprint  (2026)
 
 \bibitem{MonroyMunoz2026WACV}
 Mu{\~n}oz, A.M., Verma, R., Timans, A.: Detecting object tracking failure via
@@ -45,11 +45,7 @@ Mu{\~n}oz, A.M., Verma, R., Timans, A.: Detecting object tracking failure via
 
 \bibitem{SnowyScenes2026}
 Ngo, T., Raisuddin, A.M., et~al.: Snowy scenes: A multimodal multitask dataset
-  toward snow-tonomous vehicles. IEEE Journals \& Magazine  (2026), iEEE Xplore
-  document 11623683; full author list and volume/issue/page metadata to be
-  confirmed against the publisher record prior to camera-ready, as the IEEE
-  Xplore listing could not be scraped for verification (HTTP 418 on automated
-  fetch)
+  toward snow-tonomous vehicles. IEEE  (2026)
 
 \bibitem{Pitropov2021CADC}
 Pitropov, M., Garcia, D.E., Rebello, J., Smart, M., Wang, C., Czarnecki, K.,
