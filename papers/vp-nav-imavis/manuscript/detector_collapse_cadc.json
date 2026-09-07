@@ -1,0 +1,39 @@
+{
+  "note": "Detector-collapse diagnostic (cadc).",
+  "dataset": "cadc",
+  "checkpoint": "../../../checkpoints/cadc/checkpoint_final.pth",
+  "checkpoint_epoch": 4,
+  "alpha": 0.2,
+  "head_statistics": {
+    "n_frames": 40,
+    "heatmap_std": 0.0013148546335287393,
+    "box_pred_std": 0.00034965147933689876,
+    "box_pred_abs_max": 0.001421861190465279,
+    "heatmap_peak_at_gt_object_cells": 0.014056617114692926,
+    "heatmap_peak_at_empty_cells": 0.014187759673222899,
+    "object_vs_empty_separation": -0.00013114255852997303,
+    "frac_empty_cells_above": {
+      "0.05": 0.0,
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "0.75": 0.0
+    }
+  },
+  "zero_prediction_ablation": {
+    "real_model": {
+      "q_hat": 10.75584602355957,
+      "nominal_m": 0.07199997474706385,
+      "degraded_m": 0.21104665759077523,
+      "jump": 0.13904668284371138
+    },
+    "zero_prediction": {
+      "q_hat": 10.756113052368164,
+      "nominal_m": 0.07199997474706385,
+      "degraded_m": 0.21104665759077523,
+      "jump": 0.13904668284371138
+    }
+  },
+  "collapsed": true,
+  "verdict": "COLLAPSED: the monitor's evidence does not depend on the detector's output. The nonconformity score reduces to the ground-truth box magnitude, so the monitor is measuring scene content, not perception degradation."
+}

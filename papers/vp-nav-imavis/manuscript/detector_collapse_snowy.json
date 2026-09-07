@@ -1,0 +1,39 @@
+{
+  "note": "Detector-collapse diagnostic (snowy).",
+  "dataset": "snowy",
+  "checkpoint": "../../../checkpoints/snowy_scenes_fixed/checkpoint_final.pth",
+  "checkpoint_epoch": 4,
+  "alpha": 0.2,
+  "head_statistics": {
+    "n_frames": 40,
+    "heatmap_std": 0.0010759251454146579,
+    "box_pred_std": 0.00026275001582689585,
+    "box_pred_abs_max": 0.0007029498927295208,
+    "heatmap_peak_at_gt_object_cells": 0.040357968503875394,
+    "heatmap_peak_at_empty_cells": 0.04036418637260795,
+    "object_vs_empty_separation": -6.217868732553977e-06,
+    "frac_empty_cells_above": {
+      "0.05": 0.0,
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "0.75": 0.0
+    }
+  },
+  "zero_prediction_ablation": {
+    "real_model": {
+      "q_hat": 10.188355445861816,
+      "nominal_m": 0.29940476190476184,
+      "degraded_m": 0.1436715367965368,
+      "jump": -0.15573322510822504
+    },
+    "zero_prediction": {
+      "q_hat": 10.188589096069336,
+      "nominal_m": 0.29940476190476184,
+      "degraded_m": 0.1436715367965368,
+      "jump": -0.15573322510822504
+    }
+  },
+  "collapsed": true,
+  "verdict": "COLLAPSED: the monitor's evidence does not depend on the detector's output. The nonconformity score reduces to the ground-truth box magnitude, so the monitor is measuring scene content, not perception degradation."
+}

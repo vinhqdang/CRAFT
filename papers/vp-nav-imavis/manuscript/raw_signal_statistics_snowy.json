@@ -1,0 +1,33 @@
+{
+  "note": "Raw un-thresholded per-regime signal statistics (snowy).",
+  "dataset": "snowy",
+  "checkpoint": "../../../checkpoints/snowy_scenes_fixed/checkpoint_final.pth",
+  "nominal": {
+    "n_frames": 60,
+    "mean_unmatched_activation": 0.040371981697777906,
+    "max_unmatched_activation": 0.04056486636400223,
+    "frac_above": {
+      "0.05": 0.0,
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "0.75": 0.0
+    },
+    "mean_matched_residual": 9.657802326734675,
+    "mean_n_matched_cells": 2.216666666666667
+  },
+  "degraded": {
+    "n_frames": 60,
+    "mean_unmatched_activation": 0.04036199854065974,
+    "max_unmatched_activation": 0.040556642288963,
+    "frac_above": {
+      "0.05": 0.0,
+      "0.1": 0.0,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "0.75": 0.0
+    },
+    "mean_matched_residual": 6.536852709452311,
+    "mean_n_matched_cells": 15.133333333333333
+  }
+}

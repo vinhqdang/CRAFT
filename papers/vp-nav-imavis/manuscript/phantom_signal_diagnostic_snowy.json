@@ -1,0 +1,37 @@
+{
+  "note": "Real m(t)-by-regime diagnostic for the phantom-aware score (snowy).",
+  "dataset": "snowy",
+  "checkpoint": "../../../checkpoints/snowy_scenes_fixed/checkpoint_final.pth",
+  "q_loc": 10.188347816467285,
+  "q_phantom": 0.04041096195578575,
+  "alpha": 0.2,
+  "onset_frame": 8,
+  "scene_length": 20,
+  "summary": {
+    "0.0": {
+      "nominal_mean": 0.35119047619047616,
+      "degraded_mean": 0.35873015873015873,
+      "jump": 0.007539682539682568
+    },
+    "0.25": {
+      "nominal_mean": 0.34549371127901995,
+      "degraded_mean": 0.34283314267034265,
+      "jump": -0.002660568608677305
+    },
+    "0.5": {
+      "nominal_mean": 0.3397969463675637,
+      "degraded_mean": 0.3269361266105265,
+      "jump": -0.012860819757037179
+    },
+    "0.75": {
+      "nominal_mean": 0.3341001814561074,
+      "degraded_mean": 0.31103911055071043,
+      "jump": -0.023061070905396996
+    },
+    "1.0": {
+      "nominal_mean": 0.3284034165446512,
+      "degraded_mean": 0.2951420944908943,
+      "jump": -0.033261322053756925
+    }
+  }
+}
