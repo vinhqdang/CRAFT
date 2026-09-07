@@ -9,6 +9,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 from ..config import CRAFXConfig
+from ..utils.targets import splat_object
 
 # CADC's Scale-AI-provided 3D annotations cover ten labels (Car, Truck, Bus,
 # Bicycle, Horse_and_Buggy, Pedestrian, Pedestrian_With_Object, Animal,
@@ -226,12 +227,19 @@ class CRAFXCADCDataset(Dataset):
                 continue
             row, col = cell
 
-            dx = ((x - x_min) % cell_x_size) / cell_x_size
-            dy = ((y - y_min) % cell_y_size) / cell_y_size
+            row_f = (x - x_min) / cell_x_size
+            col_f = (y - y_min) / cell_y_size
             z_norm = float(np.clip((z - z_min) / (z_max - z_min), 0.0, 1.0))
             dims = obj["dimensions"]
 
-            heatmap[CADC_CLASSES[label], row, col] = 1.0
-            regression[:, row, col] = torch.tensor([dx, dy, z_norm, dims["x"], dims["y"], dims["z"]])
+            splat_object(
+                heatmap,
+                regression,
+                class_id=CADC_CLASSES[label],
+                center_cell=(row, col),
+                center_fractional=(row_f, col_f),
+                box_params=(z_norm, dims["x"], dims["y"], dims["z"]),
+                footprint_cells=(dims["x"] / cell_x_size, dims["y"] / cell_y_size),
+            )
 
         return {"H": heatmap, "B": regression, "V": velocity}

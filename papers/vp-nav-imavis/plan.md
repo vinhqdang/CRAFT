@@ -89,3 +89,71 @@ active peer review remains entirely outside the scope of this paper.
 - [ ] User's own decision, entirely separate from this paper: what to do about the
       CRAF-X manuscript's disputed Section 4 given it is currently under active review
       elsewhere.
+
+## CRITICAL (2026-09-07): all reported numbers withdrawn — detector collapse
+
+Every quantitative result previously recorded in this plan and in the
+manuscript (Snowy Scenes operating curve, CADC operating curve, the three
+CCP experiments, the mixture-betting evaluation) is **void** and must not be
+cited. What follows is what was actually measured, not an interpretation.
+
+**Finding.** Both detector checkpoints (`checkpoints/snowy_scenes_fixed/`,
+`checkpoints/cadc/`) had collapsed to constant predictors:
+
+- predicted heatmap std ~1e-3 inside a narrow band (~0.0404 Snowy,
+  ~0.0142 CADC), and activation at ground-truth object cells is *not*
+  higher than at empty cells (separation -6e-6 Snowy, -1.3e-4 CADC);
+- no cell anywhere exceeds activation 0.05, so there were no detections at
+  all — which is also why the phantom-detection score idea could not even
+  be tested on these checkpoints;
+- box-regression output |max| < 1.5e-3 everywhere.
+
+**Decisive test.** Replacing the entire trained box head's output with
+literal zeros leaves q_hat unchanged to 4 decimals and both regimes'
+miscoverage identical to 5 decimals, on both datasets:
+
+    Snowy  real 10.188355 / zeros 10.188589 ; nominal m 0.29940 both ; degraded m 0.14367 both
+    CADC   real 10.755846 / zeros 10.756113 ; nominal m 0.07200 both ; degraded m 0.21105 both
+
+So the nonconformity score ||B_pred - B_target||_1 had degenerated to
+||B_target||_1: the monitor was measuring the ground-truth scene-content
+distribution, not detector error. The two weather categories differ
+substantially in object count (Snowy 2.2 -> 15.1 mean GT object cells;
+CADC 5 -> 10), and that content shift — which co-varies with the weather
+label — is what the reported "onset detections" were tracking. This also
+explains why all three betting-rule experiments failed to beat the
+baseline: there was no detector-degradation signal to bet on.
+
+Reproduce with `papers/vp-nav-imavis/scripts/diagnose_detector_collapse.py`
+(committed, unit-tested, real JSON outputs in `manuscript/`). Independently
+reproduced by the coordinator before the fix was approved.
+
+**Root cause.** `craf_x/utils/losses.py`'s `compute_det_loss` was a
+placeholder — its own docstring said so ("Computes a mock detection loss",
+`l_h = F.mse_loss(...)  # Should be Focal Loss`) — using MSE against a
+heatmap target that is >99.99% zero, plus an *unmasked* L1 on box
+regression. A constant is the optimum for both. Not an undertraining
+problem: more epochs converge harder onto the constant.
+
+**Fix (done).** `craf_x/utils/targets.py` (new): Gaussian-splatted heatmap
+targets with CenterNet's `gaussian_radius` and a CenterPoint-style minimum
+radius, plus dense box targets over the Gaussian core. `losses.py`:
+penalty-reduced focal loss + object-masked L1 normalized by object count.
+Both are strict generalizations at the object center (unit-tested).
+
+**Acceptance gate before any new operating curve.** Re-run the
+zeros-substitution test on each retrained checkpoint; it must show a
+*material* difference in q_hat and per-object scores, and heatmap
+activation must be clearly higher at ground-truth object cells than at
+empty ones. No detection numbers get reported until that passes.
+
+**Status.** Retraining in progress (separate checkpoint dirs —
+`checkpoints/snowy_scenes_focal/`, `checkpoints/cadc_focal/` — the
+collapsed checkpoints are kept for the before/after comparison, which is
+itself worth reporting). The manuscript carries a withdrawal notice in the
+abstract and at the head of Section 4. Methodological contributions (the
+spatial e-process construction, the mixture-betting validity argument and
+its unit tests) are unaffected; only the empirical numbers are void.
+
+Scope note: `papers/conformal-snow-icra2027/` is out of scope per the
+user's decision (already submitted, isolated) and has not been touched.

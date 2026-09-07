@@ -9,6 +9,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 from ..config import CRAFXConfig
+from ..utils.targets import splat_object
 
 _LABEL_MAP_LINE = re.compile(r'^\s*(\d+)\s*:\s*"([^"]*)"')
 
@@ -221,12 +222,19 @@ class CRAFXSnowyScenesDataset(Dataset):
                 continue
             row, col = cell
 
-            dx = ((x - x_min) % cell_x_size) / cell_x_size
-            dy = ((y - y_min) % cell_y_size) / cell_y_size
+            row_f = (x - x_min) / cell_x_size
+            col_f = (y - y_min) / cell_y_size
             z_norm = float(np.clip((z - z_min) / (z_max - z_min), 0.0, 1.0))
             d1, d2, d3 = obj["dimensions"]
 
-            heatmap[obj["class_id"], row, col] = 1.0
-            regression[:, row, col] = torch.tensor([dx, dy, z_norm, d1, d2, d3])
+            splat_object(
+                heatmap,
+                regression,
+                class_id=obj["class_id"],
+                center_cell=(row, col),
+                center_fractional=(row_f, col_f),
+                box_params=(z_norm, d1, d2, d3),
+                footprint_cells=(d1 / cell_x_size, d2 / cell_y_size),
+            )
 
         return {"H": heatmap, "B": regression, "V": velocity}

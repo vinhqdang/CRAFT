@@ -1,6 +1,35 @@
 \section{Experimental Setup and Results}
 \label{sec:experiments}
 
+\begin{center}
+\fbox{\parbox{0.95\linewidth}{%
+\textbf{DRAFT NOTICE --- every quantitative result in this section is
+currently withdrawn and must not be cited.}
+A diagnostic run after these numbers were produced established that both
+detector checkpoints they rest on had collapsed to constant predictors:
+the predicted heatmap has standard deviation ${\sim}10^{-3}$ within a narrow
+band and is no higher at ground-truth object cells than at empty ones, and
+the box-regression head outputs magnitudes below $1.5\times10^{-3}$
+everywhere. Substituting literal zeros for the entire trained box head
+leaves the calibrated quantile unchanged to four decimals and both regimes'
+miscoverage rates identical to five decimals, on both datasets. The
+nonconformity score $\lVert B_{\text{pred}} - B_{\text{target}}\rVert_1$
+therefore reduces to $\lVert B_{\text{target}}\rVert_1$, so what these
+experiments measured is the ground-truth scene-content distribution, not
+detector error --- and the two weather categories differ substantially in
+object count, which is what the reported ``onset detections'' were tracking.
+The cause was a placeholder detection loss (MSE against a heatmap target
+that is $>99.99\%$ zero, plus an unmasked $\ell_1$ on box regression), for
+both of which a constant is the optimum. The loss and the target generation
+have since been corrected and both detectors are being retrained; this
+section will be regenerated against the retrained checkpoints, gated on an
+explicit check that the detector demonstrably contributes to the monitor's
+evidence. The methodological contributions (the spatial e-process
+construction, the mixture-betting validity argument and its unit tests) are
+unaffected --- only the empirical numbers are void.%
+}}
+\end{center}
+
 \subsection{Dataset 1: Snowy Scenes}
 \label{sec:dataset-snowy}
 

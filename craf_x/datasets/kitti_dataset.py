@@ -8,6 +8,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 from ..config import CRAFXConfig
+from ..utils.targets import splat_object
 
 # KITTI 3D object detection tracks exactly these three classes; everything
 # else ('Van', 'Truck', 'Person_sitting', 'Tram', 'Misc', 'DontCare') is
@@ -246,12 +247,19 @@ class CRAFXKittiDataset(Dataset):
             y_min, y_max = self.y_range
             cell_x_size = (x_max - x_min) / self.config.bev_h
             cell_y_size = (y_max - y_min) / self.config.bev_w
-            dx = ((x - x_min) % cell_x_size) / cell_x_size
-            dy = ((y - y_min) % cell_y_size) / cell_y_size
+            row_f = (x - x_min) / cell_x_size
+            col_f = (y - y_min) / cell_y_size
             z_norm = float(np.clip((z - z_min) / (z_max - z_min), 0.0, 1.0))
             height, width, length = obj["dimensions"]
 
-            heatmap[class_idx, row, col] = 1.0
-            regression[:, row, col] = torch.tensor([dx, dy, z_norm, width, length, height])
+            splat_object(
+                heatmap,
+                regression,
+                class_id=class_idx,
+                center_cell=(row, col),
+                center_fractional=(row_f, col_f),
+                box_params=(z_norm, width, length, height),
+                footprint_cells=(length / cell_x_size, width / cell_y_size),
+            )
 
         return {"H": heatmap, "B": regression, "V": velocity}

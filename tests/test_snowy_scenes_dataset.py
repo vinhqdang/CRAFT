@@ -108,8 +108,14 @@ def test_pointcloud_and_labels_project_to_same_known_cell(snowy_zip):
 
     targets = sample["targets"]
     assert targets["H"].shape == (SNOWY_SCENES_NUM_CLASSES, config.bev_h, config.bev_w)
+    # Targets are Gaussian-splatted (craf_x/utils/targets.py), so the object
+    # now has support around its center rather than a lone activation. The
+    # peak still sits exactly on the correct cell, and stays unique.
     assert targets["H"][OBJECT_CLASS, row, col] == 1.0
-    assert torch.count_nonzero(targets["H"]) == 1  # exactly one activation anywhere
+    assert targets["H"].max() == 1.0
+    assert torch.count_nonzero(targets["H"] == 1.0) == 1  # one peak, at that cell
+    assert torch.count_nonzero(targets["H"]) > 1  # with real support around it
+    assert torch.count_nonzero(targets["H"][:OBJECT_CLASS]) == 0  # other classes stay empty
 
     regression = targets["B"][:, row, col]
     assert regression[3].item() == pytest.approx(OBJECT_DIMS[0])

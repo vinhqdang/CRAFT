@@ -2,24 +2,82 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def compute_det_loss(preds: dict, targets: dict) -> torch.Tensor:
+from .targets import object_center_mask
+
+def penalty_reduced_focal_loss(
+    pred: torch.Tensor, target: torch.Tensor, alpha: float = 2.0, beta: float = 4.0
+) -> torch.Tensor:
     """
-    Computes a mock detection loss. 
-    In reality, this uses Focal Loss for heatmaps and L1 for bboxes/velocities.
+    CornerNet/CenterNet penalty-reduced focal loss for Gaussian-splatted
+    heatmap targets:
+
+        L = -1/N * sum[ positives:  (1 - p)^alpha * log(p)
+                        negatives:  (1 - y)^beta * p^alpha * log(1 - p) ]
+
+    where "positives" are the exact object centers (y == 1) and N is the
+    number of objects. The (1 - y)^beta factor down-weights cells near a
+    center, which is what makes the soft Gaussian target sensible rather
+    than contradictory.
+
+    This replaces an MSE on the heatmap. Against a target that is >99.99%
+    zero, MSE's optimum is a constant near the base rate, and that is
+    exactly what the previous checkpoints learned -- a heatmap with std
+    ~1e-3 that could not separate an object cell from an empty one.
     """
-    h_pred = preds['H']
-    b_pred = preds['B']
-    v_pred = preds['V']
-    
-    h_tgt = targets['H']
-    b_tgt = targets['B']
-    v_tgt = targets['V']
-    
-    # Mock losses
-    l_h = F.mse_loss(h_pred, h_tgt)  # Should be Focal Loss
-    l_b = F.l1_loss(b_pred, b_tgt)
-    l_v = F.l1_loss(v_pred, v_tgt)
-    
+    pred = torch.clamp(pred, 1e-7, 1.0 - 1e-7)
+    positives = target.eq(1.0).float()
+    negatives = 1.0 - positives
+
+    positive_loss = torch.log(pred) * torch.pow(1 - pred, alpha) * positives
+    negative_loss = (
+        torch.log(1 - pred)
+        * torch.pow(pred, alpha)
+        * torch.pow(1 - target, beta)
+        * negatives
+    )
+
+    n_positive = positives.sum()
+    total = -(positive_loss.sum() + negative_loss.sum())
+    # With no objects in the batch only the negative term is defined.
+    return total / n_positive if n_positive > 0 else -negative_loss.sum()
+
+
+def masked_l1_loss(pred: torch.Tensor, target: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    """
+    L1 restricted to object cells, normalized by the number of supervised
+    values rather than by the whole grid.
+
+    An unmasked L1 over a grid whose target is almost entirely zero is
+    minimized by predicting zero everywhere; that is why the previous box
+    head collapsed to outputs of magnitude ~1e-3. `mask` is (B, 1, H, W)
+    and broadcasts across the prediction's channels.
+    """
+    expanded = mask.expand_as(pred)
+    n_supervised = expanded.sum()
+    if n_supervised == 0:
+        return pred.sum() * 0.0
+    return (torch.abs(pred - target) * expanded).sum() / n_supervised
+
+
+def compute_det_loss(preds: dict, targets: dict, object_mask: torch.Tensor = None) -> torch.Tensor:
+    """
+    Detection loss: penalty-reduced focal loss on the Gaussian-splatted
+    heatmap, plus L1 on box regression and velocity masked to object cells.
+
+    Args:
+        preds: model outputs with 'H', 'B', 'V'.
+        targets: matching ground-truth tensors.
+        object_mask: optional (B, 1, H, W) mask of supervised cells. When
+            omitted it is derived from the target heatmap, so existing
+            callers need no change.
+    """
+    if object_mask is None:
+        object_mask = object_center_mask(targets['H'])
+
+    l_h = penalty_reduced_focal_loss(preds['H'], targets['H'])
+    l_b = masked_l1_loss(preds['B'], targets['B'], object_mask)
+    l_v = masked_l1_loss(preds['V'], targets['V'], object_mask)
+
     return l_h + l_b + l_v
 
 def compute_ccp_loss(s: torch.Tensor, m: torch.Tensor) -> torch.Tensor:
