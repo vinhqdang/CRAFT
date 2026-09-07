@@ -1,0 +1,42 @@
+{
+  "note": "Does a weather effect in m(t) exist at all? Real vs null detector.",
+  "dataset": "snowy",
+  "checkpoint": "../../../checkpoints/snowy_scenes_focal/checkpoint_final.pth",
+  "alpha": 0.2,
+  "n_bootstrap": 5000,
+  "rng_seed": 20260907,
+  "results": {
+    "real_detector": {
+      "nominal_mean": 0.28570877139010964,
+      "degraded_mean": 0.27717237745450224,
+      "effect": -0.0085363939356074,
+      "ci_low": -0.07193521866449133,
+      "ci_high": 0.05530963485455249,
+      "excludes_zero": false,
+      "nominal_sd": 0.3155478597954148,
+      "degraded_sd": 0.3286238729399274,
+      "label": "real_detector",
+      "q_hat": 1.73679518699646,
+      "n_nominal": 173,
+      "n_degraded": 250,
+      "overlap_fraction": 1.0,
+      "effect_to_noise": -0.027052612371200886
+    },
+    "null_detector": {
+      "nominal_mean": 0.2956961117826559,
+      "degraded_mean": 0.16419099362698217,
+      "effect": -0.13150511815567376,
+      "ci_low": -0.1917465078312596,
+      "ci_high": -0.07260434114270861,
+      "excludes_zero": true,
+      "nominal_sd": 0.3158707214863652,
+      "degraded_sd": 0.2821413869186362,
+      "label": "null_detector",
+      "q_hat": 10.188589096069336,
+      "n_nominal": 173,
+      "n_degraded": 250,
+      "overlap_fraction": 1.0,
+      "effect_to_noise": -0.4163257599085526
+    }
+  }
+}
