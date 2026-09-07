@@ -1,0 +1,48 @@
+{
+  "note": "Detector-collapse diagnostic (snowy).",
+  "dataset": "snowy",
+  "checkpoint": "../../../checkpoints/snowy_scenes_focal/checkpoint_epoch0.pth",
+  "checkpoint_epoch": 0,
+  "alpha": 0.2,
+  "head_statistics": {
+    "n_frames": 40,
+    "heatmap_std": 0.005974163138307631,
+    "box_pred_std": 1.458694589138031,
+    "box_pred_abs_max": 10.602806448936462,
+    "heatmap_peak_at_gt_object_cells": 0.041253595879035335,
+    "heatmap_peak_at_empty_cells": 0.03991496367380023,
+    "object_vs_empty_separation": 0.001338632205235106,
+    "frac_empty_cells_above": {
+      "0.05": 0.04606541502289474,
+      "0.1": 0.00024569621673435903,
+      "0.25": 0.0,
+      "0.5": 0.0,
+      "0.75": 0.0
+    }
+  },
+  "zero_prediction_ablation": {
+    "real_model": {
+      "q_hat": 1.924846887588501,
+      "nominal_m": 0.3279761904761905,
+      "degraded_m": 0.5758259222661396,
+      "jump": 0.24784973178994912
+    },
+    "zero_prediction": {
+      "q_hat": 10.188589096069336,
+      "nominal_m": 0.29940476190476184,
+      "degraded_m": 0.1436715367965368,
+      "jump": -0.15573322510822504
+    }
+  },
+  "box_head_gate": {
+    "passed": true,
+    "q_hat_delta": 8.263742208480835,
+    "nominal_m_delta": 0.028571428571428636,
+    "gates": "baseline monitor, e-value merging, lambda mixture"
+  },
+  "heatmap_gate": {
+    "passed": true,
+    "object_vs_empty_separation": 0.001338632205235106,
+    "gates": "phantom-aware score only"
+  }
+}

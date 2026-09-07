@@ -222,3 +222,54 @@ with its bootstrap CI, is the primary reported quantity; the subtraction is
 reported for orientation and explicitly labelled as heuristic.
 
 Goes in Method (or a footnote where the curve is reported).
+
+## The null-detector control, and why it is a contribution rather than a check
+
+Result (CADC, retrained detector, identical protocol, sole difference being
+whether the box head's output is real or identically zero):
+
+    real_detector  q_hat=1.935    d=0.30 FA=1.00 delay=-5.0   d=0.10 FA=1.00 delay=-2.0   d=0.05 FA=1.00 censored
+    null_detector  q_hat=10.267   d=0.30 FA=0.00 delay= 6.0   d=0.10 FA=0.00 delay= 8.0   d=0.05 FA=0.00 delay=9.0
+
+A detector that outputs nothing yields a perfectly behaved monitor: zero
+false alarms, detection in 6/8/9 frames. The real detector's monitor is
+broken. And 6/8/9 are **exactly** the numbers the manuscript reported as the
+real CADC result (tab:cadc-results, covariate-blind). That is not
+coincidence: the old CADC checkpoint was collapsed, so it *was* the null
+detector. The control reproduces the published headline to the frame from a
+model with no functioning box head.
+
+### The inversion worth writing up
+
+The null detector monitors CADC *better* than the real one, and the reason
+is clean:
+
+- With no detector, the score is pure scene content, which is relatively
+  **homogeneous** across nominal drives -> calibration transfers -> FA=0.00.
+- With a real detector, the score is genuine detector error, which is
+  genuinely **heterogeneous** across sessions (measured: 5.3x spread in
+  per-drive mean miscoverage, 0.118 to 0.623, all nominal clear-road drives
+  on one collection date) -> calibration fails -> FA=1.00.
+
+**The artifact was better-behaved than the truth.** This inverts the usual
+intuition that cleaner numbers indicate a better method. The practical
+warning, which is the most useful thing this paper can say: *a well-behaved
+monitor is not evidence of a working one*, and the null-detector control is
+what distinguishes them. The contribution is the diagnostic, not only the
+fix -- it is cheap, needs no extra data or training, and any conformal
+monitoring paper can run it.
+
+Keep the null-detector row permanently in the results table for both
+datasets, not as a one-off check.
+
+### Attribution logic must be gated on false-alarm control
+
+Recorded because it was a real bug, caught in the flattering direction:
+the first version of `run_zeros_baseline.py` compared `mean_detection_delay`
+numerically without checking false-alarm rate, and therefore reported a
+monitor with FA=1.00 and a NEGATIVE delay (alarming before the onset
+existed) as "real faster by 11.0 frames - attributable". Delay comparisons
+between monitors are only meaningful when both control their false-alarm
+budget (FA <= delta); otherwise the faster-looking arm may simply be firing
+indiscriminately. Fixed, and the same gate applies to every variant
+comparison in the ablation.

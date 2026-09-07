@@ -248,3 +248,63 @@ def compute_phantom_aware_wealth_trajectory(
         bettor.update(m_t, ccp_disagreement=ccp_disagreement)
 
     return trajectory
+
+
+def phantom_aware_operating_curve(
+    model: CRAFX_Net,
+    q_loc: float,
+    q_phantom: float,
+    alpha: float,
+    deltas: List[float],
+    onset_stream_factory,
+    clear_stream_factory,
+    bettor_factory,
+    phantom_weight: float,
+    n_onset_replicates: int = 5,
+    n_clear_replicates: int = 5,
+) -> List[dict]:
+    """
+    Operating curve for the phantom-aware score, mirroring
+    `conformal_monitor.evaluate.operating_curve`'s protocol and output
+    format exactly so the numbers are directly comparable against the
+    covariate-blind baseline's.
+    """
+    from conformal_monitor.evaluate import alarm_time_from_trajectory
+
+    onset_runs = []
+    for _ in range(n_onset_replicates):
+        stream = onset_stream_factory()
+        trajectory = compute_phantom_aware_wealth_trajectory(
+            model, stream, q_loc, q_phantom, alpha, bettor_factory, phantom_weight
+        )
+        onset_runs.append((trajectory, stream.onset_frame))
+
+    clear_trajectories = [
+        compute_phantom_aware_wealth_trajectory(
+            model, clear_stream_factory(), q_loc, q_phantom, alpha, bettor_factory, phantom_weight
+        )
+        for _ in range(n_clear_replicates)
+    ]
+
+    curve = []
+    for delta in deltas:
+        delays, n_censored = [], 0
+        for trajectory, onset_frame in onset_runs:
+            alarm_time = alarm_time_from_trajectory(trajectory, delta)
+            if alarm_time is None:
+                n_censored += 1
+            else:
+                delays.append(alarm_time - onset_frame)
+
+        n_alarmed = sum(
+            1 for t in clear_trajectories if alarm_time_from_trajectory(t, delta) is not None
+        )
+        curve.append(
+            {
+                "delta": delta,
+                "false_alarm_rate": n_alarmed / n_clear_replicates if n_clear_replicates else 0.0,
+                "mean_detection_delay": float(np.mean(delays)) if delays else None,
+                "n_censored": n_censored,
+            }
+        )
+    return curve

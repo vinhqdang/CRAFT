@@ -1,0 +1,67 @@
+{
+  "note": "Null-detector control: operating curve with the box head's output zeroed, versus the real detector, identical protocol.",
+  "dataset": "cadc",
+  "checkpoint": "../../../checkpoints/cadc_focal/checkpoint_final.pth",
+  "q_hat": {
+    "real_detector": 1.9350011348724365,
+    "null_detector": 10.267354965209961
+  },
+  "config": {
+    "alpha": 0.2,
+    "scene_length": 20,
+    "onset_frame": 8,
+    "deltas": [
+      0.3,
+      0.1,
+      0.05
+    ],
+    "n_onset_replicates": 5,
+    "n_clear_replicates": 5,
+    "kappa": 2.0,
+    "calibration_fraction": 0.5,
+    "nominal_category": "bare",
+    "degraded_category": "covered"
+  },
+  "results": {
+    "real_detector": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -5.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -2.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ],
+    "null_detector": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 6.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 8.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 9.0,
+        "n_censored": 0
+      }
+    ]
+  }
+}

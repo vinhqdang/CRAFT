@@ -1,0 +1,250 @@
+{
+  "note": "Signal-strength ablation on real cadc data, retrained detector.",
+  "dataset": "cadc",
+  "checkpoint": "../../../checkpoints/cadc_focal/checkpoint_final.pth",
+  "checkpoint_epoch": 4,
+  "q_hat": 1.9350011348724365,
+  "config": {
+    "alpha": 0.2,
+    "scene_length": 20,
+    "onset_frame": 8,
+    "deltas": [
+      0.3,
+      0.1,
+      0.05
+    ],
+    "n_onset_replicates": 5,
+    "n_clear_replicates": 5,
+    "kappa": 2.0,
+    "calibration_fraction": 0.5,
+    "nominal_category": "bare",
+    "degraded_category": "covered"
+  },
+  "provenance": {
+    "calibration_drives": [
+      [
+        "2018_03_06",
+        "0001"
+      ],
+      [
+        "2018_03_06",
+        "0002"
+      ],
+      [
+        "2018_03_06",
+        "0005"
+      ],
+      [
+        "2018_03_06",
+        "0006"
+      ],
+      [
+        "2018_03_06",
+        "0008"
+      ],
+      [
+        "2018_03_06",
+        "0009"
+      ],
+      [
+        "2018_03_07",
+        "0001"
+      ],
+      [
+        "2018_03_07",
+        "0002"
+      ],
+      [
+        "2018_03_07",
+        "0004"
+      ]
+    ],
+    "nominal_drives": [
+      [
+        "2018_03_06",
+        "0010"
+      ],
+      [
+        "2018_03_06",
+        "0012"
+      ],
+      [
+        "2018_03_06",
+        "0013"
+      ],
+      [
+        "2018_03_06",
+        "0015"
+      ],
+      [
+        "2018_03_06",
+        "0016"
+      ],
+      [
+        "2018_03_06",
+        "0018"
+      ],
+      [
+        "2018_03_07",
+        "0005"
+      ],
+      [
+        "2018_03_07",
+        "0006"
+      ],
+      [
+        "2018_03_07",
+        "0007"
+      ]
+    ],
+    "n_calibration_frames": 850,
+    "n_nominal_frames": 800,
+    "n_degraded_frames": 1292
+  },
+  "results": {
+    "baseline": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -5.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -2.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ],
+    "phantom_quantiles": {
+      "q_loc": 1.9350011348724365,
+      "q_phantom": 0.04444431886076927
+    },
+    "phantom_w0.25": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -5.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -2.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -2.0,
+        "n_censored": 0
+      }
+    ],
+    "phantom_w0.5": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -5.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -3.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -2.0,
+        "n_censored": 0
+      }
+    ],
+    "merged_4x4": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ],
+    "whole_frame_ref_4x4": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -5.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -2.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ],
+    "merged_8x8": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ],
+    "whole_frame_ref_8x8": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -5.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": -2.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ]
+  }
+}
