@@ -12,6 +12,11 @@ A.~M. Mu{\~n}oz, R.~Verma, A.~Timans, Detecting object tracking failure via
   Surveillance: Applications and Challenges, 2026.
 \newblock \href {http://arxiv.org/abs/2602.12983} {\path{arXiv:2602.12983}}.
 
+\bibitem{VovkWang2021Evalues}
+V.~Vovk, R.~Wang, E-values: Calibration, combination and applications, Annals
+  of Statistics 49~(3) (2021) 1736--1754.
+\newblock \href {http://arxiv.org/abs/1912.06116} {\path{arXiv:1912.06116}}.
+
 \bibitem{VovkGammermanShafer2005}
 V.~Vovk, A.~Gammerman, G.~Shafer, Algorithmic Learning in a Random World,
   Springer, 2005.
@@ -46,6 +51,23 @@ D.~Kumar, S.~Tayebati, F.~Migliarba, R.~Krishnan, A.~R. Trivedi, Learnable
 J.~Liu, L.~N. Zheng, W.~E. Zhang, X.~Wang, W.~Chen, Before fusion, ask what to
   keep: Contextual calibration of multimodal signals, arXiv preprint (2026).
 \newblock \href {http://arxiv.org/abs/2606.02679} {\path{arXiv:2606.02679}}.
+
+\bibitem{Prinster2025WATCH}
+D.~Prinster, X.~Han, A.~Liu, S.~Saria, {WATCH}: Adaptive monitoring for ai
+  deployments via weighted-conformal martingales, in: International Conference
+  on Machine Learning (ICML), 2025.
+\newblock \href {http://arxiv.org/abs/2505.04608} {\path{arXiv:2505.04608}}.
+
+\bibitem{Eliades2023ICMEnsemble}
+C.~Eliades, H.~Papadopoulos, A conformal martingales ensemble approach for
+  addressing concept drift, in: Proceedings of the Twelfth Symposium on
+  Conformal and Probabilistic Prediction with Applications, Vol. 204, PMLR,
+  2023.
+
+\bibitem{Eliades2024ICMEnsemble}
+C.~Eliades, H.~Papadopoulos, {ICM} ensemble with novel betting functions for
+  concept drift, arXiv preprint (2024).
+\newblock \href {http://arxiv.org/abs/2406.15760} {\path{arXiv:2406.15760}}.
 
 \bibitem{Pitropov2021CADC}
 M.~Pitropov, D.~E. Garcia, J.~Rebello, M.~Smart, C.~Wang, K.~Czarnecki,

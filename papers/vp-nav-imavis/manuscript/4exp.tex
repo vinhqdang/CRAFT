@@ -134,3 +134,33 @@ $\delta$ & Bettor & False-alarm rate & Mean detection delay \\
 \end{tabular}
 \end{threeparttable}
 \end{table}
+
+\subsection{Mixture Betting: Real Evaluation on Both Datasets}
+\label{sec:mixture-results}
+
+Sections~\ref{sec:ccp-negative} and~\ref{sec:cadc-results} together establish the tension motivating Section~\ref{sec:mixture-method}'s algorithm: the CCP-informed bettor is strictly worse than covariate-blind on Snowy Scenes, but ties or marginally beats it on CADC. We evaluate the fixed equal-weight mixture (Equation~\ref{eq:mixture}) against both real checkpoints, using the exact calibration protocol and replicate counts of Table~\ref{tab:snowy-results} and Table~\ref{tab:cadc-results} respectively, so the mixture's real numbers are directly comparable to both single-bettor results already reported.
+
+Table~\ref{tab:mixture-results} reports the real outcome, and it is not the clean "hedges toward whichever is better" result one might hope for. On CADC, the mixture's operating curve is \emph{identical} to the covariate-blind bettor's alone (delays 6, 8, 9 at $\delta=0.30, 0.10, 0.05$) -- not intermediate between the two components, and specifically not capturing the CCP-informed bettor's one-frame advantage at $\delta=0.10, 0.05$. On Snowy Scenes, the mixture is worse than the covariate-blind bettor at the loosest budget (delay $7$ versus $3$ at $\delta=0.3$) and censored at the two tighter budgets, matching the CCP-informed bettor's own complete failure there rather than the covariate-blind bettor's real detections.
+
+\begin{table}[t]
+\centering
+\caption{Real mixture-betting operating curve (equal-weight average of covariate-blind and CCP-informed wealth trajectories, Equation~\ref{eq:mixture}), against both real checkpoints, same protocol as Tables~\ref{tab:snowy-results} and~\ref{tab:cadc-results}. False-alarm rate is $0.00$ throughout for all three rows shown; omitted from the table for space.}
+\label{tab:mixture-results}
+\begin{threeparttable}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Dataset & $\delta$ & covariate-blind & CCP-informed & mixture \\
+\midrule
+\multirow{3}{*}{Snowy Scenes} & 0.30 & 3 & -- & 7 \\
+& 0.10 & 10 & -- & -- \\
+& 0.05 & -- & -- & -- \\
+\midrule
+\multirow{3}{*}{CADC} & 0.30 & 6 & 6 & 6 \\
+& 0.10 & 8 & 7 & 8 \\
+& 0.05 & 9 & 8 & 9 \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}
+
+This is a real, informative negative result about the cost of hedging in this instantiation, not a mechanism failure -- the mixture is exactly as valid an anytime-valid test as either component (Section~\ref{sec:mixture-method}), and behaves exactly as the underlying arithmetic predicts: a fixed $50/50$ average of two wealth values is bounded between them at every timestep (verified directly as a unit test, \texttt{test\_mixture\_wealth\_is\_convex\_combination\_at\_every\_timestep} in \texttt{papers/vp-nav-imavis/tests/test\_mixture\_betting.py}), so when one component's wealth stays persistently low -- exactly what happens to the CCP-informed bettor's trajectory on Snowy Scenes, where it rarely if ever crosses back toward growth -- averaging it with a healthy trajectory can delay, or entirely prevent within the evaluation window, the mixture's own crossing of the alarm threshold $1/\delta$, even though the healthy component alone would have crossed it well within that window. On CADC, where both components are already close in absolute performance, the averaging effect is small enough that the mixture tracks the (slightly worse) covariate-blind trajectory closely rather than splitting the difference visibly at this delay resolution. Neither outcome is a defect in the combination rule; both are the direct, predictable consequence of averaging when one component is either badly broken (Snowy Scenes) or only marginally different from the other (CADC) -- and the practical upshot, on this real evidence, is that fixed equal-weight hedging did not pay off on either dataset tested. Section~\ref{sec:discuss-mixture} discusses what this implies for whether and how to hedge going forward.
