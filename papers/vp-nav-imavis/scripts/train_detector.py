@@ -59,6 +59,9 @@ def parse_args():
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--log-every", type=int, default=25)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--resume", default=None,
+                        help="checkpoint to resume weights from; --epochs then counts "
+                             "ADDITIONAL epochs, numbered on from the checkpoint's own")
     return parser.parse_args()
 
 
@@ -121,6 +124,20 @@ def train(args):
 
     device = torch.device(args.device)
     model = CRAFX_Net(config).to(device)
+
+    # Resuming matters here for a practical reason: a full run exceeds the
+    # ~1h background-task ceiling in this environment, so training is done
+    # in chunks that pick up from the last per-epoch checkpoint. Only the
+    # weights are carried over -- Adam's moments are not checkpointed, so a
+    # resumed chunk re-warms them over its first few steps.
+    start_epoch = 0
+    if args.resume:
+        resumed = torch.load(args.resume, map_location=device, weights_only=False)
+        model.load_state_dict(resumed["model_state_dict"])
+        start_epoch = int(resumed.get("epoch", -1)) + 1
+        print(f"Resumed weights from {args.resume} (epoch {resumed.get('epoch')}); "
+              f"continuing at epoch {start_epoch}")
+
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     loader = DataLoader(
@@ -137,7 +154,7 @@ def train(args):
     history = []
     step = 0
     stop = False
-    for epoch in range(args.epochs):
+    for epoch in range(start_epoch, start_epoch + args.epochs):
         model.train()
         epoch_start = time.time()
         epoch_loss, n_batches = 0.0, 0
@@ -191,8 +208,17 @@ def train(args):
         {"model_state_dict": model.state_dict(), "config": config, "epoch": history[-1]["epoch"]},
         os.path.join(args.output_dir, "checkpoint_final.pth"),
     )
-    with open(os.path.join(args.output_dir, "training_history.json"), "w") as f:
-        json.dump({"dataset": args.dataset, "args": vars(args), "history": history}, f, indent=2)
+    # Append rather than overwrite, so a chunked run keeps the whole record.
+    history_path = os.path.join(args.output_dir, "training_history.json")
+    previous = []
+    if os.path.exists(history_path):
+        with open(history_path) as f:
+            previous = json.load(f).get("history", [])
+    with open(history_path, "w") as f:
+        json.dump(
+            {"dataset": args.dataset, "args": vars(args), "history": previous + history},
+            f, indent=2,
+        )
     print(f"Wrote checkpoints and training_history.json to {args.output_dir}")
 
 
