@@ -1,0 +1,67 @@
+{
+  "note": "Null-detector control: operating curve with the box head's output zeroed, versus the real detector, identical protocol.",
+  "dataset": "snowy",
+  "checkpoint": "../../../checkpoints/snowy_scenes_focal/checkpoint_final.pth",
+  "q_hat": {
+    "real_detector": 1.73679518699646,
+    "null_detector": 10.188589096069336
+  },
+  "config": {
+    "alpha": 0.2,
+    "scene_length": 20,
+    "onset_frame": 8,
+    "deltas": [
+      0.3,
+      0.1,
+      0.05
+    ],
+    "n_onset_replicates": 5,
+    "n_clear_replicates": 5,
+    "kappa": 2.0,
+    "n_calibration_frames": 40,
+    "nominal_category": "accumulated",
+    "degraded_category": "falling"
+  },
+  "results": {
+    "real_detector": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 1.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ],
+    "null_detector": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 3.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 10.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": null,
+        "n_censored": 5
+      }
+    ]
+  }
+}
