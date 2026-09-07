@@ -195,3 +195,30 @@ estimates are not checkpointed, so each resumed chunk re-warms its
 optimizer state over its first several steps. This is a small but real
 deviation from an uninterrupted run and must be stated plainly in the
 paper rather than glossed as "trained for 5 epochs".
+
+## Per-model calibration in the quality-vs-signal curve (deliberate, state it)
+
+The detector-quality-vs-monitorable-signal curve compares the onset jump in
+m(t) across six checkpoints (collapsed, then focal epochs 0-4). **Each
+checkpoint calibrates its own q_hat** on the same held-out calibration
+frames, rather than all six sharing one common threshold.
+
+This is a deliberate choice, not an oversight, and the writeup must name it
+as such rather than leave a reviewer to find it and read it as a confound.
+The justification: calibration is per-model in any real deployment -- you
+calibrate the detector you are actually shipping -- so "each model under its
+own calibration" is exactly the quantity a deployed monitor experiences. A
+common fixed threshold across checkpoints would measure something no
+deployment ever sees, and would additionally be dominated by the fact that
+the collapsed checkpoint's score distribution lives on a completely
+different scale (q_hat ~10.2 versus ~1.7 for the trained ones).
+
+Consequence to state alongside it: because the quantiles differ, the
+"content artifact subtraction" (jump_real - jump_zeros) is **indicative
+only, not an identity**. There is no decomposition making that difference
+the detector's own contribution, since the two branches threshold different
+score distributions at different quantiles. The raw jump per checkpoint,
+with its bootstrap CI, is the primary reported quantity; the subtraction is
+reported for orientation and explicitly labelled as heuristic.
+
+Goes in Method (or a footnote where the curve is reported).
