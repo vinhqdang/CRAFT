@@ -48,7 +48,7 @@ DELTAS = [0.3, 0.1, 0.05]
 N_ONSET_REPLICATES = 5
 N_CLEAR_REPLICATES = 5
 KAPPA = 2.0
-N_CALIBRATION_DRIVES = 2  # held-out whole bare drives, disjoint from the nominal-stream drives
+CALIBRATION_FRACTION = 0.5  # per collection date, roughly this fraction of its drives go to calibration
 
 
 def _drives_for_category(dataset, category):
@@ -67,6 +67,33 @@ def _drives_for_category(dataset, category):
         drive = parts[3]
         drives[(date, drive)].append(i)
     return dict(drives)
+
+
+def _split_calibration_and_nominal(bare_drives):
+    """Splits bare drives into (calibration_drives, nominal_drives), stratified
+    per collection date.
+
+    A first version of this evaluation held out only 2 whole drives for
+    calibration, both from the same date -- and the real per-drive
+    diagnostic (see plan.md) showed CADC's drive-to-drive heterogeneity is
+    large enough, and correlated enough with collection date (every
+    2018_03_06 drive had held-out coverage 0.47-0.77 against the alpha=0.2
+    target of >=0.80; every 2018_03_07 drive had 0.68-0.91), that an
+    unstratified split can put an easy date's drives on one side of the
+    calibration/nominal boundary and a hard date's drives on the other --
+    producing a q_hat that doesn't generalize. Splitting within each date
+    keeps the calibration set representative of both.
+    """
+    by_date = defaultdict(list)
+    for date, drive in sorted(bare_drives.keys()):
+        by_date[date].append((date, drive))
+
+    calibration_drives, nominal_drives = [], []
+    for date, drives in by_date.items():
+        n_cal = max(1, round(len(drives) * CALIBRATION_FRACTION))
+        calibration_drives.extend(drives[:n_cal])
+        nominal_drives.extend(drives[n_cal:])
+    return calibration_drives, nominal_drives
 
 
 def parse_args():
@@ -97,17 +124,12 @@ def main():
     covered_indices = category_indices(dataset, "covered")
     print(f"{len(bare_drives)} bare drives, {len(covered_indices)} covered frames")
 
-    if len(bare_drives) < N_CALIBRATION_DRIVES + 1:
-        raise ValueError(
-            f"Need at least {N_CALIBRATION_DRIVES + 1} bare drives (>= {N_CALIBRATION_DRIVES} for "
-            f"calibration + >=1 for the nominal stream), found {len(bare_drives)}."
-        )
+    if len(bare_drives) < 2:
+        raise ValueError(f"Need at least 2 bare drives (>=1 for calibration, >=1 for the nominal stream), found {len(bare_drives)}.")
     if len(covered_indices) < SCENE_LENGTH:
         raise ValueError(f"Need at least {SCENE_LENGTH} covered frames, found {len(covered_indices)}.")
 
-    sorted_drives = sorted(bare_drives.keys())
-    calibration_drives = sorted_drives[:N_CALIBRATION_DRIVES]
-    nominal_drives = sorted_drives[N_CALIBRATION_DRIVES:]
+    calibration_drives, nominal_drives = _split_calibration_and_nominal(bare_drives)
     calibration_indices = [i for d in calibration_drives for i in bare_drives[d]]
     nominal_indices = [i for d in nominal_drives for i in bare_drives[d]]
     print(f"Calibration drives: {calibration_drives} ({len(calibration_indices)} frames)")
@@ -187,7 +209,7 @@ def main():
                     "n_onset_replicates": N_ONSET_REPLICATES,
                     "n_clear_replicates": N_CLEAR_REPLICATES,
                     "kappa": KAPPA,
-                    "n_calibration_drives": N_CALIBRATION_DRIVES,
+                    "calibration_fraction": CALIBRATION_FRACTION,
                     "q_hat": q_hat,
                     "bev_size": args.bev_size,
                 },

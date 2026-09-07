@@ -70,8 +70,20 @@ active peer review remains entirely outside the scope of this paper.
       finalizing).
 - [ ] Confirm IMAVIS's actual word/page-length guidance if any (not found in the
       publicly reachable search results used for this draft).
-- [ ] Fill in Table 2 (CADC operating curve) once the parallel CADC experiment
-      (tracked separately, not part of this paper's own file changes) completes.
+- [x] Fill in Table 2 (CADC operating curve). Completed: 32 real CADC drives
+      downloaded (39GB), detector trained from scratch (5 epochs, same protocol as
+      Snowy Scenes), and the real operating-curve evaluation run twice -- a first,
+      unstratified 2-drive calibration split gave a uniform false-alarm rate of
+      1.00 (diagnosed as drive-to-drive heterogeneity correlated with collection
+      date, not a size problem), fixed by stratifying the calibration split across
+      dates (9 drives, 850 frames). With the fix, both bettors detect the real
+      onset with zero false alarms; CCP-informed is tied or one frame faster than
+      covariate-blind at every $\delta$ -- a modest, CADC-specific reversal of
+      Snowy Scenes' negative result, reported as exactly that in Sections
+      4.4-4.5 and Discussion 5.4, not as evidence the covariate now works in
+      general. See `papers/conformal-snow-icra2027/plan.md`'s "Second real
+      dataset: CADC" section for the underlying experiment log (dataset loader,
+      training runs, calibration diagnostic).
 - [ ] Fill in real author names/affiliations once the anonymity-policy question above
       is resolved.
 - [ ] User's own decision, entirely separate from this paper: what to do about the

@@ -1,0 +1,139 @@
+{
+  "note": "Real CADC data (bare vs. snow-covered road condition, from the devkit's own per-drive metadata) + trained CRAFX_Net checkpoint. Calibration and nominal-stream frames come from disjoint whole bare drives (not a frame-count split within pooled frames), avoiding the temporal-adjacency leakage the Snowy Scenes driver accepted.",
+  "checkpoint": "checkpoints/cadc/checkpoint_final.pth",
+  "checkpoint_epoch": 4,
+  "calibration_drives": [
+    [
+      "2018_03_06",
+      "0001"
+    ],
+    [
+      "2018_03_06",
+      "0002"
+    ],
+    [
+      "2018_03_06",
+      "0005"
+    ],
+    [
+      "2018_03_06",
+      "0006"
+    ],
+    [
+      "2018_03_06",
+      "0008"
+    ],
+    [
+      "2018_03_06",
+      "0009"
+    ],
+    [
+      "2018_03_07",
+      "0001"
+    ],
+    [
+      "2018_03_07",
+      "0002"
+    ],
+    [
+      "2018_03_07",
+      "0004"
+    ]
+  ],
+  "nominal_drives": [
+    [
+      "2018_03_06",
+      "0010"
+    ],
+    [
+      "2018_03_06",
+      "0012"
+    ],
+    [
+      "2018_03_06",
+      "0013"
+    ],
+    [
+      "2018_03_06",
+      "0015"
+    ],
+    [
+      "2018_03_06",
+      "0016"
+    ],
+    [
+      "2018_03_06",
+      "0018"
+    ],
+    [
+      "2018_03_07",
+      "0005"
+    ],
+    [
+      "2018_03_07",
+      "0006"
+    ],
+    [
+      "2018_03_07",
+      "0007"
+    ]
+  ],
+  "config": {
+    "conformal_alpha": 0.2,
+    "scene_length": 20,
+    "onset_frame": 8,
+    "deltas": [
+      0.3,
+      0.1,
+      0.05
+    ],
+    "n_onset_replicates": 5,
+    "n_clear_replicates": 5,
+    "kappa": 2.0,
+    "calibration_fraction": 0.5,
+    "q_hat": 10.250822067260742,
+    "bev_size": 128
+  },
+  "results": {
+    "covariate_blind_agrapa": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 6.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 8.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 9.0,
+        "n_censored": 0
+      }
+    ],
+    "ccp_informed": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 6.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 7.0,
+        "n_censored": 0
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "mean_detection_delay": 8.0,
+        "n_censored": 0
+      }
+    ]
+  }
+}
