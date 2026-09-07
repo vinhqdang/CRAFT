@@ -157,3 +157,41 @@ its unit tests) are unaffected; only the empirical numbers are void.
 
 Scope note: `papers/conformal-snow-icra2027/` is out of scope per the
 user's decision (already submitted, isolated) and has not been touched.
+
+## Interpretation rule for the ablation, fixed BEFORE results are in
+
+Recorded in advance deliberately: deciding how to read a result after
+seeing it is how motivated reasoning gets in, and this project has already
+been burned once by a measurement that looked like a finding and was
+actually an artifact.
+
+The retrained detectors are **undertrained** — 5 epochs on 3,016 frames
+(Snowy), with training loss still descending at epoch 2 (64.9 -> 16.6 ->
+13.0). Five epochs is a budget chosen for convenience, not a convergence
+point. That confounds the two possible ablation outcomes **asymmetrically**,
+so they do not get symmetric treatment:
+
+- **Improvement beats the baseline** -> valid, and conservative.
+  Undertraining works *against* the improvement, so an effect that survives
+  it survived a handicap. Report it, with the undertraining caveat framed
+  as a strength ("achieved despite an undertrained detector").
+- **Improvement fails to beat the baseline** -> **confounded, not a
+  finding.** "The method does not help" and "the detector is too weak for
+  the method to have anything to work with" are indistinguishable from that
+  measurement alone. Do NOT write this up as a negative result about the
+  method. Flag it as confounded, report it as such, and settle whether a
+  longer training run is warranted before drawing any conclusion.
+
+This applies to all three variants (phantom-aware score, e-value merging,
+lambda-mixture betting) on both datasets.
+
+## Reproducibility note (for the paper's own reproducibility statement)
+
+Training was done in chunks because a full run exceeds the ~1h
+background-task ceiling in this environment: Snowy Scenes ran epochs 0-2,
+was interrupted, and resumed from `checkpoint_epoch2.pth` for epochs 3-4.
+`--resume` restores **model weights only** — Adam's first/second moment
+estimates are not checkpointed, so each resumed chunk re-warms its
+optimizer state over its first several steps. This is a small but real
+deviation from an uninterrupted run and must be stated plainly in the
+paper rather than glossed as "trained for 5 epochs".
