@@ -57,8 +57,15 @@ from experiment_common import DATASET_DEFAULTS, build_real_setting
 ACTIVATION_THRESHOLDS = [0.05, 0.1, 0.25, 0.5, 0.75]
 # A detection head that has genuinely learned to localize should put
 # noticeably more heatmap mass on ground-truth object cells than on empty
-# ones. This is the margin below which we call the head collapsed.
+# ones. This is the margin below which we call the heatmap collapsed.
 SEPARATION_EPSILON = 1e-3
+
+# Material-difference thresholds for the zeros-substitution gate. The
+# collapsed checkpoints moved q_hat by ~2.6e-4 and nominal miscoverage by
+# <1e-5 when the entire box head was replaced by zeros; anything at or
+# below that scale is indistinguishable from the head contributing nothing.
+Q_MATERIAL_EPSILON = 1e-2
+M_MATERIAL_EPSILON = 1e-3
 
 
 def parse_args():
@@ -190,17 +197,38 @@ def main():
               f"degraded_m={r['degraded_m']:.5f}  jump={r['jump']:+.5f}")
 
     m_delta = abs(ablation["real_model"]["nominal_m"] - ablation["zero_prediction"]["nominal_m"])
-    collapsed = (
-        stats["object_vs_empty_separation"] < SEPARATION_EPSILON and m_delta < 1e-4
-    )
-    verdict = (
-        "COLLAPSED: the monitor's evidence does not depend on the detector's output. "
-        "The nonconformity score reduces to the ground-truth box magnitude, so the "
-        "monitor is measuring scene content, not perception degradation."
-        if collapsed
-        else "Detector output does affect the monitor's evidence."
-    )
-    print(f"\nVERDICT: {verdict}")
+    q_delta = abs(ablation["real_model"]["q_hat"] - ablation["zero_prediction"]["q_hat"])
+
+    # Two independent gates, because the two heads gate different things.
+    #
+    # All three call sites in conformal_monitor.evaluate build the match mask
+    # from targets["H"] -- the GROUND-TRUTH heatmap -- so the baseline
+    # nonconformity score ||B_pred - B_target||_1 restricted to matched cells
+    # is a function of the box head alone. The predicted heatmap never enters
+    # it. The box-head gate therefore governs the baseline monitor and the
+    # e-value-merging and lambda-mixture variants; the heatmap gate governs
+    # only the phantom-aware score, which is the one variant that does read
+    # predicted activation on empty cells.
+    box_head_ok = m_delta >= M_MATERIAL_EPSILON or q_delta >= Q_MATERIAL_EPSILON
+    heatmap_ok = stats["object_vs_empty_separation"] >= SEPARATION_EPSILON
+
+    print("\nGATES")
+    print(f"  [{'PASS' if box_head_ok else 'FAIL'}] box head -> baseline monitor, e-value merging, lambda mixture")
+    print(f"         |dq_hat|={q_delta:.6f} (need >= {Q_MATERIAL_EPSILON}), "
+          f"|d nominal_m|={m_delta:.6f} (need >= {M_MATERIAL_EPSILON})")
+    print(f"  [{'PASS' if heatmap_ok else 'FAIL'}] heatmap  -> phantom-aware score only")
+    print(f"         object-vs-empty separation={stats['object_vs_empty_separation']:+.6f} "
+          f"(need >= {SEPARATION_EPSILON})")
+
+    if box_head_ok:
+        print("\n  The baseline monitor is measuring real detector error again.")
+    else:
+        print("\n  The box head still contributes nothing: the nonconformity score is "
+              "still effectively ||B_target||_1, so the monitor is still measuring "
+              "scene content. Nothing downstream is worth running.")
+    if not heatmap_ok:
+        print("  The predicted heatmap still cannot separate object cells from empty "
+              "ones, so the phantom-aware score remains untestable on this checkpoint.")
 
     out_path = args.out or f"../manuscript/detector_collapse_{args.dataset}.json"
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -214,8 +242,17 @@ def main():
                 "alpha": alpha,
                 "head_statistics": stats,
                 "zero_prediction_ablation": ablation,
-                "collapsed": bool(collapsed),
-                "verdict": verdict,
+                "box_head_gate": {
+                    "passed": bool(box_head_ok),
+                    "q_hat_delta": q_delta,
+                    "nominal_m_delta": m_delta,
+                    "gates": "baseline monitor, e-value merging, lambda mixture",
+                },
+                "heatmap_gate": {
+                    "passed": bool(heatmap_ok),
+                    "object_vs_empty_separation": stats["object_vs_empty_separation"],
+                    "gates": "phantom-aware score only",
+                },
             },
             f, indent=2,
         )

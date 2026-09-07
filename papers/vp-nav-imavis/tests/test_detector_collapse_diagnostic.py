@@ -129,3 +129,27 @@ def test_zero_prediction_ablation_differs_for_a_contributing_box_head():
 
     real, zeroed = ablation["real_model"], ablation["zero_prediction"]
     assert real["q_hat"] != pytest.approx(zeroed["q_hat"])
+
+
+def test_the_two_gates_are_independent():
+    # The box-head gate and the heatmap gate govern different downstream
+    # variants and must not be conflated: all three call sites in
+    # conformal_monitor.evaluate build the match mask from the GROUND-TRUTH
+    # heatmap, so the baseline nonconformity score depends on the box head
+    # alone. A model with a working box head but a flat heatmap must pass
+    # the box-head gate and fail the heatmap gate.
+    from diagnose_detector_collapse import (
+        M_MATERIAL_EPSILON,
+        Q_MATERIAL_EPSILON,
+        SEPARATION_EPSILON,
+    )
+
+    working_box_flat_heatmap = _FixedOutputModel(box_scale=2.0, heatmap_object_boost=0.0)
+    stats = head_statistics(working_box_flat_heatmap, _TinyDataset(4, 0.5), n_frames=4)
+    ablation = zero_prediction_ablation(working_box_flat_heatmap, _setting(), ALPHA, n_frames=6)
+
+    q_delta = abs(ablation["real_model"]["q_hat"] - ablation["zero_prediction"]["q_hat"])
+    m_delta = abs(ablation["real_model"]["nominal_m"] - ablation["zero_prediction"]["nominal_m"])
+
+    assert q_delta >= Q_MATERIAL_EPSILON or m_delta >= M_MATERIAL_EPSILON  # box gate passes
+    assert stats["object_vs_empty_separation"] < SEPARATION_EPSILON  # heatmap gate fails
