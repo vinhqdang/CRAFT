@@ -4,143 +4,137 @@
 \subsection{Why a Fictitious Monitor Looks Healthy}
 \label{sec:discuss-null}
 
-The most uncomfortable result in this paper is that our own reported
-detection delays were reproduced exactly, to the frame, by a detector that
-outputs nothing. It is worth being precise about why, because the mechanism
-generalizes past our particular bug.
+The mechanism is worth stating precisely, because it generalizes past our
+particular bug. The nonconformity score is a residual evaluated where a
+ground-truth object sits. When the prediction term vanishes it becomes
+$\lVert B_{\mathrm{target}} \rVert_1$: a function of the labels alone.
+Nothing downstream notices. Split conformal calibration still returns a
+well-defined quantile, because it is the quantile of \emph{some}
+exchangeable score distribution. The betting process still accumulates
+wealth, because the miscoverage rate still moves between the nominal and
+degraded halves of a stream. The alarm still fires at a plausible time,
+because ground-truth box statistics genuinely differ between a dataset's
+splits. Every component behaves exactly as specified, and the monitor
+reports annotation structure as perception degradation.
 
-The nonconformity score is a residual, $\lVert B_{\mathrm{pred}} -
-B_{\mathrm{target}} \rVert_1$, evaluated where a ground-truth object sits.
-When the prediction term vanishes the score becomes $\lVert
-B_{\mathrm{target}} \rVert_1$: a function of the labels alone. Nothing
-downstream notices. Split conformal calibration still returns a
-well-defined quantile, because it is a quantile of \emph{some} exchangeable
-score distribution. The betting process still accumulates wealth, because
-$m(t)$ still moves. The alarm still fires at a plausible time, because
-scene content genuinely differs between a dataset's nominal and adverse
-splits --- on CADC the mean ground-truth object count per frame roughly
-doubles. Every component behaves exactly as specified. The monitor is
-measuring the dataset's annotation statistics and reporting them as
-perception degradation.
+We were careful about which dataset property drives this, having initially
+got it wrong. We had attributed it to object count roughly doubling between
+CADC's nominal and degraded splits. Direct measurement contradicts that: in
+the scored bird's-eye-view window, degraded frames contain \emph{fewer}
+matched objects than nominal ones ($0.84\times$). Since the score reduces
+to $\lVert B_{\mathrm{target}} \rVert_1$, the driver must instead be the
+distribution of ground-truth box dimensions and positions across the two
+collection dates. That is a more interesting explanation than density, and
+it interacts directly with the date confound discussed below.
 
-There is an inversion here worth naming. On CADC the null monitor was
-\emph{better behaved} than the real one: false-alarm rate $0.00$ against
-$1.00$. The reason is that scene content is relatively homogeneous across
-nominal drives, so a content-derived score transfers cleanly between
-sessions, whereas genuine detector error is heterogeneous across sessions
-and does not. The artifact was better behaved than the truth. This inverts
-the usual heuristic that cleaner numbers indicate a better method, and it
-is precisely why the failure is hard to notice from the outputs alone.
+There is an inversion here that matters for how the failure is detected. On
+CADC the null monitor was \emph{better behaved} than the real one --- a
+zero false-alarm rate where the real monitor alarmed on everything. Scene
+content is relatively homogeneous across nominal drives, so a
+content-derived score transfers cleanly between sessions; genuine detector
+error is heterogeneous across sessions and does not. The artifact was
+better behaved than the truth. This inverts the usual heuristic that
+cleaner numbers indicate a better method, and it is exactly why inspecting
+outputs cannot substitute for a control.
 
-The practical recommendation is cheap. One extra evaluation pass with the
-prediction head zeroed, reported as a row in the results table, separates
-``our monitor detects degradation'' from ``our monitor detects the
-dataset''. We would not have found our own error without it.
-
-\subsection{Sessions Are Not Exchangeable, and What That Costs}
+\subsection{Sessions Are Not Exchangeable, and What It Costs Navigation}
 \label{sec:discuss-sessions}
 
-Conformal prediction's guarantee is conditional on exchangeability, and
-driving data violates it in a specific, structured way: it arrives in
-sessions, and sessions differ in weather, lighting, traffic density and
-route in ways that persist across every frame within them. Our measurement
-puts a number on the cost --- a $7.5\times$ spread in per-drive miscoverage
-under a pooled quantile, with between-session standard deviation ($0.061$)
-as large as the weather effect being sought ($0.057$).
+Conformal validity is conditional on exchangeability, and driving data
+violates it in a structured way: it arrives in sessions that differ
+persistently in route, traffic, lighting and weather. Our measurement puts
+a number on the cost --- a $7.5\times$ per-drive spread in miscoverage
+under a pooled quantile, with between-session variation as large as the
+weather effect being sought.
 
-The consequence is not a small loss of efficiency. It is that the monitored
-quantity is dominated by which session the vehicle is on, so the monitor
-detects session identity. That is visible directly in the operating curve:
-the marginal baseline's detection delays are negative and become more
-negative as the window lengthens, because a longer window simply supplies
-more nominal frames from an unlucky session to accumulate against.
+The consequence is not a modest loss of efficiency. It is that the
+monitored quantity is dominated by which session the vehicle is on, so the
+monitor detects session identity. For a navigation stack this is the worst
+available failure mode. An alarm that tracks route rather than perception
+fires on an unremarkable drive and stays silent on a dangerous one, and a
+planner wired to react --- by slowing, handing back, or initiating a
+minimum-risk manoeuvre --- inherits that error directly and acts on it. A
+monitor whose sensitivity has not been demonstrated but which is
+nonetheless counted in a safety argument is worse than no monitor, because
+the assurance it appears to provide displaces mitigations that would
+otherwise be required.
 
-Mondrian calibration is the natural repair and it works on one checkpoint.
-We report the reversal on the other rather than omitting it, and we
-deliberately do not explain it, because we cannot. What we can say is that
-the reversal makes an unconditional recommendation unsafe: whether
-session-conditional calibration improves worst-case coverage appears to
-depend on the model being calibrated, and a practitioner should measure it
-on their own model rather than assume it. We would rather publish a
-qualified result than a clean one we cannot support at a second
-measurement.
+Two practical consequences follow for anyone deploying this pattern. First,
+calibration should be conditioned on the session, or at minimum validated
+per session rather than in aggregate --- an aggregate coverage check passes
+while individual sessions sit far from target. Second, because our own
+attempt at the session-conditional fix reversed direction between two
+checkpoints of the same model (Section~\ref{sec:mondrian}), the check has
+to be repeated against the model actually being shipped, not inherited from
+a paper.
 
-\subsection{Monitorability Is Non-Monotone in Detector Quality}
-\label{sec:discuss-quality}
+\subsection{Underpowered Is Not Absent}
+\label{sec:discuss-power}
 
-The central finding is that the monitorable weather effect is largest at
-intermediate detector quality and declines as the detector improves,
-becoming undetectable at our best checkpoint.
+Our headline measurement is a null we decline to interpret as an absence,
+and the distinction carries the section. An interval of $[-0.061, +0.193]$
+around a point estimate of $+0.064$ excludes neither a real effect of the
+size we previously claimed nor no effect at all. With nine evaluation
+sessions the minimum detectable effect is roughly twice the estimate, so
+failing to detect it is what this design does regardless of whether the
+effect is there.
 
-The mechanism we propose is straightforward, though we test it only
-indirectly. A conformal monitor of this design detects a \emph{differential}
---- the gap between nominal-condition error and degraded-condition error.
-A collapsed detector has no error differential because it has no error
-signal at all, only content. A converged detector has little error
-differential because it handles snow nearly as well as clear conditions:
-that is what robustness means. The differential is largest for a detector
-good enough to have real, structured error but not good enough to be
-robust to the condition being monitored.
+The dual-interval reporting in Table~\ref{tab:underpowered} is what makes
+that diagnosable rather than assertable. Because the nominal-only and
+two-level intervals are computed from the same session draws and differ
+only in whether the degraded arm is resampled, a reader can attribute the
+loss of significance to its causes: the session count falling from 18 to 9
+under the drive-disjoint split, and a further $1.4$--$1.5\times$ widening
+from clustering the degraded arm. The point estimate moved by 14\%. We
+suggest reporting both intervals whenever an effect is estimated from
+clustered data on both sides; a single interval says whether a result is
+significant, the pair says why not.
 
-If this is right, it is an awkward property for the field. The
-better-engineered the perception stack, the less there is for a
-degradation monitor of this design to find, and the monitor's failure is
-silent --- it continues producing calibrated quantiles and plausible alarm
-times. A team that improves its detector and keeps its monitor may
-reasonably believe both are working.
-
-Three qualifications constrain how far this should be taken. First, power:
-two of six points significant, $18$ sessions, wide intervals; the claim
-rests on the trend and on the loss of detectability, not on a run of
-significant results. Second, the two scores disagree at epoch 9, and we do
-not know which is right there. Third, we vary detector quality along one
-axis, on one architecture and one dataset; whether the same shape appears
-for other detectors or other conditions is untested. The finding is
-suggestive and mechanistically plausible, not established.
-
-It also admits a more optimistic reading we cannot presently distinguish
-from ours: perhaps a converged detector's residual degradation is real but
-concentrated in rarer, harder cases that a frame-averaged miscoverage rate
-dilutes away. That would make the problem one of \emph{score design} rather
-than of monitorability as such. Our phantom-score result is weak evidence
-against the simplest version of that story --- a score built entirely from a
-different failure mode also finds nothing at convergence --- but it is not
-decisive, and a score targeting rare severe errors specifically is the
-experiment we would run next.
-
-\subsection{What the Score Families Tell Us}
-\label{sec:discuss-scores}
-
-Adding a phantom-detection component was the only intervention in this
-project that changed \emph{what is measured} rather than how we bet on it,
-and it is the only one that enlarged the effect: $+54\%$ at $w=1$ relative
-to localization alone, with mixing at $w=0.5$ giving the best
-effect-to-noise. That the two families are complementary rather than
-redundant is a genuine methodological result: spurious activation in empty
-space carries weather information that a matched-cell residual cannot see,
-which is what one would expect given that snow's dominant LiDAR effect is
-spurious near-range returns.
-
-It did not clear the detection bar. Effect-to-noise $0.862$ against the
-$0.849$ obtainable without it is within noise of no improvement on that
-metric, even though the raw effect is substantially larger --- the
-between-session variance grows alongside the effect. We report both numbers
-rather than the flattering one.
+It is worth being explicit that the correction which mattered most was not
+the one we expected. Removing the train/evaluation overlap --- the most
+serious defect, and the one that voids the earlier numbers as a matter of
+principle --- barely moved the point estimate. The significance was carried
+by estimator defects, not by the leakage. Both had to be fixed; only one
+turned out to change the number.
 
 \subsection{Limitations}
-\label{sec:discuss-limits}
+\label{sec:limitations}
 
-Beyond the power constraints already stated: our evaluation is a single
-detector architecture on two datasets, with $18$ nominal sessions on the
-dataset carrying the positive result. Training used chunked resumption, so
-optimizer moment estimates re-warm at each resume --- a small deviation from
-an uninterrupted run, stated because it is a real difference. The
-within-session split used for Mondrian places calibration and monitored
-frames in the same drive; we control for adjacency with a temporal-gap
-sweep and the effect is stable across it, but the split still differs from
-the whole-drive protocol used elsewhere in this work, and we flag that
-rather than leaving a reader to find the inconsistency. Finally, the
-degraded regime on CADC is a different collection date from the nominal
-one, so weather is confounded with date; the null-detector control bounds
-how much of the effect that could explain, but does not eliminate the
-confound.
+\paragraph{Scope of the null-detector diagnostic.} It is a null for scores
+built from regression residuals. A score reading a different output head
+requires its own, and constructing one is not always straightforward: for a
+score built from classification-head activation, zeroing that head makes
+every score identical and the statistic degenerate, which is a floor rather
+than an informative control. We report this because it bounds the
+recommendation, and a general recipe --- sever the dependence between the
+score and the model output while leaving the calibration pipeline
+intact --- is easier to state than to instantiate for every score family.
+
+\paragraph{The diagnostic does not catch every failure.} It catches a
+monitor that is not reading the model. It does not catch a monitor that
+reads the model but measures the wrong thing --- including the
+session-identity failure documented in Section~\ref{sec:exchangeability},
+which passes the null-detector check.
+
+\paragraph{Weather is confounded with collection date.} CADC's degraded
+drives come from a different date than its nominal ones, so sensor
+condition, route and traffic are confounded with weather. The
+null-detector control bounds the contribution of label content
+specifically; it does not bound the rest. The dataset publishes a
+quantitative per-drive snowfall-severity count that varies \emph{within}
+date and would break this aliasing; we identified it too late to use, and
+regard it as the most promising next step.
+
+\paragraph{Scale and single-run training.} Nine evaluation sessions, one
+detector architecture, one dataset carrying the positive findings, and one
+training run --- no seed replication, so nothing here has error bars in
+that dimension. Training used chunked resumption, so optimizer moment
+estimates re-warm at each resume, a small deviation from an uninterrupted
+run.
+
+\paragraph{Statistical scope.} The Snowy Scenes intervals in
+Section~\ref{sec:snowy-control} use frame-level resampling and are narrower
+than our session-level convention would give. The Mondrian worst-case
+statistic is a maximum over nine sessions and carries no interval. We
+report both rather than presenting the numbers as comparable to the
+clustered estimates elsewhere.

@@ -32,7 +32,7 @@
 
 \begin{frontmatter}
 
-\title{When Better Detectors Break Their Monitors: Detector-Quality Dependence and a Null-Detector Diagnostic for Conformal Perception Monitoring}
+\title{Your Perception Monitor May Be Measuring Nothing: A Null-Detector Diagnostic and a Cross-Session Validity Failure in Conformal Monitoring for Autonomous Navigation}
 
 %% Author block withheld pending the corresponding author's confirmation of
 %% IMAVIS's anonymity requirements for this special issue (VP-NAV does not
@@ -44,59 +44,63 @@
 \address{Affiliation withheld pending anonymity-policy confirmation}
 
 \begin{abstract}
-Conformal prediction combined with anytime-valid sequential testing offers a
-principled way to monitor a deployed perception stack: calibrate a
-nonconformity score on nominal data, track its miscoverage on the live
-stream, and alarm when a betting process accumulates enough evidence that
-the nominal assumption has failed. We set out to apply this recipe to
-multimodal 3D detection under real adverse weather and to improve its
-detection delay. We report instead three findings we believe are more
-useful, and a plain negative result on the original goal.
+Autonomous navigation stacks are built to trust their perception layer, and
+increasingly to monitor it: conformal prediction calibrates a nonconformity
+score on nominal data, an anytime-valid sequential test tracks its
+miscoverage on the live stream, and an alarm tells the planner when
+perception has stopped being trustworthy. We set out to reduce the
+detection delay of such a monitor for camera/LiDAR 3D detection under real
+adverse weather. We did not achieve that. What we report instead are two
+validated findings about how monitors of this kind fail silently, and an
+honest account of a weather effect we cannot resolve.
 
-First, a monitor of this kind can produce entirely plausible numbers while
-measuring nothing about the detector. We introduce a \emph{null-detector
-diagnostic} --- rerun the pipeline with the detector's regression head
-output replaced by zeros --- which costs no additional data, training or
-annotation. On two real adverse-weather datasets it reproduced our own
-previously reported detection delays \emph{exactly}, to the frame, from a
-model with no functioning detection head, because a collapsed detector
-reduces the nonconformity score to a function of the ground-truth labels
-alone. We recommend this control as standard practice.
+The first finding is that a conformal monitor can produce entirely
+plausible calibrated quantiles and alarm times while measuring nothing
+about the detector at all. If the detector's regression head degenerates,
+the nonconformity score $\lVert B_{\mathrm{pred}} - B_{\mathrm{target}}
+\rVert_1$ collapses to $\lVert B_{\mathrm{target}} \rVert_1$ --- a function
+of the ground-truth labels alone --- and the monitor reports the dataset's
+annotation statistics as perception degradation. We introduce a
+\emph{null-detector diagnostic} that exposes this: rerun the pipeline with
+the prediction head's output replaced by zeros. It needs no additional
+data, training or annotation. Applied to our own earlier results it
+reproduced them \emph{bit-identically} --- nominal-to-degraded jump
+$0.13904668284371138$ from both the real and the zeroed detector, agreeing
+to 17 significant figures. A monitor with no detector performed identically
+to one with a detector, and on one dataset the null monitor was
+\emph{better behaved} than the real one. We recommend this control as
+standard practice for conformal monitoring of perception, and we are
+explicit about its scope: it is a null for scores built on regression
+residuals, and a score reading a different head needs its own null.
 
-Second, split conformal's exchangeability assumption fails across driving
-sessions. On the Canadian Adverse Driving Conditions dataset we measure a
-$7.5\times$ spread in per-drive miscoverage under a single pooled quantile
-($0.083$ to $0.623$ against a target of $0.20$), with between-session
-standard deviation as large as the weather effect itself. Mondrian
-session-conditional calibration repairs this on a mid-quality checkpoint
-(effect-to-noise $0.55 \rightarrow 0.85$; worst-case per-session deviation
-$0.41 \rightarrow 0.19$), but that advantage \emph{reverses} on a converged
-checkpoint, so the benefit is model-dependent rather than unconditional.
+The second finding is that split conformal's exchangeability assumption
+fails across driving sessions. On the Canadian Adverse Driving Conditions
+dataset, per-drive miscoverage under one pooled quantile ranges from
+$0.083$ to $0.623$ against a target of $0.20$ --- a $7.5\times$ spread
+across drives that are all nominal, all clear-road, several sharing a
+collection date --- with between-session variation as large as the weather
+effect being sought. The guarantee remains formally correct and becomes
+operationally useless: the monitor detects which session the vehicle is on.
+For navigation this is the worst available failure mode, because the alarm
+fires on route identity rather than on perception loss.
 
-Third, and most consequentially, monitorability is \emph{non-monotone in
-detector quality}. Across five trained checkpoints spanning a real quality
-range, the measured weather effect declines monotonically as the detector
-improves ($0.108 \rightarrow 0.007$ for a phantom-detection score) and
-becomes statistically undetectable beyond a heatmap separation of roughly
-$0.41$. Two structurally different nonconformity scores --- one blind to
-phantom detections, one dominated by them --- agree on this. The practical
-warning is uncomfortable: \emph{improving your detector can silently
-disable your monitor}, because a detector that degrades gracefully leaves
-no error differential to detect, and the monitor keeps emitting plausible
-numbers throughout.
-
-We are explicit about power: only two of six curve points reach
-significance with $18$ sessions, so the claim rests on the monotone
-effect-size trend and the loss of detectability, not on a series of
-significant measurements. On the original objective we are equally plain
---- at the effect sizes available here reliable detection is not
-achievable, and we report that with intervals rather than burying it.
+On the weather effect itself we report an \emph{underpowered null}, and
+distinguish that carefully from an absence. On drive-disjoint held-out
+data with two-level clustered resampling, the effect is $+0.064$ with a
+95\% interval of $[-0.061, +0.193]$: consistent with a real effect of the
+size we previously claimed, and equally consistent with none. Nine
+evaluation sessions cannot resolve it; the minimum detectable effect is
+roughly twice the estimate. We also show \emph{why} an earlier version of
+this measurement appeared significant, by reporting the interval with and
+without the degraded arm resampled --- a decomposition that lets a reader
+distinguish "underpowered" from "absent" rather than guess, and which we
+suggest reporting alongside any clustered effect estimate of this kind.
 \end{abstract}
 
 \begin{keyword}
-Conformal prediction \sep Anytime-valid sequential testing \sep Perception monitoring \sep
-Mondrian conformal prediction \sep Distribution shift \sep Autonomous vehicle perception \sep
-Adverse weather \sep Negative controls
+Conformal prediction \sep Perception monitoring \sep Autonomous navigation \sep
+Negative controls \sep Exchangeability \sep Anytime-valid sequential testing \sep
+Adverse weather \sep Reproducibility
 \end{keyword}
 
 \end{frontmatter}

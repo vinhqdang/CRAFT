@@ -1,100 +1,110 @@
 \section{Introduction}
 \label{sec:introduction}
 
-A deployed autonomous-vehicle perception stack is validated under some set
-of sensing conditions and then asked to operate outside them. The failure
-that matters operationally is not that the detector is sometimes wrong ---
-it always is --- but that it becomes wrong in a way nothing downstream is
-told about. Conformal prediction offers a distribution-free way to attach
-calibrated uncertainty to a black-box detector's outputs, and anytime-valid
-sequential testing turns that into a live monitor: calibrate a
-nonconformity score on nominal data, track its miscoverage $m(t)$ on the
-incoming stream, and raise an alarm when a betting process accumulates
-enough evidence against the nominal hypothesis. The construction is
-attractive because its false-alarm guarantee holds uniformly over all
-stopping times, so the question ``has anything changed yet?'' can be asked
-continuously without a multiple-testing penalty.
+An autonomous navigation stack is architected to trust its perception
+layer. Path planning, risk assessment and minimum-risk manoeuvre selection
+all consume detections as though they were reliable, and the safety case
+for the vehicle rests on that reliability holding under the conditions the
+vehicle actually meets. Because it will not always hold, a monitoring layer
+is attractive: something that watches perception during operation and tells
+the planner when its inputs have stopped being trustworthy, so the stack
+can slow down, hand back, or pull over.
 
-We set out to apply that recipe to multimodal 3D detection under real
-adverse weather, and specifically to improve its detection delay. We did
-not achieve that, and this paper is largely about why the attempt was more
-instructive than the goal. Three findings emerged that we think are more
-useful than a delay improvement would have been, and we state the negative
-result on the original objective plainly rather than burying it.
+Conformal prediction offers a principled way to build one. Calibrate a
+nonconformity score on nominal data, and the fraction of new predictions
+falling outside the conformal region is controlled at a chosen level
+without distributional assumptions. Pair it with anytime-valid sequential
+testing --- a betting process whose wealth is a nonnegative supermartingale
+under the nominal hypothesis --- and the monitor can be interrogated
+continuously without a multiple-testing penalty, which is exactly what a
+vehicle needs from a system asked ``has anything changed yet?'' at every
+frame.
 
-\paragraph{A monitor can be entirely fictitious and look fine.}
-The nonconformity score in this setting is a residual between predicted and
-ground-truth boxes, evaluated at cells a ground-truth object occupies. If
-the detector's regression head collapses --- as ours did, under a
-placeholder training loss whose optimum is a constant --- that residual
-degenerates to a function of the ground-truth labels alone. The monitor
-then measures the distribution of scene content, not detector error, and
-because scene content genuinely differs between a dataset's clear and
-adverse splits, it produces detection delays that look completely
-reasonable. We introduce a \emph{null-detector diagnostic} that catches
-this: rerun the entire pipeline with the regression head's output replaced
-by zeros. It requires no additional data, training or annotation. Applied
-to our own earlier results, it reproduced every reported detection delay
-\emph{exactly}, to the frame, on both datasets --- a monitor with no
-detector performing identically to one with a detector
-(Section~\ref{sec:null-diagnostic}). We think this control belongs in any
-conformal monitoring study, and we foreground it as a contribution in its
-own right rather than as an internal check.
+We set out to reduce the detection delay of such a monitor for camera/LiDAR
+3D detection under real adverse weather. We did not achieve that, and this
+paper is about what we found instead. Two findings concern how monitors of
+this design fail \emph{silently} --- continuing to emit calibrated
+quantiles and plausible alarm times while not doing their job --- and both
+matter more for navigation than a delay improvement would have.
+
+\paragraph{A monitor can measure nothing and look healthy.}
+The nonconformity score used throughout this literature is a residual
+between predicted and ground-truth boxes. If the detector's regression head
+degenerates --- as ours did, under a placeholder training loss whose
+optimum is a constant --- that residual becomes $\lVert B_{\mathrm{target}}
+\rVert_1$, a function of the labels alone. Every downstream component then
+behaves exactly as specified: calibration returns a well-defined quantile,
+because it is the quantile of \emph{some} exchangeable score distribution;
+the betting process accumulates wealth, because the miscoverage rate still
+moves; the alarm fires at a plausible time, because annotation statistics
+genuinely differ between a dataset's nominal and adverse splits. The
+monitor reports dataset structure as perception degradation, and nothing in
+its output reveals this.
+
+We introduce a \emph{null-detector diagnostic} that does reveal it: rerun
+the whole pipeline, calibration included, with the prediction head's output
+replaced by zeros. It costs one evaluation pass and needs no extra data,
+training or annotation. Applied to our own earlier results it reproduced
+them bit-identically --- a nominal-to-degraded jump of
+$0.13904668284371138$ from both the real and the zeroed detector, agreeing
+to 17 significant figures (Section~\ref{sec:null-diagnostic}). A monitor
+with no detector performed identically to one with a detector. On CADC the
+null monitor was in fact \emph{better behaved}, holding a zero false-alarm
+rate where the real one alarmed on everything --- an inversion we explain
+in Section~\ref{sec:discuss-null} and which is precisely why the failure is
+invisible from output inspection.
 
 \paragraph{Exchangeability fails across driving sessions.}
-Split conformal calibration assumes calibration and test data are
-exchangeable. Real driving data is collected in sessions, and sessions
-differ in ways that survive calibration: on the Canadian Adverse Driving
-Conditions dataset (CADC)~\cite{Pitropov2021CADC} we measure per-drive mean
-miscoverage ranging from $0.083$ to $0.623$ against a target of $0.20$ ---
-a $7.5\times$ spread across drives that are all nominal, all clear-road,
-several from a single collection date. The between-session standard
-deviation is as large as the weather effect the monitor exists to detect,
-so under pooled calibration the monitored quantity is dominated by which
-session the vehicle is on. Mondrian conformal
-prediction~\cite{VovkMondrian2003}, conditioning calibration on the session,
-repairs this on one checkpoint --- but, as we report in
-Section~\ref{sec:mondrian-reversal}, that advantage reverses on another, so
-we present it as model-dependent rather than as a general property.
+Conformal validity is conditional on exchangeability between calibration
+and test data. Real driving data arrives in sessions --- drives --- that
+differ persistently in route, traffic, lighting and weather. On CADC
+\cite{Pitropov2021CADC} we measure per-drive miscoverage under a single
+pooled quantile ranging from $0.083$ to $0.623$ against a target of
+$0.20$: a $7.5\times$ spread across drives that are all nominal, all
+clear-road, several sharing a collection date
+(Section~\ref{sec:exchangeability}). Between-session variation is as large
+as the weather effect the monitor exists to detect. The guarantee stays
+formally correct --- it holds on average over the calibration
+distribution --- and becomes operationally useless, because the monitored
+quantity is dominated by which session the vehicle is on.
 
-\paragraph{Monitorability is non-monotone in detector quality.}
-This is the paper's central claim and the most counterintuitive. Measuring
-the weather effect across a series of checkpoints spanning a real quality
-range, the effect is largest at intermediate detector quality and declines
-monotonically as the detector improves, becoming statistically undetectable
-beyond a heatmap object-versus-empty separation of roughly $0.41$
-(Section~\ref{sec:quality-curve}). A collapsed detector yields only content
-artifacts; a mid-quality detector yields real, attributable weather signal;
-a converged detector yields none, because it degrades gracefully enough
-under snow that little error differential remains. Two structurally
-different nonconformity scores --- one restricted to ground-truth object
-cells and therefore blind to spurious detections, one built entirely from
-activation in empty space --- agree on where signal exists, which is
-stronger evidence than either could provide alone.
+For navigation specifically this is the worst way for a monitor to fail.
+An alarm that tracks route identity rather than perception loss will fire
+on an unremarkable drive and stay silent on a dangerous one, and a planner
+wired to react to it inherits that error directly. Worse, a monitor with
+undemonstrated sensitivity that is nonetheless counted in a safety
+argument is more dangerous than no monitor at all, because the false
+assurance displaces other mitigations.
 
-The deployment implication is uncomfortable and, we think, worth stating
-directly: \emph{improving your detector can silently disable your monitor}.
-The monitor does not fail loudly when this happens. It continues to emit
-calibrated-looking quantiles and plausible alarm times, and without a
-control of the kind described above there is no signal that anything is
-wrong.
+\paragraph{What we can and cannot say about the weather effect.}
+Our original objective requires a detectable difference between nominal and
+degraded conditions. On drive-disjoint held-out data, with resampling
+clustered over both nominal sessions and degraded drives, we measure
+$+0.064$ with a 95\% interval of $[-0.061, +0.193]$. This is an
+\emph{underpowered null}, not a demonstrated absence, and we are careful to
+report it as such throughout: the interval is consistent with a real effect
+of the size we previously claimed and equally consistent with none. Nine
+evaluation sessions cannot resolve an effect of this magnitude --- the
+minimum detectable effect is roughly twice the point estimate.
 
-\paragraph{What we do not claim.}
-We are explicit about statistical power throughout rather than confining it
-to a limitations section. The quality curve has six points, of which only
-two reach significance with $18$ sessions; the claim rests on the monotone
-effect-size trend and the loss of detectability, not on a run of
-significant measurements. One of the six --- the collapsed checkpoint ---
-is not a commensurable measurement at all, since its score is a
-demonstrated content artifact, and we mark it as such rather than fitting a
-trend through it. On the original objective, detection at these effect
-sizes is not achievable: the best configuration we found controls false
-alarms where the baseline does not, but detects roughly $22\%$ of onsets,
-no better than a null detector (Section~\ref{sec:operating-curve}). We
-report that with intervals attached.
+We also report why an earlier version of this measurement appeared
+significant. Reporting the interval both with and without the degraded arm
+resampled shows that the earlier significance came from two compounding
+estimator defects rather than from a larger effect
+(Section~\ref{sec:underpowered}). We suggest that dual reporting as a
+general practice for clustered effect estimates: it is what allows a reader
+to distinguish an underpowered design from a genuine absence, which the
+point estimate alone never does.
 
-Snowy Scenes~\cite{SnowyScenes2026} appears throughout as a negative
-control. Its real detector shows no weather effect distinguishable from
-zero, while its null detector shows a large one --- the mirror image of
-CADC --- and that contrast is what makes CADC's mid-quality result
-credible rather than a diagnostic artifact of our own pipeline.
+\paragraph{Scope and honesty about this work's own history.}
+Both findings above were discovered by controls applied to our own
+pipeline, and the numbers those controls invalidated were ours. We think
+this strengthens rather than weakens the case for the controls, but it puts
+an obligation on us to be exact about what is being corrected: the affected
+results were obtained in an unpublished predecessor of this work and were
+never published, so no external record requires correction. Snowy
+Scenes~\cite{SnowyScenes2026} appears throughout as a negative control ---
+its real detector shows no weather effect while its null detector shows a
+large one, the mirror image of CADC --- and that contrast is what shows the
+diagnostic discriminates between datasets rather than reporting a property
+of our own harness.

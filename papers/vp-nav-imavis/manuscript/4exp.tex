@@ -1,115 +1,104 @@
 \section{Experiments}
 \label{sec:experiments}
 
-Every number in this section is produced by a script committed alongside
-the manuscript and written to a JSON artifact named in the corresponding
-caption, so each table can be regenerated and checked against its source.
+Every number below is produced by a script committed alongside the
+manuscript and written to a JSON artifact named in the corresponding
+caption.
 
 \subsection{Setup}
 \label{sec:exp-setup}
 
-We evaluate on two real adverse-weather driving datasets. CADC
-\cite{Pitropov2021CADC} provides $18$ nominal (\texttt{bare}-road) driving
-sessions and $14$ snow-covered sessions, with the road-condition label
-taken from the dataset's own per-drive metadata rather than inferred.
-Snowy Scenes~\cite{SnowyScenes2026} provides real snowy driving across
-three weather categories; since it contains no clear-weather split, its
-nominal/degraded contrast is constructed across categories using a measured
-per-point snow-class fraction, and it serves here as a negative control
-rather than as a second positive result.
+CADC~\cite{Pitropov2021CADC} provides 32 downloaded driving sessions across
+three collection dates: 18 nominal (\texttt{bare}-road) and 14
+snow-covered. Snowy Scenes~\cite{SnowyScenes2026} provides real snowy
+driving; it contains no clear-weather split, so its contrast is constructed
+across weather categories and it serves here as a negative control rather
+than a second positive result.
 
-The monitored detector is a camera/LiDAR fusion architecture producing a
-per-cell class heatmap and box regression on a $128 \times 128$
-bird's-eye-view grid. The nonconformity score is the $\ell_1$
-box-regression residual at cells a ground-truth object occupies; a second
-score, introduced in Section~\ref{sec:phantom-score}, is built from
-predicted activation at cells that contain no ground-truth object. All
-monitoring uses $\alpha = 0.2$.
+\paragraph{Train/evaluation separation.} The detector and the monitor are
+built on disjoint \emph{drives}. Frame-level holdout would not suffice:
+consecutive CADC frames are ${\sim}10$\,Hz samples of one scene, so a
+frame-level split leaves near-duplicates of training frames in evaluation.
+Drives are interleaved within each weather category, giving 16 training and
+16 evaluation drives (1534 / 1408 frames) with both categories and all
+three dates represented on each side. Calibration and monitoring both draw
+only from evaluation drives, so the conformal scores are out-of-sample.
 
-\paragraph{Evaluation harness.} Onset streams splice a nominal prefix with
-a degraded suffix at a known onset index. Frames within a stream are
-sampled without replacement from the relevant pool under a per-replicate
-seed, and every arm of every comparison reuses one shared seed list, so
-methods are compared on identical frame draws replicate by replicate. This
-matters: an earlier version of this harness constructed streams by modular
-arithmetic with no sampling, so all replicates of a condition were the
-identical stream and every reported statistic was a single sample measured
-$n$ times. The signature was visible in the outputs --- false-alarm rates
-landing on exactly $0.00$ or $1.00$ and censoring on exactly $0/5$ or $5/5$
---- and a regression test now asserts that replicates differ.
+This matters because an earlier version of this work did not do it. The
+detector and the monitor were constructed over one unsplit dataset object,
+so every calibration, nominal and degraded frame had been a training frame,
+and the nonconformity scores were in-sample residuals against which a
+calibrated quantile bounds nothing. A regression test now asserts that the
+train and evaluation frame-id sets are disjoint.
 
-\paragraph{Reporting conventions.} Detection-delay comparisons are gated on
-false-alarm control: a monitor whose empirical false-alarm rate exceeds
-$\delta$ has no valid delay, because it can appear fast by alarming
-indiscriminately, including before the onset exists. Negative delays in the
-tables below denote exactly that pathology. Confidence intervals are
-percentile bootstrap; where sessions are the unit of analysis they are
-resampled over sessions rather than frames, since frames within a drive are
-strongly correlated and frame-level resampling understates intervals.
+\paragraph{Nesting with session-conditional calibration.} Mondrian
+calibration needs calibration frames from inside each monitored session, so
+an evaluation drive is split again internally into a leading calibration
+prefix, a temporal gap, and a monitored remainder. That inner split lives
+entirely within evaluation drives and never reaches training data.
+
+\paragraph{Inference.} Sessions, not frames, are the unit of analysis:
+frames within a drive are strongly correlated and frame-level resampling
+understates intervals badly. Where an estimate contrasts nominal against
+degraded data, \emph{both} arms are resampled --- nominal sessions and
+degraded drives --- because the degraded side carries real between-drive
+variation (measured sd $0.057$) that a fixed pool would silently treat as
+zero. All intervals are percentile bootstrap.
 
 \subsection{The Null-Detector Diagnostic}
 \label{sec:null-diagnostic}
 
-The diagnostic reruns the complete pipeline --- calibration included ---
-with the detector's box-regression output replaced by zeros, so the
-nonconformity score reduces to $\lVert B_{\mathrm{target}} \rVert_1$ and
-depends only on ground-truth scene content. If a monitor's behaviour is
-driven by detector error, zeroing the detector must change it.
-
-Table~\ref{tab:null-diagnostic} applies this to the checkpoints that
-produced our earlier results. On both datasets the null detector reproduces
-the real detector's reported detection delays exactly, at every
-false-alarm budget. On CADC the null monitor is in fact \emph{better
-behaved} than the real one, holding a $0.00$ false-alarm rate where the
-real monitor's exceeds every budget.
+The diagnostic reruns the entire pipeline, calibration included, with the
+detector's box-regression output replaced by zeros. The nonconformity score
+then reduces to $\lVert B_{\mathrm{target}} \rVert_1$ and depends only on
+ground-truth scene content. If a monitor's behaviour reflects detector
+error, zeroing the detector must change it.
 
 \begin{table}[t]
 \centering
-\caption{Null-detector diagnostic on the pre-fix checkpoints. Identical
-protocol; the sole difference is whether the box head's output is real or
-identically zero. Delays are in frames. Artifacts:
-\texttt{zeros\_baseline\_cadc.json}, \texttt{zeros\_baseline\_snowy.json}.}
+\caption{Null-detector diagnostic. The nominal-to-degraded jump in $m$ is
+identical to 17 significant figures whether the box head's real output or
+zeros are used, on both datasets --- the monitor's evidence does not depend
+on the detector at all. Artifacts:
+\texttt{detector\_collapse\_cadc.json},
+\texttt{detector\_collapse\_snowy.json}.}
 \label{tab:null-diagnostic}
-\begin{tabular}{@{}llccc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Dataset & Arm & $\delta=0.30$ & $\delta=0.10$ & $\delta=0.05$ \\
+Dataset & real detector & zeroed detector & difference \\
 \midrule
-\multirow{2}{*}{CADC} & real detector & $-5.0$ (FA $1.00$) & $-2.0$ (FA $1.00$) & --- (FA $1.00$) \\
- & null detector & $6.0$ (FA $0.00$) & $8.0$ (FA $0.00$) & $9.0$ (FA $0.00$) \\
-\midrule
-\multirow{2}{*}{Snowy Scenes} & real detector & --- (FA $1.00$) & --- (FA $0.00$) & --- (FA $0.00$) \\
- & null detector & $3.0$ (FA $0.00$) & $10.0$ (FA $0.00$) & --- (FA $0.00$) \\
+CADC & $0.13904668284371138$ & $0.13904668284371138$ & $0$ \\
+Snowy Scenes & $-0.15573322510822504$ & $-0.15573322510822504$ & $0$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The null delays of $6/8/9$ on CADC and $3/10$ on Snowy Scenes are, to the
-frame, the numbers we had previously reported as real detection results.
-The explanation is direct: those checkpoints had collapsed under a
-placeholder detection loss, so they \emph{were} null detectors. A separate
-measurement makes this exact rather than inferred --- on the collapsed
-checkpoint the nominal-to-degraded jump in $m$ is
-$-0.21573659$, matching the zeros branch to eight decimal places, with an
-artifact-subtracted residual of exactly $0.00000$
-(\texttt{quality\_effect\_curve\_cadc.json}).
+Table~\ref{tab:null-diagnostic} gives the result on the checkpoints that
+produced our earlier numbers. The agreement is exact, not approximate: the
+detector contributes nothing measurable to the monitor's evidence, because
+those checkpoints had collapsed under a placeholder detection loss and
+\emph{were} null detectors. This is the cleanest available statement of the
+finding, and it is immune to any question about evaluation-harness
+configuration, since it compares two branches of a single deterministic
+computation.
 
-We draw a methodological conclusion beyond our own case. A conformal
-monitor built on a degenerate score does not fail conspicuously; it reports
-calibrated quantiles and plausible alarm times throughout. The null-detector
-control costs one extra evaluation pass and distinguishes the two cases
-unambiguously, and we suggest it be reported as standard.
+We draw a conclusion beyond our own case. A conformal monitor built on a
+degenerate score does not fail conspicuously --- it reports calibrated
+quantiles and plausible alarm times throughout. One extra evaluation pass
+distinguishes the two situations unambiguously. We suggest it be reported
+as standard, with one scope condition stated honestly: this is a null for
+scores built from regression residuals. A score reading a different output
+head needs its own null, and Section~\ref{sec:limitations} explains why
+constructing one is not always straightforward.
 
 \subsection{Cross-Session Exchangeability Failure}
 \label{sec:exchangeability}
 
-Table~\ref{tab:per-drive} reports per-drive mean miscoverage on CADC under
-a single pooled quantile, using a working (non-collapsed) detector.
-
 \begin{table}[t]
 \centering
 \caption{Per-drive mean frame miscoverage under one pooled quantile
-($\hat q = 1.935$, $\alpha = 0.20$). All \texttt{bare} drives are nominal
-clear-road driving. Artifact:
+($\hat q = 1.935$, target $\alpha = 0.20$). All \texttt{bare} drives are
+nominal clear-road driving. Artifact:
 \texttt{per\_drive\_miscoverage\_cadc.json}.}
 \label{tab:per-drive}
 \begin{tabular}{@{}lccc@{}}
@@ -117,53 +106,46 @@ clear-road driving. Artifact:
 Group & $n$ drives & mean $m$ (sd) & range \\
 \midrule
 calibration drives & 9 & $0.252$ ($0.140$) & $0.133$ -- $0.623$ \\
-nominal drives & 9 & $0.182$ ($0.061$) & $0.083$ -- $0.284$ \\
+nominal drives & 9 & $0.181$ ($0.061$) & $0.083$ -- $0.284$ \\
 degraded drives & 14 & $0.238$ ($0.057$) & $0.128$ -- $0.329$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Marginal validity holds on average while failing per session: four of nine
-nominal drives sit above $\alpha$, one calibration drive reaches $0.623$,
-and the spread across all \texttt{bare} drives is $7.5\times$. The
-comparison that matters is between the weather effect and the
-between-session noise: the degraded-minus-nominal difference is $+0.057$
-against a between-drive standard deviation of $0.061$, a ratio below one,
-and six of nine nominal drives fall inside the degraded drives' range. A
-monitor calibrated marginally across sessions is therefore substantially
-detecting session identity.
+Marginal validity holds on average while failing per session. Four of nine
+nominal drives sit above $\alpha$; one calibration drive reaches $0.623$
+against the quantile it helped define; the spread across all \texttt{bare}
+drives is $7.5\times$. The comparison that matters is against the effect
+being sought: the degraded-minus-nominal difference is $+0.057$ while the
+between-drive standard deviation is $0.061$, and six of nine nominal drives
+fall inside the degraded drives' range. A monitor calibrated marginally
+across sessions is therefore substantially detecting session identity, and
+its alarms carry route information rather than perception information.
 
 \subsection{Session-Conditional Calibration, and Where It Reverses}
-\label{sec:mondrian-reversal}
+\label{sec:mondrian}
 
-Mondrian calibration conditions the quantile on the session. This requires
-a within-session split --- each drive calibrates on its own leading frames
-and is monitored on the remainder --- because under the whole-drive split a
-monitored drive has no calibration frames and no per-session quantile
-exists for it. That arrangement is deployment-faithful (a vehicle
-calibrates on the early known-nominal portion of the drive it is on) but it
-places calibration and monitored frames adjacent in time, and adjacent
-driving frames are correlated. We therefore insert a temporal gap and sweep
-it; an effect inflated by adjacency would shrink as the gap grows.
+Mondrian conformal prediction~\cite{VovkMondrian2003} conditions the
+quantile on a taxonomy; here the taxonomy is the driving session.
 
 \begin{table}[t]
 \centering
 \caption{Mondrian versus marginal calibration, matched on sessions, frames,
 gap and cached scores, differing only in which quantile scores each
-session. Left: 5-epoch checkpoint. Right: converged (20-epoch) checkpoint.
-Artifacts: \texttt{mondrian\_gap\_sweep\_cadc.json},
+session. The advantage on one checkpoint reverses on the other. Artifacts:
+\texttt{mondrian\_gap\_sweep\_cadc.json},
 \texttt{mondrian\_gap\_sweep\_cadc\_converged.json}.}
 \label{tab:mondrian}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-& \multicolumn{2}{c}{effect-to-noise} & \multicolumn{2}{c}{worst $|m - \alpha|$} \\
+& \multicolumn{2}{c}{effect / nominal sd} & \multicolumn{2}{c}{worst $|m - \alpha|$} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
 gap & marginal & Mondrian & marginal & Mondrian \\
 \midrule
 \multicolumn{5}{@{}l}{\emph{5-epoch checkpoint}} \\
-0 & $0.551$ & $\mathbf{0.849}$ & $0.412$ & $\mathbf{0.187}$ \\
-10 & $0.528$ & $\mathbf{0.848}$ & $0.427$ & $\mathbf{0.190}$ \\
-20 & $0.558$ & $\mathbf{0.829}$ & $0.480$ & $\mathbf{0.200}$ \\
+0 & $0.551$ & $0.849$ & $0.412$ & $\mathbf{0.187}$ \\
+10 & $0.528$ & $0.848$ & $0.427$ & $\mathbf{0.190}$ \\
+20 & $0.558$ & $0.829$ & $0.480$ & $\mathbf{0.200}$ \\
 \midrule
 \multicolumn{5}{@{}l}{\emph{converged checkpoint}} \\
 0 & $-0.033$ & $-0.025$ & $\mathbf{0.187}$ & $0.344$ \\
@@ -173,236 +155,113 @@ gap & marginal & Mondrian & marginal & Mondrian \\
 \end{tabular}
 \end{table}
 
-On the 5-epoch checkpoint Mondrian improves effect-to-noise by $1.54\times$
-and more than halves the worst-case per-session deviation, and the effect
-is stable across gaps ($+0.074$ at gap $0$, $+0.087$ at gap $20$), so
-adjacency is not inflating it. That worst-case improvement is the mechanism
-by which false-alarm control returns, since a $0.41$ deviation under pooled
-calibration is what drives clear-stream alarms.
+On the 5-epoch checkpoint session-conditional calibration more than halves
+the worst-case per-session deviation. On the converged checkpoint the
+ordering reverses and Mondrian is roughly $1.7\times$ worse. We do not have
+an explanation and do not offer one. Two consequences follow, and we state
+both rather than the convenient one. First, the benefit is a property of
+the model--data combination, not an unconditional improvement: any claim
+that Mondrian improves worst-case per-session coverage is contradicted by
+our own second measurement. Second, neither the benefit nor the reversal
+carries an interval --- $\max_s |m_s - \alpha|$ is a maximum over nine
+sessions, among the least stable estimators available --- so the reversal
+may itself be noise. A practitioner should measure this on their own model
+rather than assume either direction.
 
-The converged checkpoint reverses the worst-case ordering: Mondrian is
-roughly $1.7\times$ \emph{worse} than marginal. We do not have an
-explanation for this and do not offer one. It means the benefit of
-session-conditional calibration here is a property of the
-model--data combination rather than an unconditional improvement, and we
-state it that way: any claim of the form ``Mondrian improves worst-case
-per-session coverage'' is contradicted by our own second measurement.
-
-\subsection{Block Aggregation and the Temporal-Correlation Penalty}
-\label{sec:blocking}
-
-Averaging $m$ over blocks of $k$ frames before the betting step cannot
-change the session-level statistic --- averaging within a session leaves
-the session mean unchanged, so the session-level effect and between-session
-standard deviation are exactly invariant to $k$, which we verify to six
-decimal places as a correctness check on the implementation. What blocking
-reduces is the within-session per-block variance, the noise a sequential
-test consumes when judging whether the current stretch of frames looks
-degraded.
+\subsection{The Weather Effect: an Underpowered Null}
+\label{sec:underpowered}
 
 \begin{table}[t]
 \centering
-\caption{Per-block discriminability
-$d(k) = [\bar m_{\mathrm{deg}} - \bar m_{\mathrm{nom}}] /
-\mathrm{sd}(m_{\mathrm{nom}})$ over blocks of $k$ frames, 5-epoch
-checkpoint, Mondrian calibration. Artifact:
-\texttt{block\_sweep\_cadc.json}.}
-\label{tab:blocking}
-\begin{tabular}{@{}ccccc@{}}
+\caption{Nominal-versus-degraded effect on drive-disjoint held-out drives
+(9 nominal sessions, 7 degraded drives), Mondrian calibration. The
+two-level interval resamples nominal sessions and degraded drives; the
+nominal-only interval resamples sessions alone, from the same draws, and is
+shown so the effect of the correction is visible. Artifact:
+\texttt{split\_effect\_split\_ep5.json}.}
+\label{tab:underpowered}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-$k$ & block noise & $d(k)$ & gain vs $k=1$ & $\sqrt{k}$ predicts \\
+gap & effect & two-level 95\% CI & nominal-only 95\% CI & inflation & null detector \\
 \midrule
-1 & $0.1452$ & $0.454$ & $1.00\times$ & $1.00\times$ \\
-2 & $0.1260$ & $0.523$ & $1.15\times$ & $1.41\times$ \\
-4 & $0.1118$ & $0.588$ & $1.30\times$ & $2.00\times$ \\
-8 & $0.0950$ & $0.646$ & $1.42\times$ & $2.83\times$ \\
+0 & $+0.064$ & $[-0.061, +0.193]$ & $[-0.031, +0.143]$ & $1.46\times$ & n.s. \\
+10 & $+0.076$ & $[-0.059, +0.211]$ & $[-0.029, +0.161]$ & $1.43\times$ & n.s. \\
+20 & $+0.069$ & $[-0.073, +0.210]$ & $[-0.039, +0.163]$ & $1.40\times$ & n.s. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Blocking delivers roughly half the gain independent sampling would predict
---- $1.42\times$ at $k=8$ against $2.83\times$ --- which quantifies the
-temporal-correlation penalty for $10$\,Hz driving frames. At $k=8$ the
-effect itself begins to erode ($+0.0659 \to +0.0614$) as blocks span
-genuinely different scene content, so the gain turns over; we use $k=4$.
-The null detector's discriminability stays flat and low across all $k$
-($0.128$, $0.133$, $0.128$, $0.100$), confirming that blocking does not
-manufacture discriminability where there is no signal.
+The effect is not distinguishable from zero at any gap, under either
+calibration scheme, and the null detector is likewise null throughout.
 
-\subsection{A Phantom-Detection Score}
-\label{sec:phantom-score}
+\paragraph{This is an underpowered null, not a demonstrated absence.} The
+interval $[-0.061, +0.193]$ is consistent with a real effect of the size we
+previously claimed and equally consistent with none. With nine evaluation
+sessions and a between-session sd near $0.06$, the minimum detectable
+effect at 80\% power is roughly $0.13$ --- about twice the point estimate.
+The design cannot resolve an effect of this magnitude, and no conclusion
+about the presence or absence of weather-induced degradation should be
+drawn from it.
 
-The localization score is restricted to ground-truth object cells and is
-therefore structurally blind to spurious detections in empty space --- which
-is snow's documented physical effect on LiDAR. We add a second score family:
-predicted peak activation at cells containing no ground-truth object,
-calibrated by the same split-conformal procedure at level $\alpha$, with the
-frame rate a convex combination
-$m = (1-w)\,m_{\mathrm{loc}} + w\,m_{\mathrm{phantom}}$. Each component has
-expectation at most $\alpha$ under the nominal distribution, so the
-combination does too, and $w=0$ recovers the original score exactly.
+\paragraph{Why an earlier version appeared significant.} Before correction
+this measurement read $+0.074$ with an interval of $[+0.020, +0.117]$. The
+point estimate barely moved --- $+0.074 \rightarrow +0.064$, a 14\%
+reduction --- so removing the train/evaluation overlap did \emph{not}
+destroy the effect. Significance was lost for two separate statistical
+reasons, and reporting both intervals separates them. Restricting to
+held-out drives cut the session count from 18 to 9, which alone widened the
+interval enough to cross zero (the nominal-only column). Resampling the
+degraded arm widened it a further $1.4$--$1.5\times$. Neither correction
+alone would have exposed the problem, and the earlier significance was an
+artifact of the two compounding.
 
-\begin{table}[t]
-\centering
-\caption{Phantom-score effect on the 5-epoch checkpoint, session-paired,
-session-level bootstrap over $18$ sessions. All entries significant (CI
-excludes zero) at every gap. Artifact:
-\texttt{phantom\_effect\_5epoch.json}.}
-\label{tab:phantom}
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-$w$ & effect (gap 0) & 95\% CI & effect (gap 20) & best eff/noise \\
-\midrule
-$0.00$ & $+0.0647$ & $[+0.0135, +0.1076]$ & $+0.0772$ & $0.740$ \\
-$0.25$ & $+0.0734$ & $[+0.0338, +0.1102]$ & $+0.0844$ & $0.851$ \\
-$0.50$ & $+0.0821$ & $[+0.0446, +0.1227]$ & $+0.0917$ & $\mathbf{0.862}$ \\
-$0.75$ & $+0.0908$ & $[+0.0411, +0.1427]$ & $+0.0990$ & $0.812$ \\
-$1.00$ & $+0.0995$ & $[+0.0304, +0.1714]$ & $+0.1062$ & $0.746$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The effect grows monotonically with phantom weight, $54\%$ larger at $w=1$
-than at $w=0$, and every cell survives the gap control. Mixing beats either
-endpoint on effect-to-noise ($0.862$ at $w=0.5$), so the two score families
-are partly complementary rather than redundant: phantom activations carry
-weather information the localization score cannot see. On the converged
-checkpoint, by contrast, no weight at any gap produces an effect whose
-interval excludes zero (\texttt{phantom\_effect\_converged.json}).
-
-We flag a limitation of this arm specifically. The null-detector control
-used elsewhere zeroes the box head, which leaves the heatmap untouched and
-is therefore not a null for a score that reads the heatmap. Zeroing all
-heads makes every phantom score identical and the component degenerate ---
-a floor by construction rather than an informative comparison. For $w > 0$
-the gap sweep and the confidence intervals carry the evidential weight, and
-we do not present the all-heads-null row as a control.
-
-\subsection{Monitorability Versus Detector Quality}
-\label{sec:quality-curve}
-
-Table~\ref{tab:quality-curve} measures both score families across six
-checkpoints on one protocol. The $x$-axis is heatmap object-versus-empty
-separation, not epoch count or training loss: between epochs $12$ and $20$
-the loss continued to fall ($5.52 \to 4.87$) while separation plateaued, so
-an epoch axis would suggest the detector kept improving in the dimension
-the monitor consumes when it had stopped.
-
-\begin{table}[t]
-\centering
-\caption{Weather effect versus detector quality, gap $10$, session-level
-bootstrap over $18$ sessions. $^{\ast}$ marks a 95\% CI excluding zero. The
-collapsed checkpoint is \textbf{not a commensurable measurement} --- its
-score is a demonstrated content artifact (Section~\ref{sec:null-diagnostic})
-rather than detector error --- and is shown as an artifact reference,
-excluded from the trend. Artifact:
-\texttt{quality\_effect\_curve\_cadc.json}.}
-\label{tab:quality-curve}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Checkpoint & separation & localization effect & phantom effect \\
-\midrule
-\multicolumn{4}{@{}l}{\emph{artifact reference, not part of the trend}} \\
-collapsed & $-0.0002$ & $+0.0341$ & $+0.1562$ \\
-\midrule
-\multicolumn{4}{@{}l}{\emph{trained checkpoints}} \\
-epoch 5 & $+0.2500$ & $+0.0660^{\ast}$ & $+0.1077^{\ast}$ \\
-epoch 9 & $+0.3796$ & $+0.0490^{\ast}$ & $+0.0205$ \\
-epoch 13 & $+0.4148$ & $+0.0116$ & $+0.0191$ \\
-epoch 16 & $+0.4488$ & $+0.0353$ & $+0.0161$ \\
-epoch 20 & $+0.4844$ & $-0.0126$ & $+0.0074$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Power, stated before the interpretation.} Only two of the six
-rows reach significance, and the session-level bootstrap has $18$
-independent units, so intervals are wide. The claim below rests on the
-monotone decline in effect size across the five trained checkpoints and on
-the loss of detectability beyond separation $\approx 0.41$, \emph{not} on a
-sequence of significant measurements. A reader who requires significance at
-every point should regard this as suggestive.
-
-With that stated: the phantom effect declines monotonically across all five
-trained checkpoints, $+0.1077 \to +0.0074$, as separation rises from $0.25$
-to $0.48$. The localization effect broadly tracks it, from $+0.0660$ to
-$-0.0126$, though not strictly monotonically --- epoch 16 ($+0.0353$) sits
-above epoch 13 ($+0.0116$), and neither is significant. The two scores
-agree on significance at five of six points; they disagree at epoch 9,
-where localization is significant and phantom is not. We report the
-disagreement rather than smoothing it: at that point the two score families
-give different answers about whether signal remains.
-
-The collapsed checkpoint's apparent phantom effect of $+0.1562$ is the
-largest in the table and is not detector signal at all. Including it in a
-fitted trend would be a category error, which is why it is separated above.
-
-\subsection{Operating Curve}
-\label{sec:operating-curve}
-
-Table~\ref{tab:operating-curve} gives the end-to-end result on the
-5-epoch checkpoint --- the configuration where signal exists --- at the
-best window length found ($40$ frames, onset at $40\%$).
-
-\begin{table}[t]
-\centering
-\caption{CADC operating curve, $36$ replicates, shared seeds across arms.
-``det.'' is the number of replicates on which the monitor alarmed after
-onset. Artifacts: \texttt{window\_sweep\_cadc.json},
-\texttt{final\_operating\_curve\_cadc.json}.}
-\label{tab:operating-curve}
-\begin{tabular}{@{}llcccc@{}}
-\toprule
-Arm & $\delta$ & FA & FA 95\% CI & det. & delay \\
-\midrule
-\multirow{3}{*}{baseline (marginal, $k{=}1$)}
- & $0.30$ & $0.14$ & $[0.03, 0.25]$ & 5/36 & $-9.4$ \\
- & $0.10$ & $0.11$ & $[0.03, 0.22]$ & 4/36 & $-7.5$ (FA $>\delta$) \\
- & $0.05$ & $0.11$ & $[0.03, 0.22]$ & 4/36 & $-5.8$ (FA $>\delta$) \\
-\midrule
-\multirow{3}{*}{ours (Mondrian, $k{=}4$)}
- & $0.30$ & $0.17$ & $[0.06, 0.28]$ & 11/36 & $12.8$ \\
- & $0.10$ & $0.03$ & $[0.00, 0.08]$ & 8/36 & $18.0$ \\
- & $0.05$ & $0.00$ & $[0.00, 0.00]$ & 6/36 & $19.7$ \\
-\midrule
-\multirow{3}{*}{null (Mondrian, $k{=}4$)}
- & $0.30$ & $0.19$ & $[0.08, 0.33]$ & 8/36 & $0.5$ \\
- & $0.10$ & $0.17$ & $[0.06, 0.28]$ & 8/36 & $9.0$ (FA $>\delta$) \\
- & $0.05$ & $0.17$ & $[0.06, 0.31]$ & 7/36 & $12.1$ (FA $>\delta$) \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Two things hold. The baseline is invalid at $\delta \le 0.10$ and its
-delays are \emph{negative} --- it alarms before the onset exists, and does
-so progressively earlier as the window lengthens ($-3.4$ at $20$ frames,
-$-9.4$ at $40$, $-17.3$ at $80$), which is the signature of accumulating on
-session identity. Our arm controls false alarms at every budget where the
-baseline does not, and the null detector is invalid at $\delta \le 0.10$,
-so where our arm is valid and detecting, the detection is attributable.
-
-One thing does not hold, and it is the original objective. Detection rate
-is $31\%$, $22\%$ and $17\%$ --- and on detection rate alone the null
-detector matches it ($8/36$ versus $8/36$ at $\delta = 0.10$). Longer
-windows do not fix this: across $20/40/60/80$ frames detection rises from
-$8\%$ to $22\%$ and then plateaus, while false-alarm control breaks at $80$
-frames as the extra frames give the clear streams more opportunity to cross
-the threshold. We therefore make no performance claim. The monitor we can
-build is \emph{valid} where the standard one is not; it is not
-\emph{reliable}.
+We suggest reporting both intervals as general practice for clustered
+effect estimates. A single interval tells a reader whether a result is
+significant; the pair tells them \emph{why} it is not, which is the
+difference between concluding ``underpowered'' and concluding ``absent.''
 
 \subsection{Snowy Scenes as Negative Control}
 \label{sec:snowy-control}
 
-On Snowy Scenes the real detector's weather effect is $-0.0085$ with a 95\%
-CI of $[-0.0719, +0.0553]$ --- centred on zero --- while the null detector's
-is $-0.1315$, $[-0.1917, -0.0726]$, clearly non-zero
+On Snowy Scenes the real detector's effect is $-0.0085$ with a 95\%
+interval of $[-0.0719, +0.0553]$, centred on zero, while the null
+detector's is $-0.1315$, $[-0.1917, -0.0726]$
 (\texttt{effect\_exists\_snowy.json}). The only signal present is a content
 artifact pointing the wrong way, which is why the null monitor ``detected''
-at $3$ and $10$ frames there while the real one was censored throughout.
+there while the real one did not.
 
-This is the mirror image of CADC, where the real effect is present and the
-null's is not, and the contrast is what makes the CADC result credible: the
-same diagnostic applied to two datasets returns opposite verdicts, so it is
-discriminating between them rather than reporting a property of our
-pipeline.
+This is the mirror image of CADC, where the real effect is the larger and
+the null's interval covers zero. The same diagnostic returns opposite
+verdicts on two datasets, which is the evidence that it discriminates
+between them rather than reporting a property of our pipeline. We note that
+these two intervals were computed with frame-level rather than
+session-level resampling and are therefore narrower than our convention
+elsewhere would give; the qualitative contrast is robust to this, but the
+Snowy interval widths should not be read as comparable to
+Table~\ref{tab:underpowered}'s.
+
+\subsection{What We Do Not Report}
+\label{sec:not-reported}
+
+Three lines of work were carried far enough to have numbers and are
+excluded, because the numbers do not support conclusions.
+
+A curve relating measured weather effect to detector quality across
+checkpoints is omitted: its quality axis (heatmap object-versus-empty
+separation) shares a term with one of the two scores plotted against it ---
+the phantom score \emph{is} the empty-cell activation that the axis
+subtracts --- so a decline along that axis is partly circular. Its inputs
+also predate the corrections in Section~\ref{sec:exp-setup}. We record it
+as an open question, not a finding.
+
+A covariate-informed betting rule conditioned on the detector's own
+cross-modal consistency score, and a spatially resolved variant using
+per-cell e-processes under multiplicity control, are described in
+Section~\ref{sec:method} because they motivate the design, but neither is
+evaluated here and neither carries a result in this paper.
+
+Operating-curve and detection-delay results are omitted because, under the
+corrected design, no configuration has a demonstrable false-alarm
+advantage: with 36 replicates, an observed rate of $0/36$ has an exact
+upper confidence bound of $0.080$, which does not establish control at
+$\delta = 0.05$.

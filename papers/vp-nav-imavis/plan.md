@@ -307,3 +307,54 @@ Consequences for the writeup:
   benefit depends on the quality of the model being calibrated is a real
   and non-obvious caveat for anyone applying Mondrian conformal prediction
   to a deployed monitor.
+
+## HIGHEST-PRIORITY FOLLOW-UP: CADC's quantitative snowfall-severity field
+
+Verified and downloaded to `data/cadcd/cadc_dataset_route_stats.csv` (75
+rows, one per drive) but **deliberately not used in this paper** — recorded
+here for the next round or for revision.
+
+**The field.** `Snow points removed`: LiDAR returns deleted as snow during
+annotation. Numeric, continuous, **100% populated (75/75 drives)**, range
+26–1443 (55x), median 416.
+
+**Why it matters — it varies WITHIN collection date:**
+
+    date          n   range        median   Road snow cover
+    2018_03_06   12   26 -  500     255     None
+    2018_03_07    6   42 -  557     141     None
+    2019_02_27   57   163 - 1443    492     Covered
+
+Everything in this paper used the binary `Road snow cover` label, which is
+**perfectly aliased with collection date** — that aliasing is the root of
+the cross-session tangle. `Snow points removed` is not: the 2018_03_06
+"bare" drives alone span 26–500 (19x) under one categorical label, and a
+500-count "bare" drive overlaps a 163-count "covered" drive. Severity is
+therefore separable from date.
+
+**What it would buy:**
+- *Power*: a continuous predictor across all drives is far more efficient
+  than the 9-vs-7 two-group comparison that produced the underpowered null.
+- *Confounding*: severity replaces date, so drive identity stops standing
+  in for weather.
+- *Interpretability*: a dose-response slope of per-drive miscoverage on
+  measured snowfall is a stronger claim than a group difference, and if
+  monotone it is close to unarguable.
+
+**Two caveats to carry forward.** (1) It measures *airborne* snowfall, not
+road cover — arguably better aligned with the phantom-score mechanism
+(spurious near-range returns) than road cover is, but it tests a different
+hypothesis than the bare/covered contrast and must be framed as such.
+(2) It is an annotation-effort proxy, scaling with scene geometry and
+traffic as well as snowfall, so rank-based inference should be primary
+rather than assuming linearity in raw counts.
+
+**Second lever: more data exists.** The CSV lists **75 drives**; we
+downloaded **32**. 2019_02_27 alone has 57 released drives against the 14
+we hold. Since n is the binding constraint on every interval in this paper,
+raising it addresses the limitation more directly than any estimator
+change. Download cost was not assessed before work stopped.
+
+Design constraint for both: keep the drive-disjoint split; regression over
+evaluation drives only; null-detector arm; drive-level clustering; CIs on
+the slope.

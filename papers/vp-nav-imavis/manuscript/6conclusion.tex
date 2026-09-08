@@ -2,58 +2,68 @@
 \label{sec:conclusion}
 
 We set out to reduce the detection delay of a conformal, anytime-valid
-monitor for multimodal 3D perception under real adverse weather. We did not
-succeed at that, and the reasons turned out to be more informative than the
-target.
+monitor for camera/LiDAR 3D perception under real adverse weather, so that
+a navigation stack could be told sooner when its perception had stopped
+being trustworthy. We did not achieve that. What the attempt produced
+instead are two findings about how such monitors fail silently, and a
+measurement we report as unresolved rather than settled.
 
-Three results stand. First, a conformal monitor built on a degenerate
-nonconformity score produces calibrated quantiles, plausible alarm times
-and clean-looking operating curves while measuring nothing about the
-detector; the \emph{null-detector diagnostic} --- one extra evaluation pass
-with the prediction head zeroed --- exposes this, and on our own earlier
-results it reproduced every reported detection delay exactly, to the frame,
-on two datasets. Second, split conformal's exchangeability assumption fails
-across driving sessions, with a $7.5\times$ spread in per-drive miscoverage
-under a pooled quantile and between-session variation as large as the
-weather effect itself; Mondrian session-conditional calibration repairs
-this on one checkpoint, though the advantage reverses on another, so we
-report it as model-dependent. Third, monitorability is non-monotone in
-detector quality: the measurable weather effect peaks at intermediate
-quality and declines to undetectability as the detector converges, with two
-structurally different nonconformity scores agreeing on the trend.
+First, a conformal monitor can produce calibrated quantiles and plausible
+alarm times while measuring nothing about the detector. When the prediction
+head degenerates, the nonconformity score becomes a function of the
+ground-truth labels alone and the monitor reports annotation structure as
+perception degradation, with nothing in its output revealing this. The
+\emph{null-detector diagnostic} --- rerun the pipeline with the prediction
+head's output replaced by zeros --- exposes it for the cost of one
+evaluation pass, and on our own earlier results reproduced them
+bit-identically, to 17 significant figures, from a model that outputs
+nothing. On one dataset the null monitor was better behaved than the real
+one, which is precisely why output inspection cannot substitute for the
+control.
 
-On the original objective we are unambiguous. The best configuration we
-found controls false alarms where the standard approach does not --- the
-standard approach alarms \emph{before} onset, accumulating on session
-identity --- but detects roughly $22\%$ of onsets, which on detection rate
-alone a null detector matches. Longer windows raise detection to a plateau
-and then break false-alarm control. At the effect sizes available here,
-reliable detection is not achievable, and no combination of calibration
-scheme, betting rule, block size or window length that we tried changes
-that. The monitor we can build is valid; it is not reliable.
+Second, split conformal's exchangeability assumption fails across driving
+sessions. Per-drive miscoverage under a pooled quantile spans $7.5\times$
+on nominal clear-road drives, with between-session variation as large as
+the weather effect being sought. The guarantee remains formally correct and
+becomes operationally useless: the monitor detects which session the
+vehicle is on. For navigation that is the worst available failure mode,
+because a planner wired to a monitor that tracks route identity will act on
+route identity.
 
-Four directions follow. The most direct concerns score design: if a
-converged detector's residual degradation is real but concentrated in rare,
-severe failures, a frame-averaged miscoverage rate dilutes it away, and a
-score targeting the tail rather than the mean might recover what we could
-not. Our phantom-score result argues weakly against the simplest version of
-this, but does not settle it. Second, the non-monotonicity should be tested
-on another architecture and another degradation mode before it is treated
-as general; we establish it on one detector, one dataset and one axis of
-quality variation. Third, the Mondrian reversal wants an explanation, since
-a calibration scheme whose benefit depends on the quality of the model
-being calibrated is a caveat worth understanding rather than merely
-recording. Fourth, the spatial construction --- per-cell e-processes under
-multiplicity control --- remains untested against ground-truth localized
-degradation, because neither dataset annotates where degradation occurs.
+On the weather effect we report an underpowered null and are explicit that
+this is not an absence: $+0.064$ with a 95\% interval of $[-0.061,
++0.193]$ on drive-disjoint held-out data, consistent both with a real
+effect of the size we previously claimed and with none. We also show why an
+earlier version appeared significant, by reporting the interval with and
+without the degraded arm resampled --- a decomposition we recommend for
+clustered estimates generally, because it distinguishes an underpowered
+design from a genuine absence where a single interval cannot.
 
-We would emphasise one practical point over the rest. Throughout this work
-the failures were silent: a collapsed detector, a degenerate evaluation
-harness whose replicates were all identical, a monitor detecting annotation
-statistics, a calibration scheme failing per session while valid on
-average. In every case the outputs looked reasonable, and in every case
-what exposed the problem was a control --- zeroing the detector, asserting
-replicates differ, measuring per session rather than in aggregate,
-inserting a temporal gap. For monitoring systems specifically, whose entire
-purpose is to be trusted when nothing else is watching, we think the
-controls deserve as much attention in reporting as the headline numbers.
+Three directions follow, in the order we would pursue them. The most
+promising is already identified: CADC publishes a quantitative per-drive
+snowfall-severity count that varies within collection date, which would
+replace the date-aliased binary contrast used here with a dose-response
+regression --- more efficient statistically, and free of the confound that
+limits every effect estimate in this paper. Second, the dataset releases
+substantially more drives than we downloaded, and since the number of
+evaluation sessions is the binding constraint on every interval reported
+here, raising it addresses the limitation more directly than any change of
+estimator. Third, the null-detector diagnostic should be generalized from a
+single check into a family: a null per score family, and ideally a graded
+sensitivity profile obtained by injecting known degradations of known
+magnitude, so that a null result acquires a measured detection floor rather
+than resting on an instrument of unknown sensitivity.
+
+We would emphasise one point above the others. Every failure in this work
+was silent --- a collapsed detector, an evaluation harness whose replicates
+were identical, a monitor reading annotation statistics, calibration valid
+in aggregate and broken per session, and a train/evaluation overlap that
+made every conformal score in-sample. In each case the outputs looked
+reasonable, and in each case what exposed the problem was a control:
+zeroing the detector, asserting that replicates differ, measuring per
+session rather than in aggregate, asserting that train and evaluation
+frames are disjoint. For a monitoring system, whose whole purpose is to be
+trusted when nothing else is watching, we think the controls deserve as
+much space in the reporting as the headline numbers --- and that a
+monitor whose sensitivity has never been demonstrated should not be counted
+in a safety argument at all.

@@ -10,11 +10,6 @@ M.~Pitropov, D.~E. Garcia, J.~Rebello, M.~Smart, C.~Wang, K.~Czarnecki,
   S.~Waslander, Canadian adverse driving conditions dataset, The International
   Journal of Robotics Research 40~(4-5) (2021) 681--690.
 
-\bibitem{VovkMondrian2003}
-V.~Vovk, D.~Lindsay, I.~Nouretdinov, A.~Gammerman, Mondrian confidence machine,
-  On-line Compression Modelling project, Working Paper~4, Royal Holloway,
-  University of London (2003).
-
 \bibitem{SnowyScenes2026}
 T.-T. Ngo, A.~M. Raisuddin, I.~Gouigah, P.~Litkey, P.~Manninen, H.~Hyyti,
   J.~Maanp{\"a}{\"a}, H.~Tuomas, V.~Sofie, N.~Kalle, L.~Pernickel, E.~E. Aksoy,
@@ -64,6 +59,11 @@ D.~Kumar, S.~Tayebati, F.~Migliarba, R.~Krishnan, A.~R. Trivedi, Learnable
 J.~Liu, L.~N. Zheng, W.~E. Zhang, X.~Wang, W.~Chen, Before fusion, ask what to
   keep: Contextual calibration of multimodal signals, arXiv preprint (2026).
 \newblock \href {http://arxiv.org/abs/2606.02679} {\path{arXiv:2606.02679}}.
+
+\bibitem{VovkMondrian2003}
+V.~Vovk, D.~Lindsay, I.~Nouretdinov, A.~Gammerman, Mondrian confidence machine,
+  On-line Compression Modelling project, Working Paper~4, Royal Holloway,
+  University of London (2003).
 
 \bibitem{Bijelic2020SeeingThroughFog}
 M.~Bijelic, T.~Gruber, F.~Mannan, F.~Kraus, W.~Ritter, K.~Dietmayer, F.~Heide,
