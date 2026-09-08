@@ -85,7 +85,47 @@ class CRAFXCADCDataset(Dataset):
         x_range: Tuple[float, float] = (0.0, 70.4),
         y_range: Tuple[float, float] = (-40.0, 40.0),
         z_range: Tuple[float, float] = (-3.0, 1.0),
+        split: Optional[str] = None,
+        eval_every: int = 2,
     ):
+        """
+        Args:
+            split: ``None`` loads every drive (the original behaviour).
+                ``"train"`` / ``"eval"`` partition the dataset by **whole
+                drive**, so no frame of an evaluation drive was ever seen in
+                training.
+
+                This exists because the detector and the conformal monitor
+                were previously built over the same unsplit dataset object:
+                every calibration, nominal and degraded frame had been a
+                training frame. Conformal calibration on training data
+                carries no validity guarantee at all -- the nonconformity
+                scores are in-sample residuals, so the calibrated quantile
+                does not bound out-of-sample miscoverage.
+
+                Frame-level splitting would not fix it. Consecutive CADC
+                frames are ~10 Hz samples of one scene, so a frame-level
+                holdout leaves near-duplicates of training frames in the
+                evaluation set. The partition is therefore by drive.
+            eval_every: every ``eval_every``-th drive *within each weather
+                category* goes to the evaluation split, the rest to train.
+                Interleaving within category (rather than splitting by
+                date, or taking a contiguous block) keeps both categories
+                and all collection dates represented on both sides.
+
+        Note on nesting with session-conditional calibration: Mondrian
+        calibration needs calibration frames drawn from inside each
+        monitored session, so an evaluation drive is split *again*
+        internally into a leading calibration prefix, a temporal gap, and a
+        monitored remainder. That inner split is within evaluation drives
+        only and never reaches back into training drives, so the two levels
+        compose without leaking.
+        """
+        if split not in (None, "train", "eval"):
+            raise ValueError(f"split must be None, 'train' or 'eval', got {split!r}")
+        if eval_every < 2:
+            raise ValueError(f"eval_every must be >= 2, got {eval_every}")
+
         self.data_root = data_root
         self.config = config or CRAFXConfig()
         self.camera_id = camera_id
@@ -93,21 +133,26 @@ class CRAFXCADCDataset(Dataset):
         self.x_range = x_range
         self.y_range = y_range
         self.z_range = z_range
+        self.split = split
+        self.eval_every = eval_every
 
         self._frame_index: List[Tuple[str, str, int]] = []  # (date, drive, frame_num)
         self.sample_indices: List[str] = []
         self._ann_cache: Dict[Tuple[str, str], list] = {}
+        self.drives: List[Tuple[str, str]] = []  # the (date, drive) pairs this split owns
 
         if not os.path.isdir(data_root):
             warnings.warn(f"{data_root} does not exist. Dataset will be empty.")
             return
 
+        # Enumerate every usable drive first, so the partition depends only
+        # on the drive inventory and not on iteration order or on which
+        # split is being constructed.
+        available: Dict[str, List[Tuple[str, str]]] = {}
         for date in sorted(os.listdir(data_root)):
             date_dir = os.path.join(data_root, date)
             if not os.path.isdir(date_dir) or date not in _DATE_CATEGORY:
                 continue
-            category = _DATE_CATEGORY[date]
-
             for drive in sorted(os.listdir(date_dir)):
                 drive_dir = os.path.join(date_dir, drive)
                 image_dir = os.path.join(drive_dir, "labeled", f"image_0{camera_id}", "data")
@@ -115,11 +160,24 @@ class CRAFXCADCDataset(Dataset):
                 ann_path = os.path.join(drive_dir, "3d_ann.json")
                 if not (os.path.isdir(image_dir) and os.path.isdir(lidar_dir) and os.path.isfile(ann_path)):
                     continue
+                available.setdefault(_DATE_CATEGORY[date], []).append((date, drive))
 
-                n_frames = len([f for f in os.listdir(image_dir) if f.endswith(".png")])
-                for frame_num in range(n_frames):
-                    self._frame_index.append((date, drive, frame_num))
-                    self.sample_indices.append(f"{category}_{date}_{drive}_{frame_num:010d}")
+        selected: List[Tuple[str, str]] = []
+        for category in sorted(available):
+            drives = sorted(available[category])
+            for position, key in enumerate(drives):
+                is_eval = (position % eval_every) == 0
+                if split is None or (split == "eval") == is_eval:
+                    selected.append(key)
+
+        for date, drive in sorted(selected):
+            category = _DATE_CATEGORY[date]
+            image_dir = os.path.join(data_root, date, drive, "labeled", f"image_0{camera_id}", "data")
+            n_frames = len([f for f in os.listdir(image_dir) if f.endswith(".png")])
+            self.drives.append((date, drive))
+            for frame_num in range(n_frames):
+                self._frame_index.append((date, drive, frame_num))
+                self.sample_indices.append(f"{category}_{date}_{drive}_{frame_num:010d}")
 
         if not self._frame_index:
             warnings.warn(f"No CADC drives found under {data_root}. Dataset will be empty.")

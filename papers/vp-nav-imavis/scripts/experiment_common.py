@@ -157,7 +157,9 @@ def _build_cadc(args, defaults: dict, device: torch.device) -> RealSetting:
         raise ValueError("--data-root is required for dataset=cadc")
 
     config = CRAFXConfig(bev_h=args.bev_size, bev_w=args.bev_size, num_classes=CADC_NUM_CLASSES)
-    dataset = CRAFXCADCDataset(data_root=args.data_root, config=config)
+    # split="eval": drives the detector never trained on. Calibration and
+    # monitoring both draw from here, so the conformal guarantee applies.
+    dataset = CRAFXCADCDataset(data_root=args.data_root, config=config, split="eval")
     model, epoch = _load_model(args.checkpoint, config, device)
 
     bare_drives = _drives_for_category(dataset, defaults["nominal_category"])

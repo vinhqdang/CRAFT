@@ -66,6 +66,22 @@ def cadc_root(tmp_path):
     return root
 
 
+
+@pytest.fixture
+def cadc_root_multidrive(tmp_path):
+    """
+    Enough drives for a by-drive train/eval partition to populate both
+    sides. The shared `cadc_root` fixture has one drive per category, which
+    cannot be split by drive at all -- that is a property of the fixture,
+    not of the split.
+    """
+    root = str(tmp_path / "cadcd_multi")
+    for drive in ("0001", "0002", "0003", "0004"):
+        _build_cadc_tree(root, "2018_03_06", drive, [[_car_cuboid()], []])
+    for drive in ("0005", "0006"):
+        _build_cadc_tree(root, "2019_02_27", drive, [[_car_cuboid()]])
+    return root
+
 def _expected_cell(config, x_range, y_range):
     row = int((OBJECT_LOCATION[0] - x_range[0]) / (x_range[1] - x_range[0]) * config.bev_h)
     col = int((OBJECT_LOCATION[1] - y_range[0]) / (y_range[1] - y_range[0]) * config.bev_w)
@@ -191,3 +207,56 @@ def test_missing_data_root_warns_and_is_empty(tmp_path):
     with pytest.warns(UserWarning):
         dataset = CRAFXCADCDataset(data_root=str(tmp_path / "does_not_exist"))
     assert len(dataset) == 0
+
+
+def test_train_and_eval_splits_share_no_frames(cadc_root_multidrive):
+    # THE regression guard. Before the split parameter existed, the detector
+    # and the conformal monitor were both built over one unsplit dataset
+    # object, so every calibration, nominal and degraded frame had been a
+    # training frame. Conformal calibration on training data has no validity
+    # guarantee -- the scores are in-sample residuals.
+    config = CRAFXConfig(bev_h=16, bev_w=16, num_classes=CADC_NUM_CLASSES)
+    train = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="train")
+    evaluation = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="eval")
+
+    train_ids = set(train.sample_indices)
+    eval_ids = set(evaluation.sample_indices)
+    assert train_ids, "train split must not be empty"
+    assert eval_ids, "eval split must not be empty"
+    assert train_ids.isdisjoint(eval_ids)
+
+
+def test_splits_partition_by_whole_drive_not_by_frame(cadc_root_multidrive):
+    # Frame-level holdout would be useless here: consecutive CADC frames are
+    # ~10Hz samples of the same scene, so a frame-level split leaves
+    # near-duplicates of training frames in the evaluation set.
+    config = CRAFXConfig(bev_h=16, bev_w=16, num_classes=CADC_NUM_CLASSES)
+    train = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="train")
+    evaluation = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="eval")
+
+    assert set(train.drives).isdisjoint(set(evaluation.drives))
+
+
+def test_splits_are_exhaustive_and_match_the_unsplit_dataset(cadc_root_multidrive):
+    config = CRAFXConfig(bev_h=16, bev_w=16, num_classes=CADC_NUM_CLASSES)
+    every = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config)
+    train = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="train")
+    evaluation = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="eval")
+
+    assert set(train.sample_indices) | set(evaluation.sample_indices) == set(every.sample_indices)
+    assert len(train) + len(evaluation) == len(every)
+
+
+def test_split_is_deterministic(cadc_root_multidrive):
+    config = CRAFXConfig(bev_h=16, bev_w=16, num_classes=CADC_NUM_CLASSES)
+    a = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="eval")
+    b = CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="eval")
+    assert a.sample_indices == b.sample_indices
+
+
+def test_invalid_split_rejected(cadc_root_multidrive):
+    config = CRAFXConfig(bev_h=16, bev_w=16, num_classes=CADC_NUM_CLASSES)
+    with pytest.raises(ValueError):
+        CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="validation")
+    with pytest.raises(ValueError):
+        CRAFXCADCDataset(data_root=cadc_root_multidrive, config=config, split="eval", eval_every=1)

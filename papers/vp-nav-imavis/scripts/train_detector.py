@@ -82,7 +82,9 @@ def build_dataset(args, config_num_classes=None):
     if not args.data_root:
         raise ValueError("--data-root is required for dataset=cadc")
     config = CRAFXConfig(bev_h=args.bev_size, bev_w=args.bev_size, num_classes=CADC_NUM_CLASSES)
-    return CRAFXCADCDataset(data_root=args.data_root, config=config), config
+    # split="train": whole-drive partition. Evaluation drives are never seen
+    # in training, so the conformal calibration downstream is out-of-sample.
+    return CRAFXCADCDataset(data_root=args.data_root, config=config, split="train"), config
 
 
 def _move_batch_to_device(batch, device):
