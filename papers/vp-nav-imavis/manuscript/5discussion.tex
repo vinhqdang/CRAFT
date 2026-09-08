@@ -1,46 +1,146 @@
-\section{Discussion and Limitations}
+\section{Discussion}
 \label{sec:discussion}
 
-\subsection{What the Real-Data Evaluation Supports, and What It Does Not}
-\label{sec:discuss-support}
+\subsection{Why a Fictitious Monitor Looks Healthy}
+\label{sec:discuss-null}
 
-The covariate-blind monitoring result on Snowy Scenes -- detecting a real weather onset within 3 to 10 frames depending on the false-alarm budget, with zero false alarms at every budget tested -- is genuine evidence that the anytime-valid e-process backbone, extended to spatially-resolved multiplicity control, works on real multimodal 3D perception data under a real adverse-weather transition, not only on the 2D visual-tracking benchmarks it was previously evaluated against. It is not yet evidence that the spatial construction specifically (as opposed to the global monitor) has been tested against a scene with genuine spatial heterogeneity in where degradation occurs -- the motivating use case for building a spatial map in the first place -- since neither Snowy Scenes nor CADC contains ground-truth annotation of which regions of a scene were more or less affected by the weather condition at a given time. Validating that the flagged-cell map actually tracks real spatially localized degradation, rather than only replicating the global result cell-by-cell, remains open (Section~\ref{sec:conclusion}).
+The most uncomfortable result in this paper is that our own reported
+detection delays were reproduced exactly, to the frame, by a detector that
+outputs nothing. It is worth being precise about why, because the mechanism
+generalizes past our particular bug.
 
-The evaluation scale is also modest by design at this stage: five onset replicates and five stationary ``clear'' replicates per condition, a 20-frame monitoring window (Section~\ref{sec:sensitivity} extends this to 40 frames for one sensitivity check), one detector architecture. The replicate count is a pilot-scale demonstration, not a powered comparison, and we do not report a significance test between the bettors' detection-delay distributions in Table~\ref{tab:snowy-results} for that reason -- an observed gap at this $n$ should be read as suggestive, not decisive. One property of the evaluation partially mitigates this: each replicate's wealth trajectory is computed once and is delta-independent, so the same five trajectories are reused, not independently resampled, across the $\delta$ sweep in Table~\ref{tab:snowy-results}, making the comparison across $\delta$ a paired one within a fixed replicate set even though the replicate count itself stays small. The qualitative CCP-covariate finding is on firmer footing than the replicate count alone suggests, however, since Figure~\ref{fig:qualitative-multi} shows the same wrong-direction disagreement ordering holds consistently across six independently sampled real frames (three per category, spread across each category's full frame pool), not only in the aggregated statistics a small replicate count could in principle mask.
+The nonconformity score is a residual, $\lVert B_{\mathrm{pred}} -
+B_{\mathrm{target}} \rVert_1$, evaluated where a ground-truth object sits.
+When the prediction term vanishes the score becomes $\lVert
+B_{\mathrm{target}} \rVert_1$: a function of the labels alone. Nothing
+downstream notices. Split conformal calibration still returns a
+well-defined quantile, because it is a quantile of \emph{some} exchangeable
+score distribution. The betting process still accumulates wealth, because
+$m(t)$ still moves. The alarm still fires at a plausible time, because
+scene content genuinely differs between a dataset's nominal and adverse
+splits --- on CADC the mean ground-truth object count per frame roughly
+doubles. Every component behaves exactly as specified. The monitor is
+measuring the dataset's annotation statistics and reporting them as
+perception degradation.
 
-\subsection{The CCP-Covariate Negative Result, Generalized}
-\label{sec:discuss-ccp}
+There is an inversion here worth naming. On CADC the null monitor was
+\emph{better behaved} than the real one: false-alarm rate $0.00$ against
+$1.00$. The reason is that scene content is relatively homogeneous across
+nominal drives, so a content-derived score transfers cleanly between
+sessions, whereas genuine detector error is heterogeneous across sessions
+and does not. The artifact was better behaved than the truth. This inverts
+the usual heuristic that cleaner numbers indicate a better method, and it
+is precisely why the failure is hard to notice from the outputs alone.
 
-Section~\ref{sec:ccp-negative}'s finding is worth separating from its specific mechanism, and Section~\ref{sec:snow-corruption-attempt}'s follow-up test shows why: we do not think this is only about PGD specifically. The first mechanism was: an adversarial-consistency-trained probe, when repaired to stop collapsing, learned to flag adversarial perturbation rather than natural weather degradation, and the two are different enough in feature space that the repair did not transfer. That diagnosis directly motivated a concrete, testable fix -- supervise the mismatch target with physically-motivated synthetic snow corruption instead -- which we then actually built and retrained, rather than leaving as a plausible-sounding but untested suggestion. It also failed, and not narrowly: the corrected-again covariate still ordered disagreement in the wrong direction, and the resulting operating curve was, if anything, worse than the first fix's. Two structurally different mismatch proxies -- one adversarial, one a direct physical simulation of the target condition -- both failed to produce a covariate that tracks real snow severity correctly. This is a stronger and more general warning than "the PGD proxy doesn't transfer": it suggests the difficulty may not be reducible to picking a better corruption function at all, and could instead reflect something more structural about supervising a jointly-trained consistency head this way -- for instance, that \emph{any} training signal framed as a binary matched/mismatched contrastive target (Equation~\ref{eq:ccp}'s loss) pushes $S$ toward a coarse agree/disagree decision boundary shaped by whatever mismatch examples it sees, rather than a graded severity signal that generalizes to a condition (real, bursty, partial snowfall) that looks like neither a clean match nor either training-time mismatch example particularly closely. We do not have direct evidence for that specific explanation -- it is offered as the most concrete falsifiable hypothesis the two failures jointly suggest, not a third confirmed diagnosis -- but it does redirect where we think a future attempt should look: not at a third choice of mismatch-generating corruption, but at whether a graded (non-binary) consistency training signal, or a covariate not derived from a jointly-trained consistency head at all (Section~\ref{sec:conclusion}), fares any differently. The practical implication for anyone considering this general pattern remains the same and is now doubly reinforced: verify, empirically, on real data and under the actual condition the covariate is meant to detect, that the signal varies in the intended direction, before building a betting rule, a fusion gate, or any other downstream mechanism on top of it -- and do not assume a differently-motivated repair will transfer just because its motivation sounds more physically grounded than the previous attempt's, since ours did not.
+The practical recommendation is cheap. One extra evaluation pass with the
+prediction head zeroed, reported as a row in the results table, separates
+``our monitor detects degradation'' from ``our monitor detects the
+dataset''. We would not have found our own error without it.
 
-\subsection{What the Sensitivity Analysis Adds}
-\label{sec:discuss-sensitivity}
+\subsection{Sessions Are Not Exchangeable, and What That Costs}
+\label{sec:discuss-sessions}
 
-Section~\ref{sec:sensitivity}'s completed sensitivity sweep sharpens Section~\ref{sec:discuss-ccp}'s generalized warning into three specific, checkable findings rather than one qualitative caution.
+Conformal prediction's guarantee is conditional on exchangeability, and
+driving data violates it in a specific, structured way: it arrives in
+sessions, and sessions differ in weather, lighting, traffic density and
+route in ways that persist across every frame within them. Our measurement
+puts a number on the cost --- a $7.5\times$ spread in per-drive miscoverage
+under a pooled quantile, with between-session standard deviation ($0.061$)
+as large as the weather effect being sought ($0.057$).
 
-\textbf{The covariate's failure is gain-dependent, not absolute.} At $\kappa \in \{0.5, 1.0\}$ the covariate-informed bettor still alarms, close to the covariate-blind bettor's own delays; the complete failure to alarm reported as the headline result is specific to $\kappa \ge 2.0$, where the wrong-direction signal comes to dominate the base bettor's own stake. The actionable lesson is therefore not simply "do not use this covariate," but that a covariate's gain parameter is not a free efficiency knob when its direction has not been validated -- it is a knob that can move the mechanism from harmless (small gain) to actively harmful (large gain), and a practitioner who tests only one gain value risks drawing the wrong general conclusion in either direction. We recommend, concretely, that any future use of this covariate-scaling pattern report the operating curve across a real gain sweep, not a single fixed value, precisely because the qualitative conclusion changed within the range we tested.
+The consequence is not a small loss of efficiency. It is that the monitored
+quantity is dominated by which session the vehicle is on, so the monitor
+detects session identity. That is visible directly in the operating curve:
+the marginal baseline's detection delays are negative and become more
+negative as the window lengthens, because a longer window simply supplies
+more nominal frames from an unlucky session to accumulate against.
 
-\textbf{Calibration-set size has a real, non-monotonic sweet spot.} This is, on its own, an independently useful methodological finding beyond the CCP-covariate story: at $n_{\mathrm{calib}}=20$ the calibrated quantile is unstable enough that \emph{both} bettors alarm on every stationary "clear" replicate and before the true onset on the onset replicates -- a monitor that is, in effect, non-functional, alarming regardless of true condition -- while at $n_{\mathrm{calib}}=80$ the quantile has shifted enough in the other direction that both bettors go completely silent (censored at every $\delta$). The 40-frame default that produces Table~\ref{tab:snowy-results}'s real detection result sits at a genuine sweet spot between these two failure modes, not an arbitrary choice that happened to work. This is a concrete, transferable caution for anyone applying a similar split-conformal calibration protocol to a comparably-sized real dataset: calibration-set size is not a nuisance parameter to fix once and ignore, and both too little and too much calibration data, relative to the severity contrast being calibrated against, can silently break the monitor in opposite directions -- one producing a flood of false alarms, the other producing a monitor that never fires at all.
+Mondrian calibration is the natural repair and it works on one checkpoint.
+We report the reversal on the other rather than omitting it, and we
+deliberately do not explain it, because we cannot. What we can say is that
+the reversal makes an unconditional recommendation unsafe: whether
+session-conditional calibration improves worst-case coverage appears to
+depend on the model being calibrated, and a practitioner should measure it
+on their own model rather than assume it. We would rather publish a
+qualified result than a clean one we cannot support at a second
+measurement.
 
-\textbf{The covariate-informed bettor's failure is structural, not a patience problem.} Doubling the monitoring window from 20 to 40 frames leaves the covariate-informed bettor censored at every $\delta$, identically to the shorter window, while the covariate-blind bettor's own delays (well under 20 frames at every tested $\delta$) are unaffected by the extra room. This rules out the more benign possible explanation that the covariate-informed bettor would eventually catch up given enough time; the wrong-direction covariate structurally prevents wealth from accumulating at $\kappa=2.0$, regardless of how long the stream runs.
+\subsection{Monitorability Is Non-Monotone in Detector Quality}
+\label{sec:discuss-quality}
 
-\subsection{What CADC Adds: a Second Calibration Lesson, and a Cross-Dataset Contrast}
-\label{sec:discuss-cadc}
+The central finding is that the monitorable weather effect is largest at
+intermediate detector quality and declines as the detector improves,
+becoming undetectable at our best checkpoint.
 
-Section~\ref{sec:cadc-heterogeneity}'s calibration-heterogeneity finding is a different failure mode from Section~\ref{sec:discuss-sensitivity}'s calibration-set-\emph{size} finding, and worth separating from it explicitly. The Snowy Scenes sensitivity sweep shows that a calibration set can be too small or too large, in an absolute sense, relative to a fixed severity contrast. CADC's initial 2-drive calibration failure was not primarily a size problem -- 200 frames is not obviously smaller than Snowy Scenes' working 40-frame default in a way that alone explains a jump from a well-behaved monitor to a uniform false-alarm rate of $1.00$ -- it was a \emph{representativeness} problem: the two held-out drives happened to share a collection date whose per-drive difficulty was not representative of the population the quantile needed to generalize to. A dataset composed of multiple real collection sessions (drives, in CADC's case) can carry structured heterogeneity correlated with an operational variable that a small, unstratified calibration sample can miss entirely, even at a sample size that would otherwise seem adequate. The fix -- stratifying the calibration/nominal split across that variable rather than sampling without regard to it -- is a direct, checkable, and reusable prescription for anyone applying this split-conformal protocol to a comparably structured real dataset, distinct from and additional to the ``pick an adequate size'' lesson Section~\ref{sec:discuss-sensitivity} already establishes.
+The mechanism we propose is straightforward, though we test it only
+indirectly. A conformal monitor of this design detects a \emph{differential}
+--- the gap between nominal-condition error and degraded-condition error.
+A collapsed detector has no error differential because it has no error
+signal at all, only content. A converged detector has little error
+differential because it handles snow nearly as well as clear conditions:
+that is what robustness means. The differential is largest for a detector
+good enough to have real, structured error but not good enough to be
+robust to the condition being monitored.
 
-The two datasets' CCP-covariate results also disagree, and we think that disagreement is itself informative rather than a nuisance to average away. On Snowy Scenes, across three structurally different training attempts (Section~\ref{sec:ccp-negative}, Section~\ref{sec:snow-corruption-attempt}), the CCP-informed bettor was tied at best and censored at worst -- never better than covariate-blind. On CADC, with its own independently trained checkpoint and its own real (not constructed) severity contrast, the CCP-informed bettor is tied or one frame faster at every $\delta$ tested (Section~\ref{sec:cadc-results}) -- never worse than covariate-blind, the mirror image of the Snowy Scenes pattern. Neither result generalizes to the other: we do not take CADC's modest improvement as grounds to revisit Section~\ref{sec:discuss-ccp}'s caution about reusing an invariance-trained consistency signal as a leading indicator, since the same caution -- verify the signal's direction empirically before relying on it -- is exactly what distinguishes the two outcomes here rather than contradicts it. What the contrast does suggest is that whatever makes the CCP score track (or fail to track) real snow severity correctly is sensitive to properties of the specific dataset and checkpoint -- plausibly CADC's differently-sourced snow (accumulated road snow cover versus Snowy Scenes' mix of settled and airborne snowfall the CCP score has to distinguish from clean features), plausibly some other training or data artifact we have not isolated -- rather than a fixed, dataset-independent property of the covariate-supervision mechanism itself. We report both outcomes plainly, exactly as measured, rather than picking the one that makes a cleaner story.
+If this is right, it is an awkward property for the field. The
+better-engineered the perception stack, the less there is for a
+degradation monitor of this design to find, and the monitor's failure is
+silent --- it continues producing calibrated quantiles and plausible alarm
+times. A team that improves its detector and keeps its monitor may
+reasonably believe both are working.
 
-\subsection{The Cost of Hedging: What the Mixture Result Actually Shows}
-\label{sec:discuss-mixture}
+Three qualifications constrain how far this should be taken. First, power:
+two of six points significant, $18$ sessions, wide intervals; the claim
+rests on the trend and on the loss of detectability, not on a run of
+significant results. Second, the two scores disagree at epoch 9, and we do
+not know which is right there. Third, we vary detector quality along one
+axis, on one architecture and one dataset; whether the same shape appears
+for other detectors or other conditions is untested. The finding is
+suggestive and mechanistically plausible, not established.
 
-Section~\ref{sec:mixture-results}'s real evaluation on both datasets did not produce the outcome a reader might expect from a hedging argument -- that mixing two bettors trades a little performance in the regime where the better single bettor is known in hindsight for protection in the regime where it is not. Instead, on both datasets, the fixed equal-weight mixture matched or approached whichever of the two single bettors happened to be worse, not some intermediate point. On CADC, where CCP-informed was tied or one frame faster than covariate-blind at every $\delta$ (Section~\ref{sec:discuss-cadc}), the mixture reproduced covariate-blind's delays exactly (Table~\ref{tab:mixture-results}) rather than splitting the difference or tracking the (already small) CCP-informed advantage. On Snowy Scenes, where CCP-informed is censored at every $\delta$ (Section~\ref{sec:discuss-ccp}), the mixture is dragged toward that failure -- alarming later than covariate-blind alone at $\delta=0.3$, and censored, matching CCP-informed, at the tighter budgets. In neither case did equal-weight hedging deliver the intermediate, worst-case-bounded behavior the construction is designed to guarantee in principle.
+It also admits a more optimistic reading we cannot presently distinguish
+from ours: perhaps a converged detector's residual degradation is real but
+concentrated in rarer, harder cases that a frame-averaged miscoverage rate
+dilutes away. That would make the problem one of \emph{score design} rather
+than of monitorability as such. Our phantom-score result is weak evidence
+against the simplest version of that story --- a score built entirely from a
+different failure mode also finds nothing at convergence --- but it is not
+decisive, and a score targeting rare severe errors specifically is the
+experiment we would run next.
 
-This is not a contradiction of Section~\ref{sec:mixture-method}'s validity argument -- the type-I error guarantee (Ville's inequality on the combined wealth process) holds regardless of how the two datasets' operating curves come out, and Table~\ref{tab:mixture-results} shows zero false alarms at every $\delta$ on both datasets, exactly as the theory promises. What the result actually reveals is a distinct, empirical question the validity proof is silent on: a fixed convex combination protects against being \emph{arbitrarily} wrong about which bettor is better, but it does so by averaging wealth values that can be at very different scales, and a bettor that is accumulating wealth slowly (or losing it) at a given timestep does not merely fail to help the average -- it actively pulls the combined wealth down toward its own trajectory, weighted by a fixed $w_i$ that does not adapt to which bettor is currently winning. On CADC the two single bettors' delays are close enough (6/8/9 versus 6/7/8) that this pull is barely visible in the reported statistic; on Snowy Scenes, where the gap between the two is not a matter of one or two frames but of alarming at all, the same fixed-weight average is dominated by the failing bettor's contribution once its wealth process stops accumulating, which is exactly when the covariate-blind bettor's own accumulating wealth is diluted by a factor of two it did not need. Put plainly: equal-weight mixing does not know, at any given timestep, which of its two components to trust, and paid the honest price for that ignorance on both datasets tested here, rather than the free lunch a hedging intuition might suggest.
+\subsection{What the Score Families Tell Us}
+\label{sec:discuss-scores}
 
-We read this as a genuine, reportable negative finding about the fixed-weight instantiation specifically, not as evidence against combining e-processes in general, and Section~\ref{sec:mixture-method}'s validity result (unlike this empirical instantiation) does not depend on the weights being fixed. The natural next step this result motivates directly is exactly what we flagged as unimplemented in Section~\ref{sec:mixture-method}: an adaptive or regret-weighted combination that shifts mass toward whichever component's wealth has actually been accumulating, rather than committing to a static split before either bettor's real performance on the current stream is known. That such an adaptive scheme could recover, at least, the better single bettor's own delay on both datasets -- without knowing in advance which bettor that is -- is the concrete claim a follow-up evaluation would need to test, not one we claim here (Section~\ref{sec:conclusion}).
+Adding a phantom-detection component was the only intervention in this
+project that changed \emph{what is measured} rather than how we bet on it,
+and it is the only one that enlarged the effect: $+54\%$ at $w=1$ relative
+to localization alone, with mixing at $w=0.5$ giving the best
+effect-to-noise. That the two families are complementary rather than
+redundant is a genuine methodological result: spurious activation in empty
+space carries weather information that a matched-cell residual cannot see,
+which is what one would expect given that snow's dominant LiDAR effect is
+spurious near-range returns.
 
-\subsection{Relationship to the Underlying Detector}
-\label{sec:discuss-detector}
+It did not clear the detection bar. Effect-to-noise $0.862$ against the
+$0.849$ obtainable without it is within noise of no improvement on that
+metric, even though the raw effect is substantially larger --- the
+between-session variance grows alongside the effect. We report both numbers
+rather than the flattering one.
 
-This paper deliberately keeps the monitored detector's own architecture and training as background rather than as a subject of independent re-evaluation here: the detector's design (the Cross-modal Consistency Probe, the Gated Adaptive Fusion Module, and the Adversarial Consistency Training objective, Section~\ref{sec:background-detector}) is summarized only to the depth this paper's own monitoring layer depends on, since the monitor itself is detector-agnostic. This paper's own experimental work concerns only the layer built on top of that detector -- the conformal calibration, the sequential test, the spatial multiplicity control, and the real-data evaluation of both the monitor and, honestly, of the CCP-informed betting mechanism specifically (Section~\ref{sec:ccp-negative}) -- which is squarely this paper's own empirical finding, independent of the detector's own design motivation for the CCP.
+\subsection{Limitations}
+\label{sec:discuss-limits}
+
+Beyond the power constraints already stated: our evaluation is a single
+detector architecture on two datasets, with $18$ nominal sessions on the
+dataset carrying the positive result. Training used chunked resumption, so
+optimizer moment estimates re-warm at each resume --- a small deviation from
+an uninterrupted run, stated because it is a real difference. The
+within-session split used for Mondrian places calibration and monitored
+frames in the same drive; we control for adjacency with a temporal-gap
+sweep and the effect is stable across it, but the split still differs from
+the whole-drive protocol used elsewhere in this work, and we flag that
+rather than leaving a reader to find the inconsistency. Finally, the
+degraded regime on CADC is a different collection date from the nominal
+one, so weather is confounded with date; the null-detector control bounds
+how much of the effect that could explain, but does not eliminate the
+confound.

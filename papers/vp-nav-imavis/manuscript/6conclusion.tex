@@ -1,6 +1,59 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented a statistically principled monitoring layer, built on top of a robustness-engineered multimodal fusion detector (background infrastructure to this paper, Section~\ref{sec:background-detector}), that wraps the detector's outputs in split conformal prediction and tracks the resulting miscoverage rate with an anytime-valid sequential test extended from a single global alarm to a spatially-resolved, per-BEV-cell map with online false-discovery-rate control. Evaluated against two independent real adverse-weather driving datasets -- Snowy Scenes and CADC -- the covariate-blind version of this monitor detects a genuine weather onset with zero false alarms across every budget tested on both: within 3 to 10 frames on Snowy Scenes, and within 6 to 9 frames on CADC, extending a sequential-testing-by-betting approach previously validated only on synthetic corruption and 2D visual tracking to real 3D multimodal adverse-weather perception, and replicating cleanly across two independently collected datasets. We also reported, in full, a negative result on Snowy Scenes: conditioning the betting rate on the detector's own cross-modal consistency signal, intended as a leading indicator of degradation, failed on real data across three distinct attempts -- the original collapse, a repair via adversarial-perturbation mismatch supervision, and a further repair via physically-motivated synthetic weather-corruption mismatch supervision (Section~\ref{sec:snow-corruption-attempt}). A completed real sensitivity analysis against the (adversarially-repaired) checkpoint (Section~\ref{sec:sensitivity}) sharpened that negative result into something more specific -- the failure is gain-dependent, not absolute, with a sharp transition between a small gain (still helps) and a large one (actively harmful) -- and, independently, surfaced a genuine, non-monotonic sensitivity to calibration-set size that both bounds the main result's reliability and gives concrete, transferable guidance for applying the same protocol elsewhere. CADC then added two further real findings rather than a simple replication: a distinct calibration-\emph{representativeness} failure mode, caused by drive-to-drive heterogeneity correlated with collection date, fixed by stratifying the calibration split across dates (Section~\ref{sec:cadc-heterogeneity}); and, on the CCP question specifically, a modest reversal of the Snowy Scenes direction -- the CCP-informed bettor tied or one frame faster than covariate-blind at every $\delta$ tested (Section~\ref{sec:cadc-results}). We treat the covariate mechanism as a genuinely open problem this evidence has sharpened rather than resolved -- its direction depends on the dataset and checkpoint in a way we have not fully explained -- rather than force a positive or negative framing the evidence as a whole does not cleanly support. That unresolved, dataset-dependent tension is precisely what motivated this paper's third and central contribution: mixture (hedged) betting, a fixed convex combination of the covariate-blind and CCP-informed wealth processes, valid under Ville's inequality by Vovk and Wang's~\cite{VovkWang2021Evalues} result that any convex combination of e-values is itself a valid e-value, requiring no new assumption about which regime a deployment is in and no retraining of either component bettor. We implemented and validated this real algorithm -- not only its validity proof -- on both real datasets using the existing checkpoints, and report the real outcome exactly as measured, whichever way it landed: the fixed equal-weight instantiation does not recover an intermediate result on either dataset, instead reproducing (CADC) or falling behind (Snowy Scenes) the weaker of its two components (Section~\ref{sec:mixture-results}), a genuine cost-of-hedging finding rather than the free-lunch outcome a hedging intuition might predict. The false-alarm guarantee itself holds throughout, unaffected by this result, exactly as the theory promises; what the fixed-weight instantiation does not yet deliver is a detection-delay advantage that adapts to which component is actually performing better on a given stream.
+We set out to reduce the detection delay of a conformal, anytime-valid
+monitor for multimodal 3D perception under real adverse weather. We did not
+succeed at that, and the reasons turned out to be more informative than the
+target.
 
-Five directions follow directly from what this evaluation does and does not yet establish. First, and following directly from Section~\ref{sec:discuss-mixture}'s cost-of-hedging analysis, replace the fixed equal-weight mixture with an adaptive or regret-weighted combination that shifts mass toward whichever component's wealth has actually been accumulating on the current stream, and test whether such a scheme can recover the better single bettor's own delay on both datasets without knowing in advance which bettor that is -- the concrete next step this paper's mixture result motivates but does not itself establish. Second, and directly following from Section~\ref{sec:discuss-cadc}'s cross-dataset contrast, isolate what specifically differs between Snowy Scenes and CADC that flips the CCP covariate's direction -- candidates include the two datasets' different snow characteristics (settled versus airborne snow, different sensor suites, different real severity contrasts) and the two independently trained checkpoints' own idiosyncrasies -- since neither dataset's result alone explains the disagreement. Third, validate the spatial monitoring construction against a real multi-object scene with genuine spatial heterogeneity in where degradation occurs -- the motivating use case for a spatial map over a global scalar, not yet directly tested on real data, since neither dataset used here provides ground-truth annotation of localized degradation to compare the flagged-cell map against. Fourth, and directly following from Section~\ref{sec:discuss-ccp}'s generalized diagnosis, investigate a covariate not derived from a jointly-trained, binary matched/mismatched consistency head at all -- for instance, a discrepancy between the two modalities' own independently predicted object locations -- rather than a further variant of the same contrastive-supervision pattern that has now failed on Snowy Scenes under two structurally different mismatch proxies. Fifth, if a jointly-trained consistency head is still the preferred design, investigate whether a graded (non-binary) severity-supervision signal, rather than a binary matched/mismatched target, produces a covariate whose direction is more consistent across datasets than either binary mismatch proxy tested here.
+Three results stand. First, a conformal monitor built on a degenerate
+nonconformity score produces calibrated quantiles, plausible alarm times
+and clean-looking operating curves while measuring nothing about the
+detector; the \emph{null-detector diagnostic} --- one extra evaluation pass
+with the prediction head zeroed --- exposes this, and on our own earlier
+results it reproduced every reported detection delay exactly, to the frame,
+on two datasets. Second, split conformal's exchangeability assumption fails
+across driving sessions, with a $7.5\times$ spread in per-drive miscoverage
+under a pooled quantile and between-session variation as large as the
+weather effect itself; Mondrian session-conditional calibration repairs
+this on one checkpoint, though the advantage reverses on another, so we
+report it as model-dependent. Third, monitorability is non-monotone in
+detector quality: the measurable weather effect peaks at intermediate
+quality and declines to undetectability as the detector converges, with two
+structurally different nonconformity scores agreeing on the trend.
+
+On the original objective we are unambiguous. The best configuration we
+found controls false alarms where the standard approach does not --- the
+standard approach alarms \emph{before} onset, accumulating on session
+identity --- but detects roughly $22\%$ of onsets, which on detection rate
+alone a null detector matches. Longer windows raise detection to a plateau
+and then break false-alarm control. At the effect sizes available here,
+reliable detection is not achievable, and no combination of calibration
+scheme, betting rule, block size or window length that we tried changes
+that. The monitor we can build is valid; it is not reliable.
+
+Four directions follow. The most direct concerns score design: if a
+converged detector's residual degradation is real but concentrated in rare,
+severe failures, a frame-averaged miscoverage rate dilutes it away, and a
+score targeting the tail rather than the mean might recover what we could
+not. Our phantom-score result argues weakly against the simplest version of
+this, but does not settle it. Second, the non-monotonicity should be tested
+on another architecture and another degradation mode before it is treated
+as general; we establish it on one detector, one dataset and one axis of
+quality variation. Third, the Mondrian reversal wants an explanation, since
+a calibration scheme whose benefit depends on the quality of the model
+being calibrated is a caveat worth understanding rather than merely
+recording. Fourth, the spatial construction --- per-cell e-processes under
+multiplicity control --- remains untested against ground-truth localized
+degradation, because neither dataset annotates where degradation occurs.
+
+We would emphasise one practical point over the rest. Throughout this work
+the failures were silent: a collapsed detector, a degenerate evaluation
+harness whose replicates were all identical, a monitor detecting annotation
+statistics, a calibration scheme failing per session while valid on
+average. In every case the outputs looked reasonable, and in every case
+what exposed the problem was a control --- zeroing the detector, asserting
+replicates differ, measuring per session rather than in aggregate,
+inserting a temporal gap. For monitoring systems specifically, whose entire
+purpose is to be trusted when nothing else is watching, we think the
+controls deserve as much attention in reporting as the headline numbers.

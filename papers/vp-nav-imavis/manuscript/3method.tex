@@ -90,7 +90,7 @@ K_3 &= K_2 \big(1 + 2(0.60 - 0.2)\big) = 0.72 \times 1.80 = 1.296, \\
 K_4 &= K_3 \big(1 + 2(0.55 - 0.2)\big) = 1.296 \times 1.70 = 2.203, \\
 K_5 &= K_4 \big(1 + 2(0.50 - 0.2)\big) = 2.203 \times 1.60 = 3.525.
 \end{align*}
-Two things are worth noticing in this trace. First, wealth \emph{shrinks} while $m(t) < \alpha$ (frames 1--2): a bettor staking $\lambda_t > 0$ on ``miscoverage will exceed $\alpha$'' loses money, by construction, when the pipeline is behaving nominally -- this is the price of testing at all, and is what keeps the process a supermartingale rather than an unconditionally growing one. Second, wealth grows multiplicatively, not additively, once $m(t) > \alpha$ consistently (frames 3--5): each factor $> 1$ compounds against the previous wealth, which is why a real onset that persists for several frames can cross a large threshold $1/\delta$ (e.g.\ $1/\delta = 20$ for $\delta = 0.05$) well before $t \to \infty$, even though no single frame's factor is large by itself. In this toy trace, $K_5 = 3.525$ would already trigger an alarm at $\delta = 0.3$ ($1/\delta \approx 3.33$) but not yet at $\delta = 0.1$ or $\delta = 0.05$ -- illustrating concretely why Table~\ref{tab:snowy-results}'s detection delay lengthens as $\delta$ shrinks: a smaller false-alarm budget requires more accumulated evidence (a higher wealth threshold) before the anytime-valid guarantee permits an alarm.
+Two things are worth noticing in this trace. First, wealth \emph{shrinks} while $m(t) < \alpha$ (frames 1--2): a bettor staking $\lambda_t > 0$ on ``miscoverage will exceed $\alpha$'' loses money, by construction, when the pipeline is behaving nominally -- this is the price of testing at all, and is what keeps the process a supermartingale rather than an unconditionally growing one. Second, wealth grows multiplicatively, not additively, once $m(t) > \alpha$ consistently (frames 3--5): each factor $> 1$ compounds against the previous wealth, which is why a real onset that persists for several frames can cross a large threshold $1/\delta$ (e.g.\ $1/\delta = 20$ for $\delta = 0.05$) well before $t \to \infty$, even though no single frame's factor is large by itself. In this toy trace, $K_5 = 3.525$ would already trigger an alarm at $\delta = 0.3$ ($1/\delta \approx 3.33$) but not yet at $\delta = 0.1$ or $\delta = 0.05$ -- illustrating concretely why detection delay lengthens as $\delta$ shrinks (Table~\ref{tab:operating-curve}): a smaller false-alarm budget requires more accumulated evidence (a higher wealth threshold) before the anytime-valid guarantee permits an alarm.
 
 \subsection{Covariate-Blind Baselines}
 \label{sec:blind}
@@ -166,16 +166,59 @@ CCP-informed & multiplicative covariate gain $\kappa$ on either base rule & inhe
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Mixture (Hedged) Betting}
-\label{sec:mixture-method}
+\subsection{Session-Conditional (Mondrian) Calibration}
+\label{sec:method-mondrian}
 
-Sections~\ref{sec:ccp-negative} and~\ref{sec:snow-corruption-attempt} establish, across three real experiments, that neither the covariate-blind nor the CCP-informed bettor dominates consistently: on real Snowy Scenes data the CCP-informed bettor is strictly worse (Table~\ref{tab:snowy-results}), while on real CADC data it ties or marginally beats the covariate-blind bettor (Section~\ref{sec:cadc-results}). There is no way, for a new deployment, to know in advance which regime applies without already having a labeled onset stream to test against -- exactly the real-world situation a monitor is supposed to help with, not presuppose. Rather than committing to one bettor a priori, we run multiple candidate bettors' wealth processes in parallel over the same stream and combine them into a single e-process via a fixed convex combination.
+Split conformal calibration pools nonconformity scores and produces one
+quantile, valid on average over the calibration distribution. Real driving
+data arrives in sessions that differ persistently in weather, lighting,
+traffic and route, and Section~\ref{sec:exchangeability} measures the
+resulting per-session violation directly. Mondrian conformal
+prediction~\cite{VovkMondrian2003,VovkGammermanShafer2005} conditions
+calibration on a taxonomy, giving validity within each category; here the
+category is the driving session.
 
-\paragraph{Validity.} At any fixed timestep $t$, each component bettor's wealth $K_t^{(i)}$ is an e-value under $H_0$: nonnegative, with $\mathbb{E}_{H_0}[K_t^{(i)}] \le 1$ (Section~\ref{sec:eprocess}'s Step 1, applied recursively from $t=0$, exactly as already used to justify treating $K_t^{(i)}$ as an e-value for the spatial e-BH procedure in Section~\ref{sec:spatial}). Vovk and Wang~\cite{VovkWang2021Evalues} show that any convex combination of valid e-values is itself a valid e-value: for weights $w_1, \ldots, w_n \ge 0$ summing to 1, chosen without looking at the future (in our instantiation, fixed in advance, not adapted online),
+Mondrian requires calibration data in every category it is queried about,
+which forces a within-session split: each session calibrates on its own
+leading frames and is monitored on the remainder. This is the
+deployment-faithful arrangement --- a vehicle calibrates on the early
+known-nominal portion of the drive it is currently on, rather than assuming
+a quantile estimated on previous drives transfers --- and degraded frames
+are scored against the quantile of the session the stream began in, which
+is what a deployment does when conditions change mid-drive. Because
+calibration and monitored frames then sit adjacent in time within a
+correlated stream, we insert a temporal gap between them and sweep its
+size; an effect inflated by adjacency shrinks as the gap grows.
+
+\subsection{A Phantom-Detection Nonconformity Score}
+\label{sec:method-phantom}
+
+The score of Section~\ref{sec:setup} is a box-regression residual
+restricted to cells a ground-truth object occupies, and is therefore
+structurally blind to spurious detections in empty space. Snow's dominant
+effect on LiDAR is precisely spurious near-range returns, so we add a
+second score family: the predicted peak class activation at cells
+containing no ground-truth object, calibrated by the same split-conformal
+procedure at level $\alpha$. The frame-level rate is the convex combination
 \begin{equation}
-K_t^{\mathrm{mix}} = \sum_{i=1}^{n} w_i \, K_t^{(i)}
-\label{eq:mixture}
+m(t) = (1 - w)\, m_{\mathrm{loc}}(t) + w\, m_{\mathrm{phantom}}(t),
+\label{eq:phantom-mix}
 \end{equation}
-satisfies $\mathbb{E}_{H_0}[K_t^{\mathrm{mix}}] \le \sum_i w_i \cdot 1 = 1$ at every fixed $t$, by linearity of expectation. Applying Ville's inequality to $K_t^{\mathrm{mix}}$ exactly as Section~\ref{sec:eprocess} already does for a single bettor's $K_t$ gives the same anytime-valid guarantee for the mixture: alarming the first time $K_t^{\mathrm{mix}} \ge 1/\delta$ controls the false-alarm rate at level $\delta$, with no additional correction for having hedged across $n$ component strategies rather than committing to one. This is what makes hedging provably safe rather than merely empirically convenient -- the combination rule is the same arithmetic averaging Section~\ref{sec:spatial}'s e-BH multiplicity control already relies on for a different purpose (combining many spatial cells' e-values rather than few candidate strategies' e-values), so no new validity machinery is introduced beyond what this paper already uses.
+with $w \in [0,1]$. Each component is calibrated at level $\alpha$ and so
+has expectation at most $\alpha$ under the nominal distribution; a convex
+combination of two such quantities inherits the bound, which is exactly the
+$H_0$ condition the wealth process of Section~\ref{sec:eprocess} requires.
+No new theory is needed: the conformal guarantee is agnostic to the choice
+of score function. Setting $w = 0$ recovers the original score exactly.
 
-\paragraph{Instantiation.} We combine the two bettors already defined (Sections~\ref{sec:blind},~\ref{sec:informed}) at fixed equal weight, $w_{\mathrm{blind}} = w_{\mathrm{ccp}} = 0.5$ -- the simplest, most defensible instantiation, requiring no tuning and trivially valid by Equation~\ref{eq:mixture}. Both component bettors observe the same $m(t)$ and CCP disagreement $\overline{(1-S_t)}$ at every frame (the model is run once per frame; both bettors' own wealth processes are stepped from that single frame's evidence, not independently resampled data), and the mixture combines their wealth \emph{values} at each timestep, not their betting rates $\lambda_t$ -- the combination Equation~\ref{eq:mixture} is proved for. An adaptive, regret-weighted refinement (weighting each component by its own relative performance so far, rather than a fixed $50/50$ split) is a natural next step once this fixed instantiation's real behavior is understood, and we return to it in Section~\ref{sec:conclusion} rather than introduce it here without first establishing whether the simplest version helps at all.
+\subsection{Block Aggregation}
+\label{sec:method-blocking}
+
+Averaging $m$ over blocks of $k$ consecutive frames before the betting step
+trades temporal resolution for reduced variance in the quantity the bettor
+consumes. Under independent frames the reduction would be $\sqrt{k}$;
+driving frames are strongly correlated, and
+Section~\ref{sec:blocking} measures the realised gain. We keep one
+trajectory entry per frame regardless of $k$, so detection delays remain in
+frame units and are comparable across block sizes and against the
+unblocked baseline.

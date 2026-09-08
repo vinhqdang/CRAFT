@@ -6,48 +6,46 @@ The style file: elsarticle-num.bst
 Reallocating 'name_of_file' (item size: 1) to 11 items.
 Database file #1: references.bib
 Warning--empty pages in MonroyMunoz2026WACV
-Warning--empty pages in Prinster2025WATCH
-Warning--empty pages in Eliades2023ICMEnsemble
 Warning--empty pages in Bijelic2020SeeingThroughFog
-You've used 16 entries,
+You've used 13 entries,
             2952 wiz_defined-function locations,
-            781 strings with 8953 characters,
-and the built_in function-call counts, 5049 in all, are:
-= -- 444
-> -- 226
+            763 strings with 8409 characters,
+and the built_in function-call counts, 4124 in all, are:
+= -- 360
+> -- 205
 < -- 1
-+ -- 86
-- -- 70
-* -- 388
-:= -- 723
-add.period$ -- 24
-call.type$ -- 16
-change.case$ -- 17
++ -- 77
+- -- 64
+* -- 317
+:= -- 612
+add.period$ -- 18
+call.type$ -- 13
+change.case$ -- 14
 chr.to.int$ -- 0
-cite$ -- 20
-duplicate$ -- 143
-empty$ -- 559
-format.name$ -- 86
-if$ -- 1275
+cite$ -- 15
+duplicate$ -- 113
+empty$ -- 433
+format.name$ -- 77
+if$ -- 1027
 int.to.chr$ -- 0
-int.to.str$ -- 16
-missing$ -- 17
-newline$ -- 64
-num.names$ -- 16
-pop$ -- 110
+int.to.str$ -- 13
+missing$ -- 13
+newline$ -- 52
+num.names$ -- 13
+pop$ -- 84
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 0
-skip$ -- 319
+skip$ -- 252
 stack$ -- 0
-substring$ -- 194
-swap$ -- 28
+substring$ -- 163
+swap$ -- 21
 text.length$ -- 1
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 0
-warning$ -- 4
-while$ -- 30
-width$ -- 18
-write$ -- 153
-(There were 4 warnings)
+warning$ -- 2
+while$ -- 25
+width$ -- 15
+write$ -- 123
+(There were 2 warnings)

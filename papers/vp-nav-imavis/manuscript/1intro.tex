@@ -1,14 +1,100 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Every claim a modern autonomous-vehicle perception stack makes about the world -- that box is a pedestrian, that lane is clear, that gap is wide enough to merge into -- is implicitly conditioned on the sensing conditions the detector was trained and validated under. Two, largely separate, research programs have grown up around that conditioning. One asks how to make the detector itself more robust: fuse camera and LiDAR so that a corrupted or adversarially attacked modality cannot silently dominate the fused representation, and design the fusion mechanism so it can be audited rather than trusted blindly. The other asks a different, complementary question: however robust the detector is engineered to be, how does a downstream system know, with a statistically defensible guarantee and in real time, the moment that robustness has actually been exceeded? A detector can be robust \emph{and} still eventually fail under conditions severe enough, and the failure mode that matters operationally is not "the detector is wrong" -- that is always somewhat true -- but "the detector has become wrong in a way the system has not been told about."
+A deployed autonomous-vehicle perception stack is validated under some set
+of sensing conditions and then asked to operate outside them. The failure
+that matters operationally is not that the detector is sometimes wrong ---
+it always is --- but that it becomes wrong in a way nothing downstream is
+told about. Conformal prediction offers a distribution-free way to attach
+calibrated uncertainty to a black-box detector's outputs, and anytime-valid
+sequential testing turns that into a live monitor: calibrate a
+nonconformity score on nominal data, track its miscoverage $m(t)$ on the
+incoming stream, and raise an alarm when a betting process accumulates
+enough evidence against the nominal hypothesis. The construction is
+attractive because its false-alarm guarantee holds uniformly over all
+stopping times, so the question ``has anything changed yet?'' can be asked
+continuously without a multiple-testing penalty.
 
-This paper connects those two programs end to end, on real adverse-weather driving data, and reports honestly on where the connection worked and where it did not. The first layer is a multimodal fusion detector engineered around a verify-then-fuse principle: a Cross-modal Consistency Probe (CCP) that computes, per bird's-eye-view (BEV) grid cell, a consistency score between camera and LiDAR features, and a Gated Adaptive Fusion Module (GAFM) that uses that score to quarantine a disagreeing modality at the grid-cell level rather than blending it in uniformly, trained under an Adversarial Consistency Training (ACT) objective that couples detection accuracy, cross-modal consistency, and attribution regularization into one loss. That detector is background to this paper: we summarize its architecture here only to the depth needed to make this paper self-contained, since the monitoring layer that follows is detector-agnostic and does not depend on any specific claim about this detector's own performance.
+We set out to apply that recipe to multimodal 3D detection under real
+adverse weather, and specifically to improve its detection delay. We did
+not achieve that, and this paper is largely about why the attempt was more
+instructive than the goal. Three findings emerged that we think are more
+useful than a delay improvement would have been, and we state the negative
+result on the original objective plainly rather than burying it.
 
-This paper's own contribution is the second layer: a statistically principled monitor built on top of that detector's outputs, and its evaluation against real adverse-weather data. Conformal prediction offers a distribution-free way to attach calibrated uncertainty to a black-box detector's outputs -- calibrate a nonconformity score on held-out data, and a new prediction's miscoverage is controlled at a chosen level regardless of what the detector is or how it was trained -- but that guarantee is a batch guarantee. Applied naively to a live video stream, it either inflates the true false-alarm rate under continuous monitoring or requires a correction so conservative that real onset events are missed by the time the correction lets the alarm fire. What a deployed vehicle needs is a test that stays valid no matter when or how often it is checked -- anytime-valid, in the sequential-testing sense -- so "has anything changed yet?" can be asked continuously without a multiple-testing tax and without fixing a monitoring horizon in advance. Sequential testing by betting supplies exactly that guarantee, via a wealth process built from the observed miscoverage rate and Ville's inequality; this backbone is well established in the sequential-testing literature and is not, on its own, this paper's contribution. The direct predecessor for applying it to a live perception problem evaluates it, covariate-blind, on single-object 2D visual-tracking failure~\cite{MonroyMunoz2026WACV}; we build on that work rather than around it, and use its own betting rules as the real baseline throughout.
+\paragraph{A monitor can be entirely fictitious and look fine.}
+The nonconformity score in this setting is a residual between predicted and
+ground-truth boxes, evaluated at cells a ground-truth object occupies. If
+the detector's regression head collapses --- as ours did, under a
+placeholder training loss whose optimum is a constant --- that residual
+degenerates to a function of the ground-truth labels alone. The monitor
+then measures the distribution of scene content, not detector error, and
+because scene content genuinely differs between a dataset's clear and
+adverse splits, it produces detection delays that look completely
+reasonable. We introduce a \emph{null-detector diagnostic} that catches
+this: rerun the entire pipeline with the regression head's output replaced
+by zeros. It requires no additional data, training or annotation. Applied
+to our own earlier results, it reproduced every reported detection delay
+\emph{exactly}, to the frame, on both datasets --- a monitor with no
+detector performing identically to one with a detector
+(Section~\ref{sec:null-diagnostic}). We think this control belongs in any
+conformal monitoring study, and we foreground it as a contribution in its
+own right rather than as an internal check.
 
-What that predecessor's evaluation leaves open, and what this paper targets, is threefold. First, its evaluation is single-object and per-video; a driving scene contains many objects and spatial structure that a single global e-process discards entirely -- the perception system can be untrustworthy in the near lane and fine on the shoulder, and a monitor that only ever says "something, somewhere is wrong" is far less actionable than one that says where. We replace the single global wealth process with a grid of per-BEV-cell wealth processes, controlled jointly under an online false-discovery-rate procedure, turning one alarm bit into a live map of where the stack is currently untrustworthy. Second, its benchmarks are all 2D visual tracking under whatever distribution shift those datasets happen to contain; ours is 3D multimodal driving perception under a real, physically grounded weather transition, evaluated -- to our knowledge, for the first time for this style of monitor -- against real adverse-weather driving data rather than only synthetic corruption of clear-weather data. We report results on Snowy Scenes, a real multimodal dataset captured entirely in genuine snowy conditions, and on a second, independent real adverse-weather dataset (the Canadian Adverse Driving Conditions dataset, CADC) to test whether the method's real-data behavior generalizes across more than one data source rather than being an artifact of one; it partially does -- the covariate-blind detection result replicates cleanly, but CADC also surfaced its own real calibration-heterogeneity failure mode (Section~\ref{sec:cadc-heterogeneity}) that Snowy Scenes' evaluation did not need to confront, and reversed, modestly, the direction of the CCP-covariate finding described next (Section~\ref{sec:cadc-results}). Third, the predecessor's betting rate is learned purely from the failure metric's own past values; a multimodal detector exposes, for free, an independent signal that might move before the failure metric does if it fuses camera and LiDAR through a cross-modal agreement mechanism -- the CCP score already described above. We tried conditioning the betting rate on it, and report, in full and without a positive spin, why that attempt did not deliver the advantage it was designed for on Snowy Scenes: on real data, the covariate first collapsed to near-constant agreement (a training-objective gap we diagnosed and fixed), and, once corrected, varied in the wrong direction for this task, leaving the covariate-informed bettor no better -- and on the data collected so far, worse -- than the covariate-blind baseline it was meant to improve on. A second, structurally different retraining attempt, replacing the mismatch supervision target with a physically-motivated synthetic snow-corruption signal in place of the original adversarial-perturbation proxy, failed the same way. Yet on CADC, the identical CCP-informed construction, retrained independently against that dataset's own real severity contrast, is tied or one frame faster than covariate-blind at every false-alarm budget tested -- the opposite ordering, on the same algorithm, on the other real dataset. We report both outcomes plainly rather than resolving them into a single verdict, and we discuss what the contrast implies for reusing an invariance-trained internal signal as an external monitoring covariate more generally, since the failure mode is unlikely to be specific to this one detector.
+\paragraph{Exchangeability fails across driving sessions.}
+Split conformal calibration assumes calibration and test data are
+exchangeable. Real driving data is collected in sessions, and sessions
+differ in ways that survive calibration: on the Canadian Adverse Driving
+Conditions dataset (CADC)~\cite{Pitropov2021CADC} we measure per-drive mean
+miscoverage ranging from $0.083$ to $0.623$ against a target of $0.20$ ---
+a $7.5\times$ spread across drives that are all nominal, all clear-road,
+several from a single collection date. The between-session standard
+deviation is as large as the weather effect the monitor exists to detect,
+so under pooled calibration the monitored quantity is dominated by which
+session the vehicle is on. Mondrian conformal
+prediction~\cite{VovkMondrian2003}, conditioning calibration on the session,
+repairs this on one checkpoint --- but, as we report in
+Section~\ref{sec:mondrian-reversal}, that advantage reverses on another, so
+we present it as model-dependent rather than as a general property.
 
-That contrast is itself the practical problem this paper's third contribution addresses. A practitioner deploying this monitor on a new dataset has, by construction, no ground truth in advance telling them whether they are in the CADC regime (condition on the covariate) or the Snowy Scenes regime (do not); committing to either bettor alone means committing to a guess. Mixture (hedged) betting removes the need for that guess without weakening the statistical guarantee: a fixed convex combination of the covariate-blind and CCP-informed wealth processes is itself a valid e-process, a direct consequence of Vovk and Wang's~\cite{VovkWang2021Evalues} result that any convex combination of e-values is a valid e-value, so the combined bettor inherits the same anytime-valid false-alarm control regardless of which single bettor turns out, in hindsight, to have been the better choice on a given deployment. We implement this as a real algorithm -- not only a validity argument -- and evaluate it, using the existing checkpoints, on both real datasets. The real result is not the clean win a hedging intuition might predict: the fixed equal-weight mixture reproduces (CADC) or falls behind (Snowy Scenes) the weaker of its two components rather than landing between them, a genuine cost-of-hedging finding we report and analyze (Section~\ref{sec:discuss-mixture}) rather than reframe as a success, and one that points toward adaptive, regret-weighted mixing as the concrete next step rather than a solved problem.
+\paragraph{Monitorability is non-monotone in detector quality.}
+This is the paper's central claim and the most counterintuitive. Measuring
+the weather effect across a series of checkpoints spanning a real quality
+range, the effect is largest at intermediate detector quality and declines
+monotonically as the detector improves, becoming statistically undetectable
+beyond a heatmap object-versus-empty separation of roughly $0.41$
+(Section~\ref{sec:quality-curve}). A collapsed detector yields only content
+artifacts; a mid-quality detector yields real, attributable weather signal;
+a converged detector yields none, because it degrades gracefully enough
+under snow that little error differential remains. Two structurally
+different nonconformity scores --- one restricted to ground-truth object
+cells and therefore blind to spurious detections, one built entirely from
+activation in empty space --- agree on where signal exists, which is
+stronger evidence than either could provide alone.
 
-We are correspondingly careful about what we claim. This is a real-data demonstration at a modest per-dataset scale -- a handful of replicate onset streams, short monitoring windows, one detector architecture -- strengthened by evaluating it on two independent real adverse-weather datasets rather than one, but still not a claim that the spatial-monitoring construction has been tested against a real multi-object scene with genuine spatial heterogeneity in where degradation occurs, which remains the natural next experiment (Section~\ref{sec:conclusion}). We do not claim the e-process backbone is novel, and we do not claim covariate-informed betting works in general: it failed on Snowy Scenes across three separate attempts and showed only a modest, one-frame-at-best improvement on CADC, a dataset-specific contrast we report as exactly that rather than resolving it into a single verdict either way. Nor do we claim the fixed-weight mixture solves that tension in practice -- it provably bounds false alarms on both datasets, but the real detection-delay result is a genuine cost-of-hedging finding, not a demonstrated fix, and we report it as such.
+The deployment implication is uncomfortable and, we think, worth stating
+directly: \emph{improving your detector can silently disable your monitor}.
+The monitor does not fail loudly when this happens. It continues to emit
+calibrated-looking quantiles and plausible alarm times, and without a
+control of the kind described above there is no signal that anything is
+wrong.
+
+\paragraph{What we do not claim.}
+We are explicit about statistical power throughout rather than confining it
+to a limitations section. The quality curve has six points, of which only
+two reach significance with $18$ sessions; the claim rests on the monotone
+effect-size trend and the loss of detectability, not on a run of
+significant measurements. One of the six --- the collapsed checkpoint ---
+is not a commensurable measurement at all, since its score is a
+demonstrated content artifact, and we mark it as such rather than fitting a
+trend through it. On the original objective, detection at these effect
+sizes is not achievable: the best configuration we found controls false
+alarms where the baseline does not, but detects roughly $22\%$ of onsets,
+no better than a null detector (Section~\ref{sec:operating-curve}). We
+report that with intervals attached.
+
+Snowy Scenes~\cite{SnowyScenes2026} appears throughout as a negative
+control. Its real detector shows no weather effect distinguishable from
+zero, while its null detector shows a large one --- the mirror image of
+CADC --- and that contrast is what makes CADC's mid-quality result
+credible rather than a diagnostic artifact of our own pipeline.

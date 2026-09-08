@@ -1,0 +1,202 @@
+{
+  "note": "Monitorable effect vs detector quality. x-axis is heatmap object-vs-empty separation, the monitoring-relevant quality measure; loss and epoch decouple from it after epoch 12.",
+  "alpha": 0.2,
+  "gap": 10,
+  "rng_seed": 20260908,
+  "n_sessions": 18,
+  "n_degraded_frames": 300,
+  "rows": [
+    {
+      "label": "collapsed",
+      "checkpoint": "../../../checkpoints/cadc/checkpoint_final.pth",
+      "epoch": 4,
+      "heatmap_separation": -0.00022299690410876885,
+      "localization": {
+        "phantom_weight": 0.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.20208198199967345,
+        "degraded_mean": 0.23614044101636902,
+        "effect": 0.034058459016695575,
+        "ci_low": -0.04774244314885146,
+        "ci_high": 0.1319903650380788,
+        "excludes_zero": false,
+        "between_session_sd": 0.22872559071645795,
+        "effect_to_noise": 0.1489053276024391
+      },
+      "phantom": {
+        "phantom_weight": 1.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.20664510163777083,
+        "degraded_mean": 0.3628574984522997,
+        "effect": 0.15621239681452886,
+        "ci_low": -0.006253483742409938,
+        "ci_high": 0.3443352328858587,
+        "excludes_zero": false,
+        "between_session_sd": 0.051786022189287365,
+        "effect_to_noise": 3.0164973135712962
+      }
+    },
+    {
+      "label": "focal_ep5",
+      "checkpoint": "../../../checkpoints/cadc_focal/checkpoint_final.pth",
+      "epoch": 4,
+      "heatmap_separation": 0.2499571725821648,
+      "localization": {
+        "phantom_weight": 0.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.16223804068268685,
+        "degraded_mean": 0.2282091952757222,
+        "effect": 0.06597115459303533,
+        "ci_low": 0.009378418173111316,
+        "ci_high": 0.11212704655952373,
+        "excludes_zero": true,
+        "between_session_sd": 0.08903411035587137,
+        "effect_to_noise": 0.7409649439899733
+      },
+      "phantom": {
+        "phantom_weight": 1.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.21425135322087205,
+        "degraded_mean": 0.3219727543309073,
+        "effect": 0.10772140111003524,
+        "ci_low": 0.03485978250068012,
+        "ci_high": 0.18045642451823074,
+        "excludes_zero": true,
+        "between_session_sd": 0.16513907882079878,
+        "effect_to_noise": 0.6523071454633066
+      }
+    },
+    {
+      "label": "focal_ep9",
+      "checkpoint": "../../../checkpoints/cadc_converged/checkpoint_epoch9.pth",
+      "epoch": 9,
+      "heatmap_separation": 0.3796486164896916,
+      "localization": {
+        "phantom_weight": 0.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.18032870827648806,
+        "degraded_mean": 0.22929501060024965,
+        "effect": 0.04896630232376158,
+        "ci_low": 0.007361855819719285,
+        "ci_high": 0.09060170412365,
+        "excludes_zero": true,
+        "between_session_sd": 0.09440403495480677,
+        "effect_to_noise": 0.5186886593057468
+      },
+      "phantom": {
+        "phantom_weight": 1.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.20505861537561948,
+        "degraded_mean": 0.22551673310563064,
+        "effect": 0.020458117730011147,
+        "ci_low": -0.029195160468187972,
+        "ci_high": 0.06364967966450633,
+        "excludes_zero": false,
+        "between_session_sd": 0.12298700832363257,
+        "effect_to_noise": 0.16634373019446816
+      }
+    },
+    {
+      "label": "focal_ep13",
+      "checkpoint": "../../../checkpoints/cadc_converged/checkpoint_epoch13.pth",
+      "epoch": 13,
+      "heatmap_separation": 0.4148068393891056,
+      "localization": {
+        "phantom_weight": 0.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.17484369895423327,
+        "degraded_mean": 0.1864853811224283,
+        "effect": 0.011641682168195042,
+        "ci_low": -0.030759573257994867,
+        "ci_high": 0.054635030532582535,
+        "excludes_zero": false,
+        "between_session_sd": 0.10979182115935952,
+        "effect_to_noise": 0.10603414758279207
+      },
+      "phantom": {
+        "phantom_weight": 1.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.2093136791243596,
+        "degraded_mean": 0.22837875285023204,
+        "effect": 0.019065073725872423,
+        "ci_low": -0.03135660043091893,
+        "ci_high": 0.0661217327480659,
+        "excludes_zero": false,
+        "between_session_sd": 0.13038482030798795,
+        "effect_to_noise": 0.1462215745731592
+      }
+    },
+    {
+      "label": "focal_ep16",
+      "checkpoint": "../../../checkpoints/cadc_converged/checkpoint_epoch16.pth",
+      "epoch": 16,
+      "heatmap_separation": 0.44880986564721054,
+      "localization": {
+        "phantom_weight": 0.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.1791812797147854,
+        "degraded_mean": 0.2144868718771549,
+        "effect": 0.0353055921623695,
+        "ci_low": -0.023727560907684013,
+        "ci_high": 0.09306523023360587,
+        "excludes_zero": false,
+        "between_session_sd": 0.1268620747659267,
+        "effect_to_noise": 0.27829902851196364
+      },
+      "phantom": {
+        "phantom_weight": 1.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.20050848591040316,
+        "degraded_mean": 0.21662600194287185,
+        "effect": 0.01611751603246868,
+        "ci_low": -0.03270939215980286,
+        "ci_high": 0.060323822101649625,
+        "excludes_zero": false,
+        "between_session_sd": 0.11808464655732209,
+        "effect_to_noise": 0.1364912078103627
+      }
+    },
+    {
+      "label": "focal_ep20",
+      "checkpoint": "../../../checkpoints/cadc_converged/checkpoint_final.pth",
+      "epoch": 20,
+      "heatmap_separation": 0.4843588134703728,
+      "localization": {
+        "phantom_weight": 0.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.19184238836891568,
+        "degraded_mean": 0.17925504400395373,
+        "effect": -0.012587344364961962,
+        "ci_low": -0.05078980503685432,
+        "ci_high": 0.025809728454976102,
+        "excludes_zero": false,
+        "between_session_sd": 0.12915269427109843,
+        "effect_to_noise": -0.09746095066774565
+      },
+      "phantom": {
+        "phantom_weight": 1.0,
+        "gap": 10,
+        "n_sessions": 18,
+        "nominal_mean": 0.2079722259124329,
+        "degraded_mean": 0.21535349564913345,
+        "effect": 0.007381269736700553,
+        "ci_low": -0.046216529506533426,
+        "ci_high": 0.05538544264806485,
+        "excludes_zero": false,
+        "between_session_sd": 0.11922471580979273,
+        "effect_to_noise": 0.06191056683646362
+      }
+    }
+  ]
+}

@@ -1,195 +1,408 @@
-\section{Experimental Setup and Results}
+\section{Experiments}
 \label{sec:experiments}
 
-\begin{center}
-\fbox{\parbox{0.95\linewidth}{%
-\textbf{DRAFT NOTICE --- every quantitative result in this section is
-currently withdrawn and must not be cited.}
-A diagnostic run after these numbers were produced established that both
-detector checkpoints they rest on had collapsed to constant predictors:
-the predicted heatmap has standard deviation ${\sim}10^{-3}$ within a narrow
-band and is no higher at ground-truth object cells than at empty ones, and
-the box-regression head outputs magnitudes below $1.5\times10^{-3}$
-everywhere. Substituting literal zeros for the entire trained box head
-leaves the calibrated quantile unchanged to four decimals and both regimes'
-miscoverage rates identical to five decimals, on both datasets. The
-nonconformity score $\lVert B_{\text{pred}} - B_{\text{target}}\rVert_1$
-therefore reduces to $\lVert B_{\text{target}}\rVert_1$, so what these
-experiments measured is the ground-truth scene-content distribution, not
-detector error --- and the two weather categories differ substantially in
-object count, which is what the reported ``onset detections'' were tracking.
-The cause was a placeholder detection loss (MSE against a heatmap target
-that is $>99.99\%$ zero, plus an unmasked $\ell_1$ on box regression), for
-both of which a constant is the optimum. The loss and the target generation
-have since been corrected and both detectors are being retrained; this
-section will be regenerated against the retrained checkpoints, gated on an
-explicit check that the detector demonstrably contributes to the monitor's
-evidence. The methodological contributions (the spatial e-process
-construction, the mixture-betting validity argument and its unit tests) are
-unaffected --- only the empirical numbers are void.%
-}}
-\end{center}
+Every number in this section is produced by a script committed alongside
+the manuscript and written to a JSON artifact named in the corresponding
+caption, so each table can be regenerated and checked against its source.
 
-\subsection{Dataset 1: Snowy Scenes}
-\label{sec:dataset-snowy}
+\subsection{Setup}
+\label{sec:exp-setup}
 
-We evaluate on Snowy Scenes~\cite{SnowyScenes2026}, a multimodal driving dataset captured entirely in real winter conditions and distributed as a single $\sim$49\,GB archive, read lazily rather than extracted to disk given its $\sim$93\,GB uncompressed footprint. It contains 5{,}027 frames across three splits (3{,}016 train / 1{,}005 val / 1{,}006 test), with per-frame RGB camera images, 128-beam LiDAR point clouds, 3D object boxes, and per-point semantic segmentation labels across 29 classes (not consumed here, since the detector's head has no segmentation output).
+We evaluate on two real adverse-weather driving datasets. CADC
+\cite{Pitropov2021CADC} provides $18$ nominal (\texttt{bare}-road) driving
+sessions and $14$ snow-covered sessions, with the road-condition label
+taken from the dataset's own per-drive metadata rather than inferred.
+Snowy Scenes~\cite{SnowyScenes2026} provides real snowy driving across
+three weather categories; since it contains no clear-weather split, its
+nominal/degraded contrast is constructed across categories using a measured
+per-point snow-class fraction, and it serves here as a negative control
+rather than as a second positive result.
 
-Snowy Scenes' three weather categories -- \texttt{accumulated}, \texttt{highway}, and \texttt{falling} -- are all already-snowy driving, so no dry/clear split exists to serve as a calibration baseline or as the nominal side of an onset transition. Severity also does not ramp monotonically within a category: sampling the ground-truth per-point ``snow'' semantic class fraction across a timestamp-ordered \texttt{falling} sequence shows real but noisy fluctuation ($0.002$--$0.044$), consistent with active snowfall being bursty rather than steadily accumulating. What the data does support is a real, physically grounded severity contrast \emph{across} categories: the mean per-point ``snow''-class fraction per category gives $\texttt{accumulated} = 0.0001 < \texttt{highway} = 0.0041 < \texttt{falling} = 0.0119$, an ordering with a clear physical explanation -- \texttt{falling} captures active, airborne snowfall, which LiDAR registers as spurious near-range returns, while \texttt{accumulated} is settled snow on surfaces rather than particles in the air. We use this cross-category contrast, rather than a within-sequence transition, as the basis for the onset construction: a nominal (held-out \texttt{accumulated}) prefix spliced with a degraded (\texttt{falling}) suffix at a known onset index. Every individual frame on both sides of the transition is real sensor data; only the splice point itself is a construction, since Snowy Scenes' own sequences do not contain a within-sequence weather transition -- an assembled proxy for a naturally occurring onset, and we flag that openly as a limitation of the evaluation protocol.
+The monitored detector is a camera/LiDAR fusion architecture producing a
+per-cell class heatmap and box regression on a $128 \times 128$
+bird's-eye-view grid. The nonconformity score is the $\ell_1$
+box-regression residual at cells a ground-truth object occupies; a second
+score, introduced in Section~\ref{sec:phantom-score}, is built from
+predicted activation at cells that contain no ground-truth object. All
+monitoring uses $\alpha = 0.2$.
 
-We train the detector for 5 epochs on the real train split under its Adversarial Consistency Training objective, on a single local NVIDIA RTX 5000 Ada GPU, at $128\times128$ BEV resolution, batch size 4, Adam with learning rate $10^{-4}$; training loss converges from $\approx 2.3$ to $\approx 0.008$.
+\paragraph{Evaluation harness.} Onset streams splice a nominal prefix with
+a degraded suffix at a known onset index. Frames within a stream are
+sampled without replacement from the relevant pool under a per-replicate
+seed, and every arm of every comparison reuses one shared seed list, so
+methods are compared on identical frame draws replicate by replicate. This
+matters: an earlier version of this harness constructed streams by modular
+arithmetic with no sampling, so all replicates of a condition were the
+identical stream and every reported statistic was a single sample measured
+$n$ times. The signature was visible in the outputs --- false-alarm rates
+landing on exactly $0.00$ or $1.00$ and censoring on exactly $0/5$ or $5/5$
+--- and a regression test now asserts that replicates differ.
 
-\subsubsection{A Real Negative Result: the CCP Covariate}
-\label{sec:ccp-negative}
+\paragraph{Reporting conventions.} Detection-delay comparisons are gated on
+false-alarm control: a monitor whose empirical false-alarm rate exceeds
+$\delta$ has no valid delay, because it can appear fast by alarming
+indiscriminately, including before the onset exists. Negative delays in the
+tables below denote exactly that pathology. Confidence intervals are
+percentile bootstrap; where sessions are the unit of analysis they are
+resampled over sessions rather than frames, since frames within a drive are
+strongly correlated and frame-level resampling understates intervals.
 
-Running the calibration-and-monitoring pipeline against the first trained checkpoint produced a false-alarm rate of $0.0$ across every tested $\delta$ and detection delays that were numerically identical between the covariate-informed and covariate-blind bettors, to every digit the operating curve reports. Sampling the CCP consistency score $S$ directly across a real onset stream with the trained model showed why: $S$ had collapsed to $\approx 0.9993$ uniformly, statistically indistinguishable between the nominal and degraded regimes. Tracing the cause led to the training code rather than to anything in the monitoring code itself: the CCP contrastive loss was being computed once per training step, on the clean forward pass, against an all-ones mask -- real, synchronized frames have no annotated camera$\leftrightarrow$LiDAR mismatch to supervise against -- and the two additional CCP forward passes the training loop already computes, on adversarially perturbed features, were never fed into that loss with a mismatched target. Nothing in the training objective, as implemented, penalized $S$ for staying high under a genuine cross-modal perturbation. We fixed this by also supervising the two adversarial branches with the same CCP loss against a mismatched target, since a perturbed feature pair is a real cross-modal mismatch by construction, and retrained from scratch.
+\subsection{The Null-Detector Diagnostic}
+\label{sec:null-diagnostic}
 
-After the fix, $S$ varies again -- but in the wrong direction for this task. Figure~\ref{fig:qualitative-multi} shows this directly on six real frames rather than a single pair: three \texttt{accumulated} (nominal) and three \texttt{falling} (degraded) val-split frames, spread across each category's frame pool rather than consecutive samples, with camera image, LiDAR BEV occupancy, and the CCP disagreement heatmap for each. The per-frame mean disagreement is $0.611$, $0.583$, $0.576$ for the three \texttt{accumulated} frames and $0.564$, $0.559$, $0.573$ for the three \texttt{falling} frames -- category means of $0.590$ (nominal) versus $0.565$ (degraded), consistently the opposite of the ordering the covariate is meant to provide, and consistent enough across six independent frames that this is not an artifact of the single frame pair used in a smaller-scale version of this evaluation. Table~\ref{tab:snowy-results} reports the full operating curve this produces: the covariate-blind backbone detects the true weather onset within 3 to 10 frames depending on the false-alarm budget, with zero false alarms at every budget tested, while the covariate-informed bettor -- with disagreement now uniformly high across both regimes rather than rising specifically at onset -- bets aggressively throughout the stream and never accumulates enough evidence to alarm within the evaluation window, at any of the three $\delta$ tested. Our best explanation is that the fix supervises $S$ using adversarially perturbed features as the mismatch target, appropriate for the detector's own adversarial-robustness objective, but an $\ell_\infty$-bounded adversarial perturbation is a qualitatively different feature-space disturbance than real snowfall produces, and teaching $S$ to recognize the former does not obviously transfer to the latter. This generalizes beyond one architecture: a signal trained under an invariance objective is, by construction, in tension with reusing it as a leading indicator of degradation, which needs exactly the sensitivity the training objective suppressed -- a caution worth stating plainly for any future work that considers repurposing an internal robustness or consistency signal as an external monitoring covariate.
+The diagnostic reruns the complete pipeline --- calibration included ---
+with the detector's box-regression output replaced by zeros, so the
+nonconformity score reduces to $\lVert B_{\mathrm{target}} \rVert_1$ and
+depends only on ground-truth scene content. If a monitor's behaviour is
+driven by detector error, zeroing the detector must change it.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/qualitative_multi.pdf}
-\caption{Six real Snowy Scenes val-split frames run through the corrected checkpoint: three \texttt{accumulated} (nominal) and three \texttt{falling} (degraded), each showing the camera image, LiDAR BEV occupancy channel, and the CCP disagreement map $1-S$. Mean disagreement is consistently \emph{higher} for the visually milder \texttt{accumulated} frames (category mean $0.590$) than the visually more severe \texttt{falling} frames (category mean $0.565$) -- the wrong-direction pattern Section~\ref{sec:ccp-negative} diagnoses from the full stream, visible here across six independent real frames rather than only in aggregate statistics or a single pair.}
-\label{fig:qualitative-multi}
-\end{figure}
-
-\begin{table}[t]
-\centering
-\caption{Real Snowy Scenes operating curve (calibration: 40 held-out \texttt{accumulated} frames, $\alpha=0.2$, 5 onset + 5 ``clear'' replicates per condition, scene length 20, onset frame 8). ``--'' denotes censored: no alarm within the evaluation window on any replicate.}
-\label{tab:snowy-results}
-\begin{threeparttable}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-$\delta$ & Bettor & False-alarm rate & Mean detection delay \\
-\midrule
-0.30 & covariate-blind & 0.00 & 3 frames \\
-0.30 & CCP-informed & 0.00 & -- (5/5 censored) \\
-0.10 & covariate-blind & 0.00 & 10 frames \\
-0.10 & CCP-informed & 0.00 & -- (5/5 censored) \\
-0.05 & covariate-blind & 0.00 & -- (5/5 censored) \\
-0.05 & CCP-informed & 0.00 & -- (5/5 censored) \\
-\bottomrule
-\end{tabular}
-\end{threeparttable}
-\end{table}
-
-\subsubsection{A Third Attempt: Physically-Motivated Synthetic Snow Corruption}
-\label{sec:snow-corruption-attempt}
-
-Section~\ref{sec:ccp-negative}'s own diagnosis suggests a concrete next hypothesis: the fix's mismatch supervision uses PGD-adversarially-perturbed features as the "mismatch" target, and an $\ell_\infty$-bounded adversarial perturbation is a qualitatively different feature-space disturbance than real snowfall produces, so the repaired covariate might simply have learned to recognize the wrong kind of disturbance. We tested this directly rather than leaving it as a stated-but-untested hypothesis: we retrained the detector from scratch, this time additionally supervising the CCP contrastive loss against synthetic weather corruption applied to the raw camera image (attenuation toward flat gray plus additive speckle noise, simulating reduced visibility) and the raw LiDAR BEV input (point/pillar dropout plus range noise, simulating snow-induced beam attenuation and spurious near-range returns) as the mismatch target -- alongside, not instead of, the existing adversarial-branch supervision, so this is an additive experiment rather than a replacement of the existing fix. Full implementation and unit tests in \texttt{craf\_x/training/snow\_corruption\_ccp.py}.
-
-The result is a third negative finding, not the fix. Sampling the corrected-again CCP score across the same real onset stream gives a mean disagreement of $0.815$ on nominal (\texttt{accumulated}) frames versus $0.791$ on degraded (\texttt{falling}) frames -- still the wrong direction, qualitatively identical to Section~\ref{sec:ccp-negative}'s finding, though both values have shifted substantially higher in absolute terms (from $\approx 0.56$--$0.61$ to $\approx 0.79$--$0.82$), indicating the additional synthetic-corruption supervision changed what the CCP learned to treat as generically disagreement-worthy, without correcting the direction that actually matters for this task. The resulting operating curve is, if anything, worse than the original fix's: the CCP-informed bettor is now censored at every tested $\delta$ (including $\delta=0.3$, where the original fix's covariate-informed bettor at least still alarmed at some $\kappa$ values per Table~\ref{tab:sensitivity}), while the covariate-blind bettor's real detection remains unaffected (delay $3$ and $10$ at $\delta=0.3,0.1$, matching Table~\ref{tab:snowy-results} exactly, confirming the retraining did not degrade the underlying detector itself).
-
-This strengthens, rather than resolves, the open problem: two differently-motivated attempts at supervising this covariate -- an adversarial-perturbation proxy and a physically-motivated weather-corruption proxy -- both produced a covariate that varies in the wrong direction for real snow onset. We do not yet have a covariate-repair strategy that works; Section~\ref{sec:discuss-ccp} discusses what, if anything, both failures have in common, and what remains as a genuinely open direction (a differently-computed covariate not derived from a jointly-trained consistency head at all) rather than a variant of a supervision target that has now failed twice.
-
-\subsection{Sensitivity Analysis}
-\label{sec:sensitivity}
-
-Table~\ref{tab:snowy-results} uses fixed defaults for several evaluation parameters -- the covariate gain $\kappa=2.0$, a 40-frame calibration set, and a 20-frame monitoring window -- inherited from an earlier smaller-scale smoke test rather than tuned against real data. We ran a real sensitivity sweep against the same corrected checkpoint and the same real Snowy Scenes val-split data to check whether the qualitative pattern in Table~\ref{tab:snowy-results} (covariate-blind detects the onset; CCP-informed does not alarm at all) is an artifact of these particular defaults or holds across a real range of them.
-
-\textbf{Covariate gain $\kappa$.} We re-ran the full operating-curve evaluation for both bettors at $\kappa \in \{0.5, 1.0, 2.0, 4.0, 8.0\}$ (the base bettor is unaffected by $\kappa$, so its column in Table~\ref{tab:sensitivity} is a determinism check: it reproduces Table~\ref{tab:snowy-results}'s delays exactly at every $\kappa$, as it must), holding calibration size and scene length fixed at their Table~\ref{tab:snowy-results} defaults. The result answers, directly, whether $\kappa=2.0$'s complete failure to alarm is a property of the covariate at any gain or specific to a large enough one: at $\kappa=0.5$, the CCP-informed bettor \emph{does} alarm (delay $3$ at $\delta=0.3$, delay $9$ at $\delta=0.1$), close to the covariate-blind bettor's own delays; at $\kappa=1.0$ it still alarms, marginally later (delay $4$ at $\delta=0.3$); from $\kappa=2.0$ onward (through $4.0$ and $8.0$, with no further change) it never alarms at any $\delta$. The transition is sharp, occurring between $\kappa=1.0$ and $\kappa=2.0$, not gradual across the full range tested. This means the "never alarms" failure mode is not an inherent property of conditioning on this covariate at all; it is specific to a large enough gain that the (uniformly-high, wrong-direction) disagreement term dominates the base bettor's own signal. $\kappa$ is therefore acting as a de facto dial between "behaves like the covariate-blind baseline" (small $\kappa$) and "actively worse than the baseline" (large $\kappa$) on this covariate, rather than the covariate contributing a graceful, monotonically-improving signal at any strength -- a concrete characterization of \emph{how} this covariate fails, not just that it does, and the reason we recommend (Section~\ref{sec:discuss-sensitivity}) that any future use of this covariate-scaling pattern report a real gain sweep rather than a single fixed value.
-
-\textbf{Calibration-set size.} We re-ran both bettors with $n_{\mathrm{calib}} \in \{20, 40, 80\}$ held-out \texttt{accumulated} frames (fixing $\kappa=2.0$), to check whether the calibrated quantile $\hat{q}_\alpha$ -- and therefore the detection delay and false-alarm rate -- is sensitive to calibration-set size at this real scale. It is, and non-monotonically. At $n_{\mathrm{calib}}=20$, $\hat{q}_\alpha=9.941$ (versus $10.188$ at $n=40$) and \emph{both} bettors alarm on every one of the five stationary ``clear'' replicates ($\mathrm{FA}=1.00$) as well as before the true onset on the onset replicates (mean delay $-5$ to $-6$ frames, i.e.\ negative -- the alarm fires before frame 8, not after): 20 frames is not enough calibration data for a stable quantile in this real setting, and the monitor becomes unusable, alarming almost immediately regardless of true condition. At $n_{\mathrm{calib}}=40$ (Table~\ref{tab:snowy-results}'s default), false alarms drop to $0.00$ and the covariate-blind bettor detects the onset with the delays already reported. At $n_{\mathrm{calib}}=80$, $\hat{q}_\alpha$ rises further to $10.248$ and \emph{both} bettors become censored at every $\delta$: the monitor no longer alarms within the window at all, having become too conservative. Forty held-out frames is therefore not an arbitrary default that happens to work; it sits at a real, non-obvious sweet spot between too little calibration data (unstable quantile, false alarms) and too much relative to this severity contrast (an inflated quantile that misses the real onset within the evaluation window) -- a genuinely useful, checkable finding for anyone applying this calibration protocol to a comparably-sized real dataset.
-
-\textbf{Scene length.} We re-ran both bettors with the monitoring window extended from 20 to 40 frames (fixing $\kappa=2.0$, $n_{\mathrm{calib}}=40$), to check whether the covariate-informed bettor's failure to alarm is specific to a too-short window or persists given more time to accumulate evidence. It persists exactly: at scene length 40, the CCP-informed bettor is still censored at every $\delta$, identical to the 20-frame result, and the covariate-blind bettor's delays are unchanged as well (3 and 10 frames at $\delta=0.3,0.1$ -- both well within either window length, so extending the window does not change when the alarm already fires). Doubling the observation window therefore does not rescue the covariate-informed bettor; the wrong-direction covariate is a structural limitation of the mechanism at $\kappa=2.0$, not an artifact of an insufficiently patient evaluation.
-
-Table~\ref{tab:sensitivity} reports the complete real results of all three sweeps.
+Table~\ref{tab:null-diagnostic} applies this to the checkpoints that
+produced our earlier results. On both datasets the null detector reproduces
+the real detector's reported detection delays exactly, at every
+false-alarm budget. On CADC the null monitor is in fact \emph{better
+behaved} than the real one, holding a $0.00$ false-alarm rate where the
+real monitor's exceeds every budget.
 
 \begin{table}[t]
 \centering
-\caption{Sensitivity analysis, all against the real corrected Snowy Scenes checkpoint and val-split data (same protocol as Table~\ref{tab:snowy-results} otherwise: 5 onset + 5 clear replicates per point). Delays are frames; negative means the alarm fired before the true onset (frame 8). ``--'' denotes censored (no alarm in the window on any replicate). $\delta{=}0.05$ is omitted from the covariate-blind column of the $\kappa$ sweep since it is unaffected by $\kappa$ and already appears in Table~\ref{tab:snowy-results} (censored there too).}
-\label{tab:sensitivity}
-\begin{threeparttable}
+\caption{Null-detector diagnostic on the pre-fix checkpoints. Identical
+protocol; the sole difference is whether the box head's output is real or
+identically zero. Delays are in frames. Artifacts:
+\texttt{zeros\_baseline\_cadc.json}, \texttt{zeros\_baseline\_snowy.json}.}
+\label{tab:null-diagnostic}
 \begin{tabular}{@{}llccc@{}}
 \toprule
-Sweep & Setting & $\delta$ & covariate-blind & CCP-informed \\
+Dataset & Arm & $\delta=0.30$ & $\delta=0.10$ & $\delta=0.05$ \\
 \midrule
-\multirow{6}{*}{$\kappa$} & \multirow{2}{*}{0.5} & 0.30 & 3 & 3 \\
-& & 0.10 & 10 & 9 \\
-\cmidrule{2-5}
-& \multirow{2}{*}{1.0} & 0.30 & 3 & 4 \\
-& & 0.10 & 10 & 9 \\
-\cmidrule{2-5}
-& 2.0 / 4.0 / 8.0 & 0.30--0.05 & 3 / 10 / -- & -- / -- / -- \\
+\multirow{2}{*}{CADC} & real detector & $-5.0$ (FA $1.00$) & $-2.0$ (FA $1.00$) & --- (FA $1.00$) \\
+ & null detector & $6.0$ (FA $0.00$) & $8.0$ (FA $0.00$) & $9.0$ (FA $0.00$) \\
 \midrule
-\multirow{3}{*}{$n_{\mathrm{calib}}$} & 20 & 0.30--0.05 & $-5$/$-4$/$-3$ (FA=1.00) & $-6$/$-5$/$-4$ (FA=1.00) \\
-& 40 (default) & 0.30--0.05 & 3 / 10 / -- & -- / -- / -- \\
-& 80 & 0.30--0.05 & -- / -- / -- & -- / -- / -- \\
-\midrule
-\multirow{2}{*}{scene length} & 20 (default) & 0.30--0.05 & 3 / 10 / -- & -- / -- / -- \\
-& 40 & 0.30--0.05 & 3 / 10 / -- & -- / -- / -- \\
+\multirow{2}{*}{Snowy Scenes} & real detector & --- (FA $1.00$) & --- (FA $0.00$) & --- (FA $0.00$) \\
+ & null detector & $3.0$ (FA $0.00$) & $10.0$ (FA $0.00$) & --- (FA $0.00$) \\
 \bottomrule
 \end{tabular}
-\end{threeparttable}
 \end{table}
 
-\subsection{Dataset 2: Canadian Adverse Driving Conditions (CADC)}
-\label{sec:dataset-cadc}
+The null delays of $6/8/9$ on CADC and $3/10$ on Snowy Scenes are, to the
+frame, the numbers we had previously reported as real detection results.
+The explanation is direct: those checkpoints had collapsed under a
+placeholder detection loss, so they \emph{were} null detectors. A separate
+measurement makes this exact rather than inferred --- on the collapsed
+checkpoint the nominal-to-degraded jump in $m$ is
+$-0.21573659$, matching the zeros branch to eight decimal places, with an
+artifact-subtracted residual of exactly $0.00000$
+(\texttt{quality\_effect\_curve\_cadc.json}).
 
-To test whether the covariate-blind monitor's real-data behavior generalizes beyond a single dataset -- rather than being an artifact of Snowy Scenes' specific sensor suite, annotation convention, or severity distribution -- we replicate the calibration-and-monitoring evaluation on a second, independent real adverse-weather dataset, CADC~\cite{Pitropov2021CADC}. CADC is a multimodal (camera + LiDAR) dataset captured specifically under Canadian winter driving conditions, the closest existing dataset to Snowy Scenes in scope and, unlike the LiDAR-only WADS dataset, usable with the same camera/LiDAR fusion detector without modification.
+We draw a methodological conclusion beyond our own case. A conformal
+monitor built on a degenerate score does not fail conspicuously; it reports
+calibrated quantiles and plausible alarm times throughout. The null-detector
+control costs one extra evaluation pass and distinguishes the two cases
+unambiguously, and we suggest it be reported as standard.
 
-Unlike Snowy Scenes, CADC ships a real, dataset-provided severity label rather than requiring one to be derived: the devkit's own per-drive route metadata (\texttt{cadc\_dataset\_route\_stats.csv}'s ``Road snow cover'' field) marks every drive collected on 2018-03-06 and 2018-03-07 as bare road and every drive collected on 2019-02-27, in the subset we downloaded, as snow-covered -- a real nominal/degraded contrast at the drive level rather than a severity ordering derived from per-point semantic fractions, as Section~\ref{sec:dataset-snowy} required for Snowy Scenes. We downloaded a $\sim$39\,GB subset covering all 18 bare-road drives across the two nominal dates and 14 of the snow-covered date's drives (32 drives, 2{,}942 annotated frames total: 1{,}650 bare, 1{,}292 covered), and trained the detector from scratch under the identical protocol used for Snowy Scenes (5 epochs, $128\times128$ BEV, batch size 4, Adam, learning rate $10^{-4}$, on the same local GPU); training loss converged from $4.68$ to $\approx 1.3$, with the detection loss component alone falling to $\approx 0.002$.
+\subsection{Cross-Session Exchangeability Failure}
+\label{sec:exchangeability}
 
-\subsubsection{A Real Methodological Finding: Drive-to-Drive Calibration Heterogeneity}
-\label{sec:cadc-heterogeneity}
-
-A first calibration attempt held out 2 whole bare-road drives (both from 2018-03-06) for the calibration set and used the remaining 16 bare drives as the nominal side of the onset stream -- directly analogous to Snowy Scenes' protocol, which held out 40 frames from a single pooled category. This failed conspicuously: the resulting false-alarm rate was $1.00$ at every tested $\delta$ for both bettors, with several mean detection delays coming back \emph{negative} (the monitor alarming before the constructed onset frame, on streams built entirely from held-out nominal-category data). Diagnosing this directly -- computing per-frame nonconformity scores and coverage at the calibrated quantile $\hat{q}_\alpha$ across each of the 16 held-out nominal drives individually, rather than only in aggregate -- showed why: coverage varied from $0.47$ to $0.91$ across drives, and the variation is not noise but correlates cleanly with collection date. Every 2018-03-06 drive showed coverage between $0.47$ and $0.77$, well below the $\alpha=0.2$ target of $\ge 0.80$; every 2018-03-07 drive showed coverage between $0.68$ and $0.91$. The two calibration drives, both drawn from 2018-03-06, calibrated a quantile representative of that date's own difficulty but not of the other 16 drives' -- most of which are themselves from 2018-03-06 and harder still, with a handful from 2018-03-07 that are comparatively easy.
-
-This is a distinct failure mode from Section~\ref{sec:discuss-sensitivity}'s calibration-\emph{set-size} finding: it is not that the calibration set was too small in an absolute sense (2 drives, 200 frames, is a similar order of magnitude to Snowy Scenes' 40-frame calibration set that worked), but that it was not \emph{representative} of the heterogeneity in the population it needed to generalize to. We fixed this by stratifying the calibration/nominal split by collection date -- taking half of each date's drives for calibration and the other half for the nominal stream, rather than an unstratified alphabetical split -- giving 9 calibration drives (850 frames) spanning both dates and 9 nominal-stream drives (800 frames) also spanning both dates. Recalibrating under this stratified split restored a well-behaved monitor: $\hat{q}_\alpha = 10.251$, and false-alarm rate $0.00$ at every tested $\delta$ for both bettors (Table~\ref{tab:cadc-results}). This is a genuinely useful, transferable lesson beyond this specific dataset: a real multi-drive dataset can carry meaningful nominal-condition heterogeneity correlated with an operational variable (here, collection date) that a small, unstratified calibration sample can easily miss entirely, producing a monitor that looks calibrated in aggregate statistics but fails badly on subpopulations the calibration sample did not represent -- a caution any future application of this split-conformal protocol to a real multi-drive or multi-session dataset should check for directly, rather than assume away.
-
-\subsubsection{Real CADC Operating Curve}
-\label{sec:cadc-results}
-
-Table~\ref{tab:cadc-results} reports the completed evaluation against the real trained checkpoint, using the stratified calibration split above (9 calibration drives, $\hat{q}_\alpha=10.251$, same $\alpha=0.2$, 5 onset + 5 clear replicates, scene length 20, onset frame 8 -- protocol otherwise identical to Table~\ref{tab:snowy-results}). Both bettors detect the true onset at every $\delta$ tested, with zero false alarms throughout: the covariate-blind bettor at delays 6, 8, and 9 frames for $\delta=0.30, 0.10, 0.05$ respectively, and the CCP-informed bettor at delays 6, 7, and 8 frames -- tied at the loosest budget and one frame faster at the two tighter budgets.
-
-This is a real, if modest, reversal of the direction Section~\ref{sec:ccp-negative} and Section~\ref{sec:snow-corruption-attempt} report for Snowy Scenes, where the CCP-informed bettor was tied at best and censored (never alarming) at worst, across three separate training attempts. We are careful not to overstate it: a one-frame improvement at two of three $\delta$ values, on a five-replicate pilot evaluation with no significance test (Section~\ref{sec:discuss-support}'s caveat about replicate count applies here identically), is not evidence that CCP-informed betting ``works'' in general, or even that it reliably helps on CADC specifically beyond this particular checkpoint and replicate sample -- and it does not retroactively change anything about Snowy Scenes' own negative result, which used a differently-trained checkpoint and a differently-constructed severity contrast. What it does show is that the two real datasets disagree about the direction of this covariate's usefulness, which is itself worth reporting plainly rather than folding into either a uniformly negative or uniformly positive narrative: Section~\ref{sec:discuss-ccp} discusses what, if anything, this cross-dataset contrast adds to the earlier diagnosis.
+Table~\ref{tab:per-drive} reports per-drive mean miscoverage on CADC under
+a single pooled quantile, using a working (non-collapsed) detector.
 
 \begin{table}[t]
 \centering
-\caption{Real CADC operating curve (calibration: 850 held-out bare-road frames from 9 drives stratified across both nominal collection dates, $\alpha=0.2$, $\hat{q}_\alpha=10.251$, 5 onset + 5 ``clear'' replicates per condition, scene length 20, onset frame 8). Structure matches Table~\ref{tab:snowy-results}.}
-\label{tab:cadc-results}
-\begin{threeparttable}
+\caption{Per-drive mean frame miscoverage under one pooled quantile
+($\hat q = 1.935$, $\alpha = 0.20$). All \texttt{bare} drives are nominal
+clear-road driving. Artifact:
+\texttt{per\_drive\_miscoverage\_cadc.json}.}
+\label{tab:per-drive}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-$\delta$ & Bettor & False-alarm rate & Mean detection delay \\
+Group & $n$ drives & mean $m$ (sd) & range \\
 \midrule
-0.30 & covariate-blind & 0.00 & 6 frames \\
-0.30 & CCP-informed & 0.00 & 6 frames \\
-0.10 & covariate-blind & 0.00 & 8 frames \\
-0.10 & CCP-informed & 0.00 & 7 frames \\
-0.05 & covariate-blind & 0.00 & 9 frames \\
-0.05 & CCP-informed & 0.00 & 8 frames \\
+calibration drives & 9 & $0.252$ ($0.140$) & $0.133$ -- $0.623$ \\
+nominal drives & 9 & $0.182$ ($0.061$) & $0.083$ -- $0.284$ \\
+degraded drives & 14 & $0.238$ ($0.057$) & $0.128$ -- $0.329$ \\
 \bottomrule
 \end{tabular}
-\end{threeparttable}
 \end{table}
 
-\subsection{Mixture Betting: Real Evaluation on Both Datasets}
-\label{sec:mixture-results}
+Marginal validity holds on average while failing per session: four of nine
+nominal drives sit above $\alpha$, one calibration drive reaches $0.623$,
+and the spread across all \texttt{bare} drives is $7.5\times$. The
+comparison that matters is between the weather effect and the
+between-session noise: the degraded-minus-nominal difference is $+0.057$
+against a between-drive standard deviation of $0.061$, a ratio below one,
+and six of nine nominal drives fall inside the degraded drives' range. A
+monitor calibrated marginally across sessions is therefore substantially
+detecting session identity.
 
-Sections~\ref{sec:ccp-negative} and~\ref{sec:cadc-results} together establish the tension motivating Section~\ref{sec:mixture-method}'s algorithm: the CCP-informed bettor is strictly worse than covariate-blind on Snowy Scenes, but ties or marginally beats it on CADC. We evaluate the fixed equal-weight mixture (Equation~\ref{eq:mixture}) against both real checkpoints, using the exact calibration protocol and replicate counts of Table~\ref{tab:snowy-results} and Table~\ref{tab:cadc-results} respectively, so the mixture's real numbers are directly comparable to both single-bettor results already reported.
+\subsection{Session-Conditional Calibration, and Where It Reverses}
+\label{sec:mondrian-reversal}
 
-Table~\ref{tab:mixture-results} reports the real outcome, and it is not the clean "hedges toward whichever is better" result one might hope for. On CADC, the mixture's operating curve is \emph{identical} to the covariate-blind bettor's alone (delays 6, 8, 9 at $\delta=0.30, 0.10, 0.05$) -- not intermediate between the two components, and specifically not capturing the CCP-informed bettor's one-frame advantage at $\delta=0.10, 0.05$. On Snowy Scenes, the mixture is worse than the covariate-blind bettor at the loosest budget (delay $7$ versus $3$ at $\delta=0.3$) and censored at the two tighter budgets, matching the CCP-informed bettor's own complete failure there rather than the covariate-blind bettor's real detections.
+Mondrian calibration conditions the quantile on the session. This requires
+a within-session split --- each drive calibrates on its own leading frames
+and is monitored on the remainder --- because under the whole-drive split a
+monitored drive has no calibration frames and no per-session quantile
+exists for it. That arrangement is deployment-faithful (a vehicle
+calibrates on the early known-nominal portion of the drive it is on) but it
+places calibration and monitored frames adjacent in time, and adjacent
+driving frames are correlated. We therefore insert a temporal gap and sweep
+it; an effect inflated by adjacency would shrink as the gap grows.
 
 \begin{table}[t]
 \centering
-\caption{Real mixture-betting operating curve (equal-weight average of covariate-blind and CCP-informed wealth trajectories, Equation~\ref{eq:mixture}), against both real checkpoints, same protocol as Tables~\ref{tab:snowy-results} and~\ref{tab:cadc-results}. False-alarm rate is $0.00$ throughout for all three rows shown; omitted from the table for space.}
-\label{tab:mixture-results}
-\begin{threeparttable}
-\begin{tabular}{@{}llccc@{}}
+\caption{Mondrian versus marginal calibration, matched on sessions, frames,
+gap and cached scores, differing only in which quantile scores each
+session. Left: 5-epoch checkpoint. Right: converged (20-epoch) checkpoint.
+Artifacts: \texttt{mondrian\_gap\_sweep\_cadc.json},
+\texttt{mondrian\_gap\_sweep\_cadc\_converged.json}.}
+\label{tab:mondrian}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-Dataset & $\delta$ & covariate-blind & CCP-informed & mixture \\
+& \multicolumn{2}{c}{effect-to-noise} & \multicolumn{2}{c}{worst $|m - \alpha|$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+gap & marginal & Mondrian & marginal & Mondrian \\
 \midrule
-\multirow{3}{*}{Snowy Scenes} & 0.30 & 3 & -- & 7 \\
-& 0.10 & 10 & -- & -- \\
-& 0.05 & -- & -- & -- \\
+\multicolumn{5}{@{}l}{\emph{5-epoch checkpoint}} \\
+0 & $0.551$ & $\mathbf{0.849}$ & $0.412$ & $\mathbf{0.187}$ \\
+10 & $0.528$ & $\mathbf{0.848}$ & $0.427$ & $\mathbf{0.190}$ \\
+20 & $0.558$ & $\mathbf{0.829}$ & $0.480$ & $\mathbf{0.200}$ \\
 \midrule
-\multirow{3}{*}{CADC} & 0.30 & 6 & 6 & 6 \\
-& 0.10 & 8 & 7 & 8 \\
-& 0.05 & 9 & 8 & 9 \\
+\multicolumn{5}{@{}l}{\emph{converged checkpoint}} \\
+0 & $-0.033$ & $-0.025$ & $\mathbf{0.187}$ & $0.344$ \\
+10 & $-0.104$ & $-0.079$ & $\mathbf{0.221}$ & $0.363$ \\
+20 & $0.096$ & $0.003$ & $\mathbf{0.210}$ & $0.353$ \\
 \bottomrule
 \end{tabular}
-\end{threeparttable}
 \end{table}
 
-This is a real, informative negative result about the cost of hedging in this instantiation, not a mechanism failure -- the mixture is exactly as valid an anytime-valid test as either component (Section~\ref{sec:mixture-method}), and behaves exactly as the underlying arithmetic predicts: a fixed $50/50$ average of two wealth values is bounded between them at every timestep (verified directly as a unit test, \texttt{test\_mixture\_wealth\_is\_convex\_combination\_at\_every\_timestep} in \texttt{papers/vp-nav-imavis/tests/test\_mixture\_betting.py}), so when one component's wealth stays persistently low -- exactly what happens to the CCP-informed bettor's trajectory on Snowy Scenes, where it rarely if ever crosses back toward growth -- averaging it with a healthy trajectory can delay, or entirely prevent within the evaluation window, the mixture's own crossing of the alarm threshold $1/\delta$, even though the healthy component alone would have crossed it well within that window. On CADC, where both components are already close in absolute performance, the averaging effect is small enough that the mixture tracks the (slightly worse) covariate-blind trajectory closely rather than splitting the difference visibly at this delay resolution. Neither outcome is a defect in the combination rule; both are the direct, predictable consequence of averaging when one component is either badly broken (Snowy Scenes) or only marginally different from the other (CADC) -- and the practical upshot, on this real evidence, is that fixed equal-weight hedging did not pay off on either dataset tested. Section~\ref{sec:discuss-mixture} discusses what this implies for whether and how to hedge going forward.
+On the 5-epoch checkpoint Mondrian improves effect-to-noise by $1.54\times$
+and more than halves the worst-case per-session deviation, and the effect
+is stable across gaps ($+0.074$ at gap $0$, $+0.087$ at gap $20$), so
+adjacency is not inflating it. That worst-case improvement is the mechanism
+by which false-alarm control returns, since a $0.41$ deviation under pooled
+calibration is what drives clear-stream alarms.
+
+The converged checkpoint reverses the worst-case ordering: Mondrian is
+roughly $1.7\times$ \emph{worse} than marginal. We do not have an
+explanation for this and do not offer one. It means the benefit of
+session-conditional calibration here is a property of the
+model--data combination rather than an unconditional improvement, and we
+state it that way: any claim of the form ``Mondrian improves worst-case
+per-session coverage'' is contradicted by our own second measurement.
+
+\subsection{Block Aggregation and the Temporal-Correlation Penalty}
+\label{sec:blocking}
+
+Averaging $m$ over blocks of $k$ frames before the betting step cannot
+change the session-level statistic --- averaging within a session leaves
+the session mean unchanged, so the session-level effect and between-session
+standard deviation are exactly invariant to $k$, which we verify to six
+decimal places as a correctness check on the implementation. What blocking
+reduces is the within-session per-block variance, the noise a sequential
+test consumes when judging whether the current stretch of frames looks
+degraded.
+
+\begin{table}[t]
+\centering
+\caption{Per-block discriminability
+$d(k) = [\bar m_{\mathrm{deg}} - \bar m_{\mathrm{nom}}] /
+\mathrm{sd}(m_{\mathrm{nom}})$ over blocks of $k$ frames, 5-epoch
+checkpoint, Mondrian calibration. Artifact:
+\texttt{block\_sweep\_cadc.json}.}
+\label{tab:blocking}
+\begin{tabular}{@{}ccccc@{}}
+\toprule
+$k$ & block noise & $d(k)$ & gain vs $k=1$ & $\sqrt{k}$ predicts \\
+\midrule
+1 & $0.1452$ & $0.454$ & $1.00\times$ & $1.00\times$ \\
+2 & $0.1260$ & $0.523$ & $1.15\times$ & $1.41\times$ \\
+4 & $0.1118$ & $0.588$ & $1.30\times$ & $2.00\times$ \\
+8 & $0.0950$ & $0.646$ & $1.42\times$ & $2.83\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Blocking delivers roughly half the gain independent sampling would predict
+--- $1.42\times$ at $k=8$ against $2.83\times$ --- which quantifies the
+temporal-correlation penalty for $10$\,Hz driving frames. At $k=8$ the
+effect itself begins to erode ($+0.0659 \to +0.0614$) as blocks span
+genuinely different scene content, so the gain turns over; we use $k=4$.
+The null detector's discriminability stays flat and low across all $k$
+($0.128$, $0.133$, $0.128$, $0.100$), confirming that blocking does not
+manufacture discriminability where there is no signal.
+
+\subsection{A Phantom-Detection Score}
+\label{sec:phantom-score}
+
+The localization score is restricted to ground-truth object cells and is
+therefore structurally blind to spurious detections in empty space --- which
+is snow's documented physical effect on LiDAR. We add a second score family:
+predicted peak activation at cells containing no ground-truth object,
+calibrated by the same split-conformal procedure at level $\alpha$, with the
+frame rate a convex combination
+$m = (1-w)\,m_{\mathrm{loc}} + w\,m_{\mathrm{phantom}}$. Each component has
+expectation at most $\alpha$ under the nominal distribution, so the
+combination does too, and $w=0$ recovers the original score exactly.
+
+\begin{table}[t]
+\centering
+\caption{Phantom-score effect on the 5-epoch checkpoint, session-paired,
+session-level bootstrap over $18$ sessions. All entries significant (CI
+excludes zero) at every gap. Artifact:
+\texttt{phantom\_effect\_5epoch.json}.}
+\label{tab:phantom}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$w$ & effect (gap 0) & 95\% CI & effect (gap 20) & best eff/noise \\
+\midrule
+$0.00$ & $+0.0647$ & $[+0.0135, +0.1076]$ & $+0.0772$ & $0.740$ \\
+$0.25$ & $+0.0734$ & $[+0.0338, +0.1102]$ & $+0.0844$ & $0.851$ \\
+$0.50$ & $+0.0821$ & $[+0.0446, +0.1227]$ & $+0.0917$ & $\mathbf{0.862}$ \\
+$0.75$ & $+0.0908$ & $[+0.0411, +0.1427]$ & $+0.0990$ & $0.812$ \\
+$1.00$ & $+0.0995$ & $[+0.0304, +0.1714]$ & $+0.1062$ & $0.746$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The effect grows monotonically with phantom weight, $54\%$ larger at $w=1$
+than at $w=0$, and every cell survives the gap control. Mixing beats either
+endpoint on effect-to-noise ($0.862$ at $w=0.5$), so the two score families
+are partly complementary rather than redundant: phantom activations carry
+weather information the localization score cannot see. On the converged
+checkpoint, by contrast, no weight at any gap produces an effect whose
+interval excludes zero (\texttt{phantom\_effect\_converged.json}).
+
+We flag a limitation of this arm specifically. The null-detector control
+used elsewhere zeroes the box head, which leaves the heatmap untouched and
+is therefore not a null for a score that reads the heatmap. Zeroing all
+heads makes every phantom score identical and the component degenerate ---
+a floor by construction rather than an informative comparison. For $w > 0$
+the gap sweep and the confidence intervals carry the evidential weight, and
+we do not present the all-heads-null row as a control.
+
+\subsection{Monitorability Versus Detector Quality}
+\label{sec:quality-curve}
+
+Table~\ref{tab:quality-curve} measures both score families across six
+checkpoints on one protocol. The $x$-axis is heatmap object-versus-empty
+separation, not epoch count or training loss: between epochs $12$ and $20$
+the loss continued to fall ($5.52 \to 4.87$) while separation plateaued, so
+an epoch axis would suggest the detector kept improving in the dimension
+the monitor consumes when it had stopped.
+
+\begin{table}[t]
+\centering
+\caption{Weather effect versus detector quality, gap $10$, session-level
+bootstrap over $18$ sessions. $^{\ast}$ marks a 95\% CI excluding zero. The
+collapsed checkpoint is \textbf{not a commensurable measurement} --- its
+score is a demonstrated content artifact (Section~\ref{sec:null-diagnostic})
+rather than detector error --- and is shown as an artifact reference,
+excluded from the trend. Artifact:
+\texttt{quality\_effect\_curve\_cadc.json}.}
+\label{tab:quality-curve}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Checkpoint & separation & localization effect & phantom effect \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{artifact reference, not part of the trend}} \\
+collapsed & $-0.0002$ & $+0.0341$ & $+0.1562$ \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{trained checkpoints}} \\
+epoch 5 & $+0.2500$ & $+0.0660^{\ast}$ & $+0.1077^{\ast}$ \\
+epoch 9 & $+0.3796$ & $+0.0490^{\ast}$ & $+0.0205$ \\
+epoch 13 & $+0.4148$ & $+0.0116$ & $+0.0191$ \\
+epoch 16 & $+0.4488$ & $+0.0353$ & $+0.0161$ \\
+epoch 20 & $+0.4844$ & $-0.0126$ & $+0.0074$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Power, stated before the interpretation.} Only two of the six
+rows reach significance, and the session-level bootstrap has $18$
+independent units, so intervals are wide. The claim below rests on the
+monotone decline in effect size across the five trained checkpoints and on
+the loss of detectability beyond separation $\approx 0.41$, \emph{not} on a
+sequence of significant measurements. A reader who requires significance at
+every point should regard this as suggestive.
+
+With that stated: the phantom effect declines monotonically across all five
+trained checkpoints, $+0.1077 \to +0.0074$, as separation rises from $0.25$
+to $0.48$. The localization effect broadly tracks it, from $+0.0660$ to
+$-0.0126$, though not strictly monotonically --- epoch 16 ($+0.0353$) sits
+above epoch 13 ($+0.0116$), and neither is significant. The two scores
+agree on significance at five of six points; they disagree at epoch 9,
+where localization is significant and phantom is not. We report the
+disagreement rather than smoothing it: at that point the two score families
+give different answers about whether signal remains.
+
+The collapsed checkpoint's apparent phantom effect of $+0.1562$ is the
+largest in the table and is not detector signal at all. Including it in a
+fitted trend would be a category error, which is why it is separated above.
+
+\subsection{Operating Curve}
+\label{sec:operating-curve}
+
+Table~\ref{tab:operating-curve} gives the end-to-end result on the
+5-epoch checkpoint --- the configuration where signal exists --- at the
+best window length found ($40$ frames, onset at $40\%$).
+
+\begin{table}[t]
+\centering
+\caption{CADC operating curve, $36$ replicates, shared seeds across arms.
+``det.'' is the number of replicates on which the monitor alarmed after
+onset. Artifacts: \texttt{window\_sweep\_cadc.json},
+\texttt{final\_operating\_curve\_cadc.json}.}
+\label{tab:operating-curve}
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Arm & $\delta$ & FA & FA 95\% CI & det. & delay \\
+\midrule
+\multirow{3}{*}{baseline (marginal, $k{=}1$)}
+ & $0.30$ & $0.14$ & $[0.03, 0.25]$ & 5/36 & $-9.4$ \\
+ & $0.10$ & $0.11$ & $[0.03, 0.22]$ & 4/36 & $-7.5$ (FA $>\delta$) \\
+ & $0.05$ & $0.11$ & $[0.03, 0.22]$ & 4/36 & $-5.8$ (FA $>\delta$) \\
+\midrule
+\multirow{3}{*}{ours (Mondrian, $k{=}4$)}
+ & $0.30$ & $0.17$ & $[0.06, 0.28]$ & 11/36 & $12.8$ \\
+ & $0.10$ & $0.03$ & $[0.00, 0.08]$ & 8/36 & $18.0$ \\
+ & $0.05$ & $0.00$ & $[0.00, 0.00]$ & 6/36 & $19.7$ \\
+\midrule
+\multirow{3}{*}{null (Mondrian, $k{=}4$)}
+ & $0.30$ & $0.19$ & $[0.08, 0.33]$ & 8/36 & $0.5$ \\
+ & $0.10$ & $0.17$ & $[0.06, 0.28]$ & 8/36 & $9.0$ (FA $>\delta$) \\
+ & $0.05$ & $0.17$ & $[0.06, 0.31]$ & 7/36 & $12.1$ (FA $>\delta$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two things hold. The baseline is invalid at $\delta \le 0.10$ and its
+delays are \emph{negative} --- it alarms before the onset exists, and does
+so progressively earlier as the window lengthens ($-3.4$ at $20$ frames,
+$-9.4$ at $40$, $-17.3$ at $80$), which is the signature of accumulating on
+session identity. Our arm controls false alarms at every budget where the
+baseline does not, and the null detector is invalid at $\delta \le 0.10$,
+so where our arm is valid and detecting, the detection is attributable.
+
+One thing does not hold, and it is the original objective. Detection rate
+is $31\%$, $22\%$ and $17\%$ --- and on detection rate alone the null
+detector matches it ($8/36$ versus $8/36$ at $\delta = 0.10$). Longer
+windows do not fix this: across $20/40/60/80$ frames detection rises from
+$8\%$ to $22\%$ and then plateaus, while false-alarm control breaks at $80$
+frames as the extra frames give the clear streams more opportunity to cross
+the threshold. We therefore make no performance claim. The monitor we can
+build is \emph{valid} where the standard one is not; it is not
+\emph{reliable}.
+
+\subsection{Snowy Scenes as Negative Control}
+\label{sec:snowy-control}
+
+On Snowy Scenes the real detector's weather effect is $-0.0085$ with a 95\%
+CI of $[-0.0719, +0.0553]$ --- centred on zero --- while the null detector's
+is $-0.1315$, $[-0.1917, -0.0726]$, clearly non-zero
+(\texttt{effect\_exists\_snowy.json}). The only signal present is a content
+artifact pointing the wrong way, which is why the null monitor ``detected''
+at $3$ and $10$ frames there while the real one was censored throughout.
+
+This is the mirror image of CADC, where the real effect is present and the
+null's is not, and the contrast is what makes the CADC result credible: the
+same diagnostic applied to two datasets returns opposite verdicts, so it is
+discriminating between them rather than reporting a property of our
+pipeline.
