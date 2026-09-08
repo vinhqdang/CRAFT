@@ -257,3 +257,43 @@ def test_temporal_gap_never_overlaps_the_calibration_portion():
         for key, indices in dataset.session_indices.items():
             calibration = set(indices[:10])
             assert calibration.isdisjoint(set(monitoring[key])), gap
+
+
+def test_score_stream_trajectory_matches_the_model_based_one():
+    # The cached-score path must be arithmetically identical to running the
+    # model, or the sweep it enables would be measuring something else.
+    from signal_monitor.mondrian import wealth_trajectory_from_score_stream
+    from conformal_monitor.calibration import object_nonconformity_scores
+    from conformal_monitor.evaluate import match_mask_from_heatmap
+
+    model = _SessionModel().eval()
+    dataset = _SessionDataset({"a": 1.0}, frames_per_session=12)
+    indices = list(range(12))
+    stream = _ListStream(dataset, indices, onset_frame=4)
+
+    # Precompute the same scores the model path would produce.
+    cached = []
+    for i in indices:
+        sample = dataset[i]
+        targets = {k: v.unsqueeze(0) for k, v in sample["targets"].items()}
+        out = model(sample["image"].unsqueeze(0), sample["pointcloud"].unsqueeze(0))
+        mask = match_mask_from_heatmap(targets["H"])
+        cached.append(object_nonconformity_scores(out["B"], targets["B"], mask))
+
+    class _ScoreStream:
+        onset_frame = 4
+
+        def __len__(self):
+            return len(cached)
+
+        def __getitem__(self, t):
+            return cached[t]
+
+    for block in (1, 2, 4):
+        via_model = wealth_trajectory_with_quantile(
+            model, stream, 1.0, ALPHA, lambda: AGRAPABettor(ALPHA), block_size=block
+        )
+        via_scores = wealth_trajectory_from_score_stream(
+            _ScoreStream(), 1.0, ALPHA, lambda: AGRAPABettor(ALPHA), block_size=block
+        )
+        assert via_scores == pytest.approx(via_model), block

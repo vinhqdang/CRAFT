@@ -273,3 +273,37 @@ between monitors are only meaningful when both control their false-alarm
 budget (FA <= delta); otherwise the faster-looking arm may simply be firing
 indiscriminately. Fixed, and the same gate applies to every variant
 comparison in the ablation.
+
+## Mondrian's worst-case advantage is checkpoint-dependent (do not overclaim)
+
+On the 5-epoch CADC checkpoint, session-conditional calibration clearly
+improved worst-case per-session coverage: worst |m - alpha| fell from
+0.41-0.48 (marginal) to 0.19-0.20 (Mondrian) across all gaps, and that
+improvement was the mechanism by which false-alarm control returned.
+
+On the converged (20-epoch) checkpoint the ordering **reverses**:
+
+    gap   marginal worst|m-a|   mondrian worst|m-a|
+      0                0.1868                0.3444
+     10                0.2211                0.3631
+     20                0.2102                0.3530
+
+Mondrian is now roughly 1.7x WORSE on worst-case per-session deviation,
+while remaining at or slightly better than marginal on effect/noise. With
+per-session quantiles fitted against a sharper detector, sessions appear to
+diverge more rather than less. We do not have an explanation and are not
+inventing one.
+
+Consequences for the writeup:
+
+- Lever 1's benefit must be stated as **observed on one checkpoint**, not
+  as an unconditional property of session-conditional calibration. Any
+  claim of the form "Mondrian improves worst-case per-session coverage"
+  is contradicted by our own second measurement.
+- The effect/noise comparison (0.55 -> 0.85 on the 5-epoch checkpoint) is
+  unaffected by this and still holds as measured, but it too is a
+  single-checkpoint result.
+- This is worth reporting rather than burying: a calibration scheme whose
+  benefit depends on the quality of the model being calibrated is a real
+  and non-obvious caveat for anyone applying Mondrian conformal prediction
+  to a deployed monitor.

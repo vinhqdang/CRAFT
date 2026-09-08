@@ -314,3 +314,111 @@ def _bootstrap_ci(values: np.ndarray, rng, n_bootstrap: int, level: float = 95.0
                       for _ in range(n_bootstrap)])
     tail = (100.0 - level) / 2.0
     return (float(np.percentile(draws, tail)), float(np.percentile(draws, 100.0 - tail)))
+
+
+def wealth_trajectory_from_score_stream(
+    stream,
+    q_hat: float,
+    alpha: float,
+    bettor_factory: Callable[[], object],
+    block_size: int = 1,
+) -> List[float]:
+    """
+    Wealth trajectory over a stream that yields cached nonconformity score
+    arrays rather than raw frames.
+
+    Identical arithmetic to `wealth_trajectory_with_quantile`, but the model
+    is never invoked: scores do not depend on the quantile, the block size
+    or the window length, so they can be computed once per checkpoint and
+    reused across an entire sweep. On CADC the frames are read from disk
+    (image + LiDAR per frame) at roughly 0.4s each, which made a four-window
+    sweep a multi-hour job dominated entirely by re-reading the same frames;
+    caching turns it into a few thousand forward passes total.
+
+    `RandomizedOnsetStream` works over any indexable pool, so passing lists
+    of score arrays as the nominal and degraded pools reuses the same
+    seeded, without-replacement sampling -- and therefore the same paired
+    design -- with no separate code path to drift.
+
+    The covariate-blind bettors ignore `ccp_disagreement`, so it is not
+    cached; a covariate-informed bettor would need the CCP score cached
+    alongside, and this function would need extending rather than reusing.
+    """
+    bettor = bettor_factory()
+    wealth_process = WealthProcess(alpha, lambda_max=bettor.lambda_max)
+
+    trajectory: List[float] = []
+    pending: List[float] = []
+    wealth = 1.0
+
+    for t in range(len(stream)):
+        pending.append(frame_miscoverage_rate(stream[t], q_hat))
+        if len(pending) >= block_size:
+            m_block = float(np.mean(pending))
+            lam = bettor.next_lambda(ccp_disagreement=0.0)
+            wealth = wealth_process.step(m_block, lam)
+            bettor.update(m_block, ccp_disagreement=0.0)
+            pending = []
+        trajectory.append(wealth)
+
+    return trajectory
+
+
+def operating_curve_from_score_streams(
+    alpha: float,
+    deltas: Sequence[float],
+    onset_specs,
+    clear_specs,
+    bettor_factory: Callable[[], object],
+    block_size: int = 1,
+    n_bootstrap: int = 2000,
+    rng_seed: int = 20260907,
+) -> List[dict]:
+    """`operating_curve_per_stream_quantile` over cached-score streams."""
+    rng = np.random.default_rng(rng_seed)
+
+    onset_runs = []
+    for factory, q in onset_specs:
+        stream = factory()
+        onset_runs.append(
+            (wealth_trajectory_from_score_stream(stream, q, alpha, bettor_factory, block_size),
+             stream.onset_frame)
+        )
+    clear_trajectories = [
+        wealth_trajectory_from_score_stream(factory(), q, alpha, bettor_factory, block_size)
+        for factory, q in clear_specs
+    ]
+
+    curve = []
+    for delta in deltas:
+        delays, n_censored = [], 0
+        for trajectory, onset_frame in onset_runs:
+            alarm_time = alarm_time_from_trajectory(trajectory, delta)
+            if alarm_time is None:
+                n_censored += 1
+            else:
+                delays.append(alarm_time - onset_frame)
+
+        alarmed = [
+            1.0 if alarm_time_from_trajectory(t, delta) is not None else 0.0
+            for t in clear_trajectories
+        ]
+        fa_rate = float(np.mean(alarmed)) if alarmed else 0.0
+        fa_ci = _bootstrap_ci(np.asarray(alarmed), rng, n_bootstrap) if alarmed else (0.0, 0.0)
+        delay_ci = (_bootstrap_ci(np.asarray(delays, dtype=float), rng, n_bootstrap)
+                    if delays else (None, None))
+
+        curve.append(
+            {
+                "delta": delta,
+                "false_alarm_rate": fa_rate,
+                "false_alarm_ci": list(fa_ci),
+                "mean_detection_delay": float(np.mean(delays)) if delays else None,
+                "detection_delay_ci": list(delay_ci),
+                "n_censored": n_censored,
+                "n_onset_replicates": len(onset_runs),
+                "n_clear_replicates": len(clear_trajectories),
+                "controls_false_alarms": bool(fa_rate <= delta),
+            }
+        )
+    return curve

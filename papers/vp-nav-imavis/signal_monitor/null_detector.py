@@ -63,3 +63,44 @@ class NullBoxHeadModel(nn.Module):
     def train(self, mode: bool = True):
         self.model.train(mode)
         return super().train(mode)
+
+
+class NullAllHeadsModel(nn.Module):
+    """
+    Null control for scores that read the heatmap, not just the box head.
+
+    `NullBoxHeadModel` is the right control for the localization score,
+    which reads only `B`. It is the WRONG control for the phantom-aware
+    score, which reads predicted activation on empty cells: zeroing the box
+    head leaves `H` untouched, so a "null" built that way would carry the
+    detector's full heatmap signal and would not be a null at all.
+
+    This zeroes every predicted head the scores consume. The consequence is
+    worth stating plainly rather than hiding: with a constant heatmap every
+    phantom score is identical, so the calibrated quantile equals that
+    constant and per-frame phantom miscoverage is degenerate. The phantom
+    component then carries exactly zero information, which is the correct
+    floor for a null control -- no detector, no signal -- but it is a
+    floor by construction rather than an informative comparison. For the
+    phantom arm the load-bearing controls are the temporal-gap sweep and
+    the confidence intervals, not this one.
+    """
+
+    def __init__(self, model: nn.Module, heatmap_value: float = 0.0):
+        super().__init__()
+        self.model = model
+        self.heatmap_value = heatmap_value
+
+    def forward(self, image: torch.Tensor, pointcloud: torch.Tensor):
+        out = dict(self.model(image, pointcloud))
+        out["B"] = torch.zeros_like(out["B"])
+        out["H"] = torch.full_like(out["H"], self.heatmap_value)
+        return out
+
+    def eval(self):
+        self.model.eval()
+        return super().eval()
+
+    def train(self, mode: bool = True):
+        self.model.train(mode)
+        return super().train(mode)

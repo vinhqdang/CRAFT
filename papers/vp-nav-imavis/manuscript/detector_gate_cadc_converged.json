@@ -1,0 +1,48 @@
+{
+  "note": "Detector-collapse diagnostic (cadc).",
+  "dataset": "cadc",
+  "checkpoint": "../../../checkpoints/cadc_converged/checkpoint_final.pth",
+  "checkpoint_epoch": 20,
+  "alpha": 0.2,
+  "head_statistics": {
+    "n_frames": 40,
+    "heatmap_std": 0.019429633324034513,
+    "box_pred_std": 1.6047433912754059,
+    "box_pred_abs_max": 10.35174938440323,
+    "heatmap_peak_at_gt_object_cells": 0.38218069188296794,
+    "heatmap_peak_at_empty_cells": 0.019726614118553698,
+    "object_vs_empty_separation": 0.36245407776441424,
+    "frac_empty_cells_above": {
+      "0.05": 0.11795573590788991,
+      "0.1": 0.060929753712844106,
+      "0.25": 0.0034340032856562176,
+      "0.5": 0.000465905347300577,
+      "0.75": 2.29163470066851e-05
+    }
+  },
+  "zero_prediction_ablation": {
+    "real_model": {
+      "q_hat": 1.5521074533462524,
+      "nominal_m": 0.238515435429051,
+      "degraded_m": 0.19646555854276443,
+      "jump": -0.04204987688628656
+    },
+    "zero_prediction": {
+      "q_hat": 10.756113052368164,
+      "nominal_m": 0.07199997474706385,
+      "degraded_m": 0.21104665759077523,
+      "jump": 0.13904668284371138
+    }
+  },
+  "box_head_gate": {
+    "passed": true,
+    "q_hat_delta": 9.204005599021912,
+    "nominal_m_delta": 0.16651546068198714,
+    "gates": "baseline monitor, e-value merging, lambda mixture"
+  },
+  "heatmap_gate": {
+    "passed": true,
+    "object_vs_empty_separation": 0.36245407776441424,
+    "gates": "phantom-aware score only"
+  }
+}
