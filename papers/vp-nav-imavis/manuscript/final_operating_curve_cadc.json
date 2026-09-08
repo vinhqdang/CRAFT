@@ -1,0 +1,230 @@
+{
+  "note": "CADC final operating curve: marginal k=1 vs Mondrian k=4, with null controls.",
+  "checkpoint": "../../../checkpoints/cadc_focal/checkpoint_final.pth",
+  "alpha": 0.2,
+  "deltas": [
+    0.3,
+    0.1,
+    0.05
+  ],
+  "n_replicates": 36,
+  "scene_length": 20,
+  "onset_frame": 8,
+  "gap": 10,
+  "base_seed": 20260908,
+  "n_degraded_frames": 300,
+  "results": {
+    "baseline (marginal, k=1)": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.1388888888888889,
+        "false_alarm_ci": [
+          0.027777777777777776,
+          0.25
+        ],
+        "mean_detection_delay": -5.25,
+        "detection_delay_ci": [
+          -5.75,
+          -5.0
+        ],
+        "n_censored": 32,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": true
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.1111111111111111,
+        "false_alarm_ci": [
+          0.027777777777777776,
+          0.2222222222222222
+        ],
+        "mean_detection_delay": -2.5,
+        "detection_delay_ci": [
+          -4.5,
+          -0.5
+        ],
+        "n_censored": 32,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": false
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.1111111111111111,
+        "false_alarm_ci": [
+          0.027777777777777776,
+          0.2222222222222222
+        ],
+        "mean_detection_delay": -2.3333333333333335,
+        "detection_delay_ci": [
+          -5.0,
+          0.0
+        ],
+        "n_censored": 33,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": false
+      }
+    ],
+    "ours (mondrian, k=4)": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.1111111111111111,
+        "false_alarm_ci": [
+          0.027777777777777776,
+          0.2222222222222222
+        ],
+        "mean_detection_delay": 7.0,
+        "detection_delay_ci": [
+          5.0,
+          9.0
+        ],
+        "n_censored": 28,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": true
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.0,
+        "false_alarm_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_detection_delay": 11.0,
+        "detection_delay_ci": [
+          11.0,
+          11.0
+        ],
+        "n_censored": 32,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": true
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.0,
+        "false_alarm_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_detection_delay": 11.0,
+        "detection_delay_ci": [
+          11.0,
+          11.0
+        ],
+        "n_censored": 34,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": true
+      }
+    ],
+    "null (marginal, k=4)": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.16666666666666666,
+        "false_alarm_ci": [
+          0.05555555555555555,
+          0.2777777777777778
+        ],
+        "mean_detection_delay": 11.0,
+        "detection_delay_ci": [
+          11.0,
+          11.0
+        ],
+        "n_censored": 35,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": true
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.1388888888888889,
+        "false_alarm_ci": [
+          0.027777777777777776,
+          0.25
+        ],
+        "mean_detection_delay": null,
+        "detection_delay_ci": [
+          null,
+          null
+        ],
+        "n_censored": 36,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": false
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.05555555555555555,
+        "false_alarm_ci": [
+          0.0,
+          0.1388888888888889
+        ],
+        "mean_detection_delay": null,
+        "detection_delay_ci": [
+          null,
+          null
+        ],
+        "n_censored": 36,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": false
+      }
+    ],
+    "null (mondrian, k=4)": [
+      {
+        "delta": 0.3,
+        "false_alarm_rate": 0.19444444444444445,
+        "false_alarm_ci": [
+          0.08333333333333333,
+          0.3333333333333333
+        ],
+        "mean_detection_delay": 6.333333333333333,
+        "detection_delay_ci": [
+          3.6666666666666665,
+          9.0
+        ],
+        "n_censored": 30,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": true
+      },
+      {
+        "delta": 0.1,
+        "false_alarm_rate": 0.16666666666666666,
+        "false_alarm_ci": [
+          0.05555555555555555,
+          0.2777777777777778
+        ],
+        "mean_detection_delay": 10.0,
+        "detection_delay_ci": [
+          8.0,
+          11.0
+        ],
+        "n_censored": 32,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": false
+      },
+      {
+        "delta": 0.05,
+        "false_alarm_rate": 0.027777777777777776,
+        "false_alarm_ci": [
+          0.0,
+          0.08333333333333333
+        ],
+        "mean_detection_delay": null,
+        "detection_delay_ci": [
+          null,
+          null
+        ],
+        "n_censored": 36,
+        "n_onset_replicates": 36,
+        "n_clear_replicates": 36,
+        "controls_false_alarms": true
+      }
+    ]
+  }
+}
