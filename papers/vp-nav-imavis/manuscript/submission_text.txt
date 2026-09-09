@@ -1,0 +1,29 @@
+TITLE
+=====
+Your Perception Monitor May Be Measuring Nothing: A Null-Detector Diagnostic and a Cross-Session Validity Failure in Conformal Monitoring for Autonomous Navigation
+
+
+ABSTRACT
+========
+Autonomous navigation stacks increasingly monitor perception with conformal prediction: calibrate a nonconformity score, track its miscoverage with an anytime-valid sequential test, and alarm when perception becomes untrustworthy. We set out to reduce detection delay for such a monitor on camera/LiDAR 3D detection under real adverse weather; we did not, and report two silent failure modes instead. First, when a detector's regression head degenerates, its nonconformity score reduces to a function of ground-truth labels alone, and every downstream component -- calibration, sequential betting, alarm timing -- behaves exactly as specified while measuring nothing about perception. We introduce a null-detector diagnostic, a one-pass control that reruns the pipeline with the detector's output zeroed, and show it reproduces our own earlier results bit-for-bit. Second, split conformal's exchangeability assumption fails across driving sessions on the Canadian Adverse Driving Conditions dataset: per-drive miscoverage under one pooled quantile varies several-fold across drives that are all nominal, with between-session variation comparable to the weather effect sought, so the guarantee remains formally correct while becoming operationally useless -- the monitor tracks route identity, not perception loss. On the weather effect itself we report an underpowered null, not a demonstrated absence, and show why an earlier, in-sample version of the same measurement had appeared significant. We recommend both the null-detector diagnostic and session-conditional evaluation as standard practice for conformal perception monitoring in navigation.
+
+(Word count: ~215; single paragraph; no equations, per Elsevier's abstract guidelines.)
+
+
+KEYWORDS (6)
+============
+Conformal prediction
+Perception monitoring
+Autonomous navigation
+Exchangeability
+Anytime-valid sequential testing
+Adverse weather
+
+
+HIGHLIGHTS (for the portal's separate Highlights field, max ~85 chars each)
+============================================================================
+- A null-detector diagnostic exposes silent failure in conformal perception monitors
+- Zeroing the detector reproduces monitor output bit-for-bit under score collapse
+- Cross-session exchangeability failure inflates miscoverage under pooled calibration
+- Session-conditional calibration gives inconsistent gains at this sample size
+- A drive-disjoint weather-effect estimate is an underpowered null, not an absence

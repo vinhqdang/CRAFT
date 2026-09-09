@@ -1,0 +1,22 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{lmodern}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+
+\begin{document}
+\pagestyle{empty}
+
+\begin{center}
+{\Large \bfseries Your Perception Monitor May Be Measuring Nothing: A Null-Detector Diagnostic and a Cross-Session Validity Failure in Conformal Monitoring for Autonomous Navigation}
+\end{center}
+
+\vspace{1.5em}
+
+\noindent\textbf{Abstract.}\ Autonomous navigation stacks increasingly monitor perception with conformal prediction: calibrate a nonconformity score, track its miscoverage with an anytime-valid sequential test, and alarm when perception becomes untrustworthy. We set out to reduce detection delay for such a monitor on camera/LiDAR 3D detection under real adverse weather; we did not, and report two silent failure modes instead. First, when a detector's regression head degenerates, its nonconformity score reduces to a function of ground-truth labels alone, and every downstream component --- calibration, sequential betting, alarm timing --- behaves exactly as specified while measuring nothing about perception. We introduce a null-detector diagnostic, a one-pass control that reruns the pipeline with the detector's output zeroed, and show it reproduces our own earlier results bit-for-bit. Second, split conformal's exchangeability assumption fails across driving sessions on the Canadian Adverse Driving Conditions dataset: per-drive miscoverage under one pooled quantile varies several-fold across drives that are all nominal, with between-session variation comparable to the weather effect sought, so the guarantee remains formally correct while becoming operationally useless --- the monitor tracks route identity, not perception loss. On the weather effect itself we report an underpowered null, not a demonstrated absence, and show why an earlier, in-sample version of the same measurement had appeared significant. We recommend both the null-detector diagnostic and session-conditional evaluation as standard practice for conformal perception monitoring in navigation.
+
+\vspace{1.5em}
+
+\noindent\textbf{Keywords:}\ Conformal prediction; Perception monitoring; Autonomous navigation; Exchangeability; Anytime-valid sequential testing; Adverse weather
+
+\end{document}
