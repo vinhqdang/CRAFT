@@ -18,24 +18,34 @@ splits. Every component behaves exactly as specified, and the monitor
 reports annotation structure as perception degradation.
 
 We were careful about which dataset property drives this, having initially
-got it wrong. We had attributed it to object count roughly doubling between
-CADC's nominal and degraded splits. Direct measurement contradicts that: in
-the scored bird's-eye-view window, degraded frames contain \emph{fewer}
-matched objects than nominal ones ($0.84\times$). Since the score reduces
-to $\lVert B_{\mathrm{target}} \rVert_1$, the driver must instead be the
-distribution of ground-truth box dimensions and positions across the two
-collection dates. That is a more interesting explanation than density, and
-it interacts directly with the date confound discussed below.
+got it wrong. We had asserted object count roughly doubling between CADC's
+nominal and degraded splits, with no measurement behind the number.
+Measuring it directly, on the ground-truth heatmap and on the same
+nominal/degraded frames used throughout (\texttt{object\_counts\_cadc.json}),
+degraded frames contain \emph{fewer} matched objects than nominal ones ---
+$12.65$ versus $13.72$ per frame, a ratio of $0.92$, not the near-doubling we
+first claimed. Since the score reduces to $\lVert B_{\mathrm{target}}
+\rVert_1$, object count is at most a minor contributor and the driver is
+more likely the distribution of ground-truth box dimensions and positions
+across the two collection dates, which we have not measured directly and
+report as a plausible explanation rather than a demonstrated one. It
+interacts directly with the date confound discussed below.
 
-There is an inversion here that matters for how the failure is detected. On
-CADC the null monitor was \emph{better behaved} than the real one --- a
-zero false-alarm rate where the real monitor alarmed on everything. Scene
-content is relatively homogeneous across nominal drives, so a
-content-derived score transfers cleanly between sessions; genuine detector
-error is heterogeneous across sessions and does not. The artifact was
-better behaved than the truth. This inverts the usual heuristic that
-cleaner numbers indicate a better method, and it is exactly why inspecting
-outputs cannot substitute for a control.
+We do not have a clean instance of the inversion we originally reported ---
+a real detector that alarms while a content-only null detector stays
+quiet, or vice versa --- once the false-alarm comparison is restricted to
+the corrected, drive-disjoint design: Section~\ref{sec:not-reported}
+explains why we do not report operating-point false-alarm rates from that
+design at all, and the same reasoning applies to any single number drawn
+from it. What we can say is narrower: scene content that is homogeneous
+within a category will produce a content-derived score that looks
+consistent across sessions in a way genuine, session-heterogeneous
+detector error does not, so a null-detector control can in principle look
+\emph{more} stable than the real pipeline even though it carries no
+information about perception at all. That is a property of what the
+control measures, not a claim about which arm alarmed more often on our
+own data --- and it is still exactly why inspecting a monitor's outputs
+for smoothness cannot substitute for running the control.
 
 \subsection{Sessions Are Not Exchangeable, and What It Costs Navigation}
 \label{sec:discuss-sessions}
@@ -43,9 +53,11 @@ outputs cannot substitute for a control.
 Conformal validity is conditional on exchangeability, and driving data
 violates it in a structured way: it arrives in sessions that differ
 persistently in route, traffic, lighting and weather. Our measurement puts
-a number on the cost --- a $7.5\times$ per-drive spread in miscoverage
-under a pooled quantile, with between-session variation as large as the
-weather effect being sought.
+a number on the cost --- a $3$--$5\times$ per-drive spread in miscoverage
+under a pooled quantile, on a nominal-drive sample thin enough (four
+held-out drives) that we do not lean on the exact multiple, with
+between-session variation comparable in size to the weather effect being
+sought.
 
 The consequence is not a modest loss of efficiency. It is that the
 monitored quantity is dominated by which session the vehicle is on, so the
@@ -63,39 +75,44 @@ Two practical consequences follow for anyone deploying this pattern. First,
 calibration should be conditioned on the session, or at minimum validated
 per session rather than in aggregate --- an aggregate coverage check passes
 while individual sessions sit far from target. Second, because our own
-attempt at the session-conditional fix reversed direction between two
-checkpoints of the same model (Section~\ref{sec:mondrian}), the check has
-to be repeated against the model actually being shipped, not inherited from
-a paper.
+attempt at the session-conditional fix helped on one statistic and hurt on
+another, and reversed direction across gaps within the \emph{same}
+checkpoint (Section~\ref{sec:mondrian}), the check has to be repeated
+against the model and calibration budget actually being shipped, not
+inherited from a paper --- ours included.
 
 \subsection{Underpowered Is Not Absent}
 \label{sec:discuss-power}
 
 Our headline measurement is a null we decline to interpret as an absence,
-and the distinction carries the section. An interval of $[-0.061, +0.193]$
-around a point estimate of $+0.064$ excludes neither a real effect of the
+and the distinction carries the section. An interval of $[-0.073, +0.210]$
+around a point estimate of $+0.069$ excludes neither a real effect of the
 size we previously claimed nor no effect at all. With nine evaluation
-sessions the minimum detectable effect is roughly twice the estimate, so
-failing to detect it is what this design does regardless of whether the
-effect is there.
+sessions the minimum detectable effect at 80\% power is roughly $0.20$,
+almost $3\times$ the point estimate, so failing to detect it is what this
+design does regardless of whether the effect is there.
 
 The dual-interval reporting in Table~\ref{tab:underpowered} is what makes
-that diagnosable rather than assertable. Because the nominal-only and
+that diagnosable rather than fully assertable. Because the nominal-only and
 two-level intervals are computed from the same session draws and differ
-only in whether the degraded arm is resampled, a reader can attribute the
-loss of significance to its causes: the session count falling from 18 to 9
-under the drive-disjoint split, and a further $1.4$--$1.5\times$ widening
-from clustering the degraded arm. The point estimate moved by 14\%. We
-suggest reporting both intervals whenever an effect is estimated from
-clustered data on both sides; a single interval says whether a result is
-significant, the pair says why not.
+only in whether the degraded arm is resampled, a reader can see that even
+the narrower, nominal-only interval fails to exclude zero on the corrected
+data, and that resampling the degraded arm widens it a further
+$1.3$--$1.4\times$ on top of that. We suggest reporting both intervals
+whenever an effect is estimated from clustered data on both sides; a single
+interval says whether a result is significant, the pair helps a reader see
+part of why not.
 
-It is worth being explicit that the correction which mattered most was not
-the one we expected. Removing the train/evaluation overlap --- the most
-serious defect, and the one that voids the earlier numbers as a matter of
-principle --- barely moved the point estimate. The significance was carried
-by estimator defects, not by the leakage. Both had to be fixed; only one
-turned out to change the number.
+It is worth being explicit that the correction which mattered most for the
+point estimate was not the one we expected. Removing the train/evaluation
+overlap --- the most serious defect, and the one that voids the earlier
+numbers as a matter of principle --- moved the point estimate only modestly
+($+0.074 \rightarrow +0.069$ once every correction we can check is applied).
+Significance was lost primarily because the drive-disjoint split leaves
+only nine sessions to resample, not because the true effect shrank. Both
+the leakage and a separate bootstrap bookkeeping bug (Section
+\ref{sec:underpowered}) had to be fixed on principle; neither turned out to
+be the dominant reason the number stopped being significant.
 
 \subsection{Limitations}
 \label{sec:limitations}

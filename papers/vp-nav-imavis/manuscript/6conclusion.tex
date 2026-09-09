@@ -17,26 +17,27 @@ perception degradation, with nothing in its output revealing this. The
 head's output replaced by zeros --- exposes it for the cost of one
 evaluation pass, and on our own earlier results reproduced them
 bit-identically, to 17 significant figures, from a model that outputs
-nothing. On one dataset the null monitor was better behaved than the real
-one, which is precisely why output inspection cannot substitute for the
-control.
+nothing. Content that is homogeneous within a category can make a null
+detector's output look no less stable than the real pipeline's, which is
+precisely why output inspection cannot substitute for the control.
 
 Second, split conformal's exchangeability assumption fails across driving
-sessions. Per-drive miscoverage under a pooled quantile spans $7.5\times$
-on nominal clear-road drives, with between-session variation as large as
-the weather effect being sought. The guarantee remains formally correct and
-becomes operationally useless: the monitor detects which session the
-vehicle is on. For navigation that is the worst available failure mode,
-because a planner wired to a monitor that tracks route identity will act on
-route identity.
+sessions. On a drive-disjoint held-out split, per-drive miscoverage under a
+pooled quantile spans $3$--$5\times$ on nominal clear-road drives ---
+indicative rather than precise, given only four held-out nominal drives ---
+with between-session variation comparable to the weather effect being
+sought. The guarantee remains formally correct and becomes operationally
+useless: the monitor detects which session the vehicle is on. For
+navigation that is the worst available failure mode, because a planner
+wired to a monitor that tracks route identity will act on route identity.
 
 On the weather effect we report an underpowered null and are explicit that
-this is not an absence: $+0.064$ with a 95\% interval of $[-0.061,
-+0.193]$ on drive-disjoint held-out data, consistent both with a real
+this is not an absence: $+0.069$ with a 95\% interval of $[-0.073,
++0.210]$ on drive-disjoint held-out data, consistent both with a real
 effect of the size we previously claimed and with none. We also show why an
 earlier version appeared significant, by reporting the interval with and
 without the degraded arm resampled --- a decomposition we recommend for
-clustered estimates generally, because it distinguishes an underpowered
+clustered estimates generally, because it helps distinguish an underpowered
 design from a genuine absence where a single interval cannot.
 
 Three directions follow, in the order we would pursue them. The most

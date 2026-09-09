@@ -89,7 +89,16 @@ def main():
         for key, idxs in nominal_drives.items():
             capped = idxs[:args.max_frames_per_drive]
             scores = cache_scores(model, setting.dataset, capped)
-            session_scores[f"{key[0]}_{key[1]}"] = (scores, scores)
+            # Calibration prefix and monitored remainder must be disjoint
+            # frame sets: passing the same array for both (as this used to
+            # do) let `gap=0` score the calibration frames a second time as
+            # "monitored", inflating the effect in the direction this test
+            # exists to detect. two_level_effect's own `gap` then trims
+            # further from the front of the (already-past-calibration)
+            # monitored slice.
+            calibration_slice = scores[:N_CALIBRATION_PER_SESSION]
+            monitored_slice = scores[N_CALIBRATION_PER_SESSION:]
+            session_scores[f"{key[0]}_{key[1]}"] = (calibration_slice, monitored_slice)
         degraded_by_drive = {
             f"{key[0]}_{key[1]}": cache_scores(
                 model, setting.dataset, idxs[:args.max_frames_per_drive])

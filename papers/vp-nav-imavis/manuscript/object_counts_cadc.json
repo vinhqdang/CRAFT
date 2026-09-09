@@ -1,0 +1,15 @@
+{
+  "note": "Matched-object count per frame, from the ground-truth heatmap (match_mask_from_heatmap, threshold 0.5), no model inference. Same nominal/degraded frame sets as every other CADC result (experiment_common.build_real_setting).",
+  "checkpoint": "../../../checkpoints/cadc_split/checkpoint_final.pth",
+  "nominal": {
+    "n_frames": 350,
+    "mean_objects_per_frame": 13.72,
+    "sd": 10.38576279181786
+  },
+  "degraded": {
+    "n_frames": 608,
+    "mean_objects_per_frame": 12.649671052631579,
+    "sd": 7.520250523164377
+  },
+  "degraded_over_nominal_ratio": 0.9219876860518643
+}

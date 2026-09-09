@@ -92,7 +92,7 @@ def main():
 
     fig.tight_layout()
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    fig.savefig(args.out, dpi=200, bbox_inches="tight")
+    fig.savefig(args.out, dpi=300, bbox_inches="tight")
     print(f"Wrote {args.out}")
 
     print("\nSummary (mean CCP disagreement per frame):")

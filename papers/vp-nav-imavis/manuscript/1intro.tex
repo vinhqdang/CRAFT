@@ -48,25 +48,29 @@ training or annotation. Applied to our own earlier results it reproduced
 them bit-identically --- a nominal-to-degraded jump of
 $0.13904668284371138$ from both the real and the zeroed detector, agreeing
 to 17 significant figures (Section~\ref{sec:null-diagnostic}). A monitor
-with no detector performed identically to one with a detector. On CADC the
-null monitor was in fact \emph{better behaved}, holding a zero false-alarm
-rate where the real one alarmed on everything --- an inversion we explain
-in Section~\ref{sec:discuss-null} and which is precisely why the failure is
-invisible from output inspection.
+with no detector performed identically to one with a detector, and the
+reason is instructive rather than mysterious: content that is homogeneous
+within a category produces a score that looks stable across sessions in a
+way genuine, session-heterogeneous detector error does not, so a null
+detector's output can in principle look \emph{no worse behaved} than the
+real pipeline's even though it carries no perceptual information at all
+(Section~\ref{sec:discuss-null}) --- precisely why the failure is invisible
+from output inspection alone.
 
 \paragraph{Exchangeability fails across driving sessions.}
 Conformal validity is conditional on exchangeability between calibration
 and test data. Real driving data arrives in sessions --- drives --- that
 differ persistently in route, traffic, lighting and weather. On CADC
-\cite{Pitropov2021CADC} we measure per-drive miscoverage under a single
-pooled quantile ranging from $0.083$ to $0.623$ against a target of
-$0.20$: a $7.5\times$ spread across drives that are all nominal, all
-clear-road, several sharing a collection date
-(Section~\ref{sec:exchangeability}). Between-session variation is as large
-as the weather effect the monitor exists to detect. The guarantee stays
-formally correct --- it holds on average over the calibration
-distribution --- and becomes operationally useless, because the monitored
-quantity is dominated by which session the vehicle is on.
+\cite{Pitropov2021CADC}, on a drive-disjoint held-out split, we measure
+per-drive miscoverage under a single pooled quantile spreading $3$--$5\times$
+across drives that are all nominal, all clear-road, on a nominal-drive
+sample thin enough (four held-out drives) that we report the range as
+indicative rather than precise (Section~\ref{sec:exchangeability}).
+Between-session variation is comparable in size to the weather effect the
+monitor exists to detect. The guarantee stays formally correct --- it holds
+on average over the calibration distribution --- and becomes operationally
+useless, because the monitored quantity is dominated by which session the
+vehicle is on.
 
 For navigation specifically this is the worst way for a monitor to fail.
 An alarm that tracks route identity rather than perception loss will fire
@@ -80,21 +84,25 @@ assurance displaces other mitigations.
 Our original objective requires a detectable difference between nominal and
 degraded conditions. On drive-disjoint held-out data, with resampling
 clustered over both nominal sessions and degraded drives, we measure
-$+0.064$ with a 95\% interval of $[-0.061, +0.193]$. This is an
+$+0.069$ with a 95\% interval of $[-0.073, +0.210]$. This is an
 \emph{underpowered null}, not a demonstrated absence, and we are careful to
 report it as such throughout: the interval is consistent with a real effect
 of the size we previously claimed and equally consistent with none. Nine
 evaluation sessions cannot resolve an effect of this magnitude --- the
-minimum detectable effect is roughly twice the point estimate.
+minimum detectable effect at 80\% power, computed directly from this
+interval's bootstrap standard error, is roughly $0.20$, almost three times
+the point estimate.
 
 We also report why an earlier version of this measurement appeared
-significant. Reporting the interval both with and without the degraded arm
-resampled shows that the earlier significance came from two compounding
-estimator defects rather than from a larger effect
-(Section~\ref{sec:underpowered}). We suggest that dual reporting as a
-general practice for clustered effect estimates: it is what allows a reader
-to distinguish an underpowered design from a genuine absence, which the
-point estimate alone never does.
+significant. Two defects compounded: the detector had trained on the very
+drives being evaluated, and a bookkeeping error in the bootstrap let each
+session's own calibration frames re-enter the window being monitored.
+Reporting the interval both with and without the degraded arm resampled
+shows that even the narrower comparison fails to reach significance once
+the drive-disjoint split is applied (Section~\ref{sec:underpowered}). We
+suggest dual reporting as a general practice for clustered effect
+estimates: it helps a reader distinguish an underpowered design from a
+genuine absence, which the point estimate alone never does.
 
 \paragraph{Scope and honesty about this work's own history.}
 Both findings above were discovered by controls applied to our own
@@ -103,8 +111,10 @@ this strengthens rather than weakens the case for the controls, but it puts
 an obligation on us to be exact about what is being corrected: the affected
 results were obtained in an unpublished predecessor of this work and were
 never published, so no external record requires correction. Snowy
-Scenes~\cite{SnowyScenes2026} appears throughout as a negative control ---
-its real detector shows no weather effect while its null detector shows a
-large one, the mirror image of CADC --- and that contrast is what shows the
-diagnostic discriminates between datasets rather than reporting a property
-of our own harness.
+Scenes~\cite{SnowyScenes2026} appears throughout as a negative control: its
+null detector shows a large, significant content-driven effect where its
+real detector shows none, demonstrating that the diagnostic fires on a
+genuine artifact when one is present. CADC's corrected result is more
+modest than we first reported it to be --- neither its real nor its null
+detector reaches significance --- which at least shows the diagnostic does
+not fire spuriously when the honest answer is that we cannot tell.

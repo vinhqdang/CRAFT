@@ -1,0 +1,38 @@
+{
+  "note": "Group summary statistics computed from per_drive_miscoverage_cadc.json (the drive-disjoint, correctly-split checkpoint).",
+  "source_json": "../manuscript/per_drive_miscoverage_cadc.json",
+  "calibration": {
+    "role": "calibration",
+    "n_drives": 5,
+    "mean": 0.2528576019036367,
+    "sd": 0.17951199277098662,
+    "min": 0.11252154729416747,
+    "max": 0.5221626984126984,
+    "ratio_max_over_min": 4.64055739517692
+  },
+  "nominal": {
+    "role": "nominal",
+    "n_drives": 4,
+    "mean": 0.21712963385719702,
+    "sd": 0.11769141505501428,
+    "min": 0.11353114478114477,
+    "max": 0.38604076479076477,
+    "ratio_max_over_min": 3.400307162716801
+  },
+  "degraded": {
+    "role": "degraded",
+    "n_drives": 7,
+    "mean": 0.2989742614263663,
+    "sd": 0.1565653373633445,
+    "min": 0.1072712146241558,
+    "max": 0.4791127086197083,
+    "ratio_max_over_min": 4.466367890942288
+  },
+  "all_bare_drives": {
+    "n_drives": 9,
+    "min": 0.11252154729416747,
+    "max": 0.5221626984126984,
+    "ratio_max_over_min": 4.64055739517692
+  },
+  "degraded_minus_nominal_mean": 0.08184462756916927
+}

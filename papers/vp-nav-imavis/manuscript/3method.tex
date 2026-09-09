@@ -45,7 +45,7 @@ Figure~\ref{fig:pipeline} sketches the full per-frame pipeline before we define 
 \subsection{Problem Setup}
 \label{sec:setup}
 
-We observe a stream of driving frames indexed by $t = 1, 2, \ldots$, one per LiDAR sweep. At every $t$, the base 3D detector $f_\theta$ described above produces per-object box predictions from the frame's fused camera/LiDAR BEV features; the monitor itself is detector-agnostic and does not depend on $f_\theta$'s specific architecture. We wrap those predictions in split conformal prediction, calibrated once on a held-out set of frames drawn from the nominal (least-degraded) regime available in the data. For object $i$ in frame $t$, the nonconformity score is the $\ell_1$ box-regression residual restricted to grid cells a ground-truth object actually occupies,
+We observe a stream of driving frames indexed by $t = 1, 2, \ldots$, one per LiDAR sweep. At every $t$, the base 3D detector $f_\theta$ described above produces per-object box predictions from the frame's fused camera/LiDAR BEV features, via a center-point / heatmap detection head in the style of~\cite{Zhou2019ObjectsAsPoints,Yin2021CenterPoint}: a per-cell object-presence heatmap $H$ locates candidate object centers and a co-located regression map $B$ predicts each object's box parameters at that cell; the monitor itself is detector-agnostic and does not depend on $f_\theta$'s specific architecture beyond this head structure, which is what lets Section~\ref{sec:null-diagnostic}'s null-detector control zero $B$ while leaving $H$ intact. We wrap those predictions in split conformal prediction, calibrated once on a held-out set of frames drawn from the nominal (least-degraded) regime available in the data. For object $i$ in frame $t$, the nonconformity score is the $\ell_1$ box-regression residual restricted to grid cells a ground-truth object actually occupies,
 \[
 s_i(t) = \big\| \hat{B}_i(t) - B_i(t) \big\|_1 ,
 \]
@@ -114,6 +114,41 @@ Alongside the two contributions in Sections~\ref{sec:spatial} and~\ref{sec:exper
 \]
 where $\kappa \ge 0$ gates the covariate's influence ($\kappa = 0$ recovers the base bettor exactly) and $\overline{(1-S_t)}$ is the frame- (or cell-)averaged disagreement. The intended mechanism is that a scene beginning to degrade shows rising cross-modal disagreement before enough individual object detections have actually missed coverage for $m(t)$ to move -- disagreement as a leading indicator, miscoverage as the lagging one the covariate-blind rules are stuck reacting to. Whether that intended mechanism holds on real data is not settled in this paper; the rule is specified and implemented, and no result for it is reported here (Section~\ref{sec:not-reported}).
 
+Figure~\ref{fig:qualitative-multi} shows why we did not lean on this
+covariate, on real frames rather than in the abstract. It shows six real
+Snowy Scenes val-split frames run through the trained checkpoint --- three
+\texttt{accumulated} (nominal) and three \texttt{falling} (degraded),
+spread across each category's frame pool rather than consecutive samples
+--- with the camera image, the LiDAR bird's-eye-view occupancy channel, and
+the CCP disagreement map $1-S$ for each. The per-frame mean disagreement is
+$0.611$, $0.583$, $0.576$ for the three \texttt{accumulated} frames and
+$0.564$, $0.559$, $0.573$ for the three \texttt{falling} frames --- category
+means of $0.590$ (nominal) versus $0.565$ (degraded), consistently the
+opposite of the ordering the covariate is meant to provide, and consistent
+across all six frames rather than an artifact of one pair. Our best
+explanation is that the CCP is trained to stay invariant under an
+adversarial-robustness objective (Section~\ref{sec:background-detector}),
+which is a qualitatively different feature-space disturbance from real
+snowfall, and invariance learned against one does not obviously transfer to
+sensitivity toward the other. This is why Section~\ref{sec:not-reported}
+declines to report a result for the covariate-informed bettor rather than
+reporting one anyway.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figures/qualitative_multi.pdf}
+\caption{Six real Snowy Scenes val-split frames run through the trained
+checkpoint: three \texttt{accumulated} (nominal) and three \texttt{falling}
+(degraded), each showing the camera image, LiDAR BEV occupancy channel, and
+the CCP disagreement map $1-S$. Mean disagreement is consistently
+\emph{higher} for the visually milder \texttt{accumulated} frames (category
+mean $0.590$) than the visually more severe \texttt{falling} frames
+(category mean $0.565$) --- the wrong-direction pattern this section
+diagnoses, visible here across six independent real frames rather than
+only in aggregate.}
+\label{fig:qualitative-multi}
+\end{figure}
+
 \subsection{Spatially Resolved Monitoring with Online Multiplicity Control}
 \label{sec:spatial}
 
@@ -132,7 +167,7 @@ Table~\ref{tab:betting-comparison} summarizes the three betting rules evaluated 
 \caption{Betting rules compared in this paper. All three are valid choices of $\lambda_t$ in Equation~\ref{eq:wealth} and inherit the same anytime-valid guarantee unconditionally (Section~\ref{sec:eprocess}); they differ in statistical power, not validity.}
 \label{tab:betting-comparison}
 \begin{threeparttable}
-\begin{tabular}{@{}p{1.6cm}p{2.6cm}p{2.6cm}@{}}
+\begin{tabular}{@{}p{1.8cm}p{4.4cm}p{4.6cm}@{}}
 \toprule
 Rule & Mechanism & Reactivity / stability \\
 \midrule

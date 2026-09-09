@@ -42,8 +42,8 @@ frames within a drive are strongly correlated and frame-level resampling
 understates intervals badly. Where an estimate contrasts nominal against
 degraded data, \emph{both} arms are resampled --- nominal sessions and
 degraded drives --- because the degraded side carries real between-drive
-variation (measured sd $0.057$) that a fixed pool would silently treat as
-zero. All intervals are percentile bootstrap.
+variation (measured sd $0.128$, Mondrian calibration) that a fixed pool
+would silently treat as zero. All intervals are percentile bootstrap.
 
 \subsection{The Null-Detector Diagnostic}
 \label{sec:null-diagnostic}
@@ -97,44 +97,58 @@ constructing one is not always straightforward.
 \begin{table}[t]
 \centering
 \caption{Per-drive mean frame miscoverage under one pooled quantile
-($\hat q = 1.935$, target $\alpha = 0.20$). All \texttt{bare} drives are
-nominal clear-road driving. Artifact:
-\texttt{per\_drive\_miscoverage\_cadc.json}.}
+($\hat q = 2.712$, target $\alpha = 0.20$), on the drive-disjoint evaluation
+split (the detector's training drives never appear here). All
+\texttt{bare} drives are nominal clear-road driving. Artifacts:
+\texttt{per\_drive\_miscoverage\_cadc.json},
+\texttt{table\_summary\_cadc.json}.}
 \label{tab:per-drive}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 Group & $n$ drives & mean $m$ (sd) & range \\
 \midrule
-calibration drives & 9 & $0.252$ ($0.140$) & $0.133$ -- $0.623$ \\
-nominal drives & 9 & $0.181$ ($0.061$) & $0.083$ -- $0.284$ \\
-degraded drives & 14 & $0.238$ ($0.057$) & $0.128$ -- $0.329$ \\
+calibration drives & 5 & $0.253$ ($0.180$) & $0.113$ -- $0.522$ \\
+nominal drives & 4 & $0.217$ ($0.118$) & $0.114$ -- $0.386$ \\
+degraded drives & 7 & $0.299$ ($0.157$) & $0.107$ -- $0.479$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Marginal validity holds on average while failing per session. Four of nine
-nominal drives sit above $\alpha$; one calibration drive reaches $0.623$
-against the quantile it helped define; the spread across all \texttt{bare}
-drives is $7.5\times$. The comparison that matters is against the effect
-being sought: the degraded-minus-nominal difference is $+0.057$ while the
-between-drive standard deviation is $0.061$, and six of nine nominal drives
-fall inside the degraded drives' range. A monitor calibrated marginally
-across sessions is therefore substantially detecting session identity, and
-its alarms carry route information rather than perception information.
+An earlier version of this table was computed on a checkpoint trained on
+all 32 drives, including every drive shown here; every number below is
+recomputed on the checkpoint that never saw them, and the picture that
+survives is smaller than what we first reported. With only 9 held-out
+\texttt{bare} drives split 5/4 between calibration and the nominal stream,
+the nominal group is thin --- we say so plainly, because a 3--4$\times$
+spread over four drives is not the kind of claim that should be dressed up
+as more than it is. One of four nominal drives sits above $\alpha$; the
+spread across all held-out \texttt{bare} drives (calibration and nominal
+together) is $4.6\times$, and restricted to the nominal drives alone,
+$3.4\times$. The comparison that matters is against the effect being
+sought: the degraded-minus-nominal difference is $+0.082$ while the
+nominal-drive standard deviation is $0.118$, and all four nominal drives
+fall inside the degraded drives' range. Even on this smaller, correctly
+held-out sample, a monitor calibrated marginally across sessions is
+detecting session identity to a degree comparable with the effect it exists
+to find, and its alarms carry route information rather than perception
+information --- the qualitative conclusion is unchanged even though the
+quantitative spread is smaller than we first reported.
 
-\subsection{Session-Conditional Calibration, and Where It Reverses}
+\subsection{Session-Conditional Calibration: An Inconsistent Fix}
 \label{sec:mondrian}
 
 Mondrian conformal prediction~\cite{VovkMondrian2003} conditions the
-quantile on a taxonomy; here the taxonomy is the driving session.
+quantile on a taxonomy; here the taxonomy is the driving session. It is the
+natural response to Section~\ref{sec:exchangeability}'s finding, so we
+evaluate it on the same drive-disjoint checkpoint, matched session for
+session, frame for frame and gap for gap against marginal calibration.
 
 \begin{table}[t]
 \centering
-\caption{Mondrian versus marginal calibration, matched on sessions, frames,
-gap and cached scores, differing only in which quantile scores each
-session. The advantage on one checkpoint reverses on the other. Artifacts:
-\texttt{mondrian\_gap\_sweep\_cadc.json},
-\texttt{mondrian\_gap\_sweep\_cadc\_converged.json}.}
+\caption{Mondrian versus marginal calibration on the drive-disjoint
+checkpoint, matched on sessions (9), frames, gap and cached scores,
+differing only in which quantile scores each session. Artifact:
+\texttt{mondrian\_gap\_sweep\_cadc.json}.}
 \label{tab:mondrian}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -142,31 +156,33 @@ session. The advantage on one checkpoint reverses on the other. Artifacts:
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
 gap & marginal & Mondrian & marginal & Mondrian \\
 \midrule
-\multicolumn{5}{@{}l}{\emph{5-epoch checkpoint}} \\
-0 & $0.551$ & $0.849$ & $0.412$ & $\mathbf{0.187}$ \\
-10 & $0.528$ & $0.848$ & $0.427$ & $\mathbf{0.190}$ \\
-20 & $0.558$ & $0.829$ & $0.480$ & $\mathbf{0.200}$ \\
-\midrule
-\multicolumn{5}{@{}l}{\emph{converged checkpoint}} \\
-0 & $-0.033$ & $-0.025$ & $\mathbf{0.187}$ & $0.344$ \\
-10 & $-0.104$ & $-0.079$ & $\mathbf{0.221}$ & $0.363$ \\
-20 & $0.096$ & $0.003$ & $\mathbf{0.210}$ & $0.353$ \\
+0 & $\mathbf{0.980}$ & $0.781$ & $0.259$ & $\mathbf{0.230}$ \\
+10 & $\mathbf{1.020}$ & $0.620$ & $\mathbf{0.206}$ & $0.279$ \\
+20 & $\mathbf{0.864}$ & $0.474$ & $\mathbf{0.231}$ & $0.383$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-On the 5-epoch checkpoint session-conditional calibration more than halves
-the worst-case per-session deviation. On the converged checkpoint the
-ordering reverses and Mondrian is roughly $1.7\times$ worse. We do not have
-an explanation and do not offer one. Two consequences follow, and we state
-both rather than the convenient one. First, the benefit is a property of
-the model--data combination, not an unconditional improvement: any claim
-that Mondrian improves worst-case per-session coverage is contradicted by
-our own second measurement. Second, neither the benefit nor the reversal
-carries an interval --- $\max_s |m_s - \alpha|$ is a maximum over nine
-sessions, among the least stable estimators available --- so the reversal
-may itself be noise. A practitioner should measure this on their own model
-rather than assume either direction.
+The result does not support a clean recommendation either way, and we
+report it as such rather than picking the reading that flatters the method.
+On worst-case per-session deviation from $\alpha$ --- the statistic Mondrian
+calibration is designed to control --- it wins narrowly at gap $0$ and loses
+at gaps $10$ and $20$, the opposite of what conditioning on session identity
+should buy as the gap widens and the twenty calibration frames per session
+have less contamination from adjacency to explain a benefit. On the ratio
+that matters for detecting the weather effect itself, effect over nominal
+standard deviation, Mondrian is \emph{worse} than marginal at every gap,
+because splitting twenty calibration frames per session into its own
+quantile estimate adds quantile-estimation noise that a single pooled
+quantile does not pay. Session-conditional calibration is not a free lunch:
+with this few calibration frames per session, it can trade one source of
+miscalibration (between-session heterogeneity) for another
+(per-session quantile-estimation noise), and which one dominates is not
+obvious in advance. Neither statistic carries an interval --- $\max_s
+|m_s - \alpha|$ and the effect-to-noise ratio are both computed from nine
+sessions, among the least stable estimators available at this sample size
+--- so a practitioner should measure this on their own model and calibration
+budget rather than assume either direction from a single run.
 
 \subsection{The Weather Effect: an Underpowered Null}
 \label{sec:underpowered}
@@ -178,15 +194,16 @@ rather than assume either direction.
 two-level interval resamples nominal sessions and degraded drives; the
 nominal-only interval resamples sessions alone, from the same draws, and is
 shown so the effect of the correction is visible. Artifact:
-\texttt{split\_effect\_split\_ep5.json}.}
+\texttt{split\_effect\_split\_ep5\_fixed.json}.}
 \label{tab:underpowered}
+\small
 \begin{tabular}{@{}lccccc@{}}
 \toprule
-gap & effect & two-level 95\% CI & nominal-only 95\% CI & inflation & null detector \\
+gap & effect & two-level CI & nominal-only CI & inflation & null det.\ \\
 \midrule
-0 & $+0.064$ & $[-0.061, +0.193]$ & $[-0.031, +0.143]$ & $1.46\times$ & n.s. \\
-10 & $+0.076$ & $[-0.059, +0.211]$ & $[-0.029, +0.161]$ & $1.43\times$ & n.s. \\
-20 & $+0.069$ & $[-0.073, +0.210]$ & $[-0.039, +0.163]$ & $1.40\times$ & n.s. \\
+0 & $+0.069$ & $[-0.073, +0.210]$ & $[-0.039, +0.163]$ & $1.40\times$ & n.s. \\
+10 & $+0.058$ & $[-0.090, +0.203]$ & $[-0.060, +0.160]$ & $1.33\times$ & n.s. \\
+20 & $+0.045$ & $[-0.106, +0.197]$ & $[-0.074, +0.157]$ & $1.31\times$ & n.s. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -194,31 +211,52 @@ gap & effect & two-level 95\% CI & nominal-only 95\% CI & inflation & null detec
 The effect is not distinguishable from zero at any gap, under either
 calibration scheme, and the null detector is likewise null throughout.
 
+\begin{sloppypar}
 \paragraph{This is an underpowered null, not a demonstrated absence.} The
-interval $[-0.061, +0.193]$ is consistent with a real effect of the size we
-previously claimed and equally consistent with none. With nine evaluation
-sessions and a between-session sd near $0.06$, the minimum detectable
-effect at 80\% power is roughly $0.13$ --- about twice the point estimate.
-The design cannot resolve an effect of this magnitude, and no conclusion
-about the presence or absence of weather-induced degradation should be
-drawn from it.
+interval $[-0.073, +0.210]$ is consistent with a real effect of the size we
+previously claimed and equally consistent with none. We compute the
+minimum detectable effect directly from this interval's bootstrap standard
+error (half-width divided by $z_{0.975}$, then scaled by
+$z_{0.975} + z_{0.80} \approx 2.80$ for 80\% power) rather than asserting
+it: at gap $0$, MDE$_{80} \approx 0.202$ --- almost $3\times$ the point
+estimate of $+0.069$ (\texttt{mde\_cadc.json}). The design cannot resolve an
+effect of this magnitude, and no conclusion about the presence or absence
+of weather-induced degradation should be drawn from it.
+\end{sloppypar}
 
-\paragraph{Why an earlier version appeared significant.} Before correction
-this measurement read $+0.074$ with an interval of $[+0.020, +0.117]$. The
-point estimate barely moved --- $+0.074 \rightarrow +0.064$, a 14\%
-reduction --- so removing the train/evaluation overlap did \emph{not}
-destroy the effect. Significance was lost for two separate statistical
-reasons, and reporting both intervals separates them. Restricting to
-held-out drives cut the session count from 18 to 9, which alone widened the
-interval enough to cross zero (the nominal-only column). Resampling the
-degraded arm widened it a further $1.4$--$1.5\times$. Neither correction
-alone would have exposed the problem, and the earlier significance was an
-artifact of the two compounding.
+\begin{sloppypar}
+\paragraph{Why an earlier version appeared significant.} Two independent
+defects were present before correction, and we can only cleanly separate
+one of them. The train/evaluation overlap put the entire pipeline in-sample
+over 18 nominal-regime sessions, giving $+0.074$, $[+0.020, +0.117]$
+(\texttt{mondrian\_gap\_sweep\_cadc\_presplit\_insample.json}, preserved
+separately from the corrected artifact of the same name). A
+separate bookkeeping bug in the two-level bootstrap let each session's
+first twenty frames --- its own calibration set --- re-enter the monitored
+window at gap $0$, biasing that specific cell; holding the drive-disjoint
+split fixed and only fixing this bug moves the gap-$0$ estimate from
+$+0.064$ (\texttt{split\_effect\_split\_ep5.json}, preserved for
+comparison) to $+0.069$ (\texttt{split\_effect\_split\_ep5\_fixed.json}), a
+small change relative to the interval width. What we
+cannot do cleanly is isolate the split correction from the bug fix in
+combination, because the bug lived inside the two-level bootstrap that only
+ever ran on the held-out split; the 18-session, in-sample number comes from
+a different script entirely. What is well supported is this: the point
+estimate moves only modestly across every correction we can check
+individually ($+0.074 \rightarrow +0.064 \rightarrow +0.069$), while
+significance is lost once the drive-disjoint split cuts the session count
+from 18 to 9 --- even the nominal-only column, which does not resample the
+degraded arm, fails to reach significance at any gap on the corrected data
+(Table~\ref{tab:underpowered}, fourth column). The earlier significance
+was not driven by a larger true effect; it was driven by having more
+sessions than the design was entitled to.
+\end{sloppypar}
 
 We suggest reporting both intervals as general practice for clustered
 effect estimates. A single interval tells a reader whether a result is
-significant; the pair tells them \emph{why} it is not, which is the
-difference between concluding ``underpowered'' and concluding ``absent.''
+significant; the pair tells them something about \emph{why}, which is part
+of the difference between concluding ``underpowered'' and concluding
+``absent.''
 
 \subsection{Snowy Scenes as Negative Control}
 \label{sec:snowy-control}
@@ -230,15 +268,24 @@ detector's is $-0.1315$, $[-0.1917, -0.0726]$
 artifact pointing the wrong way, which is why the null monitor ``detected''
 there while the real one did not.
 
-This is the mirror image of CADC, where the real effect is the larger and
-the null's interval covers zero. The same diagnostic returns opposite
-verdicts on two datasets, which is the evidence that it discriminates
-between them rather than reporting a property of our pipeline. We note that
-these two intervals were computed with frame-level rather than
+On the corrected CADC split (Table~\ref{tab:underpowered}) neither arm is
+significant: the real detector's interval covers zero and so does the null
+detector's. This is not the mirror image we originally reported --- an
+earlier draft, using the in-sample CADC artifact, read the real effect as
+significant and the null's as covering zero, the reverse of Snowy. That
+contrast does not survive the correction, and we withdraw it. What the two
+datasets now show is asymmetric in a more modest but still useful way:
+Snowy Scenes demonstrates that the null-detector diagnostic \emph{does}
+fire on a genuine content artifact when one is present, while CADC's
+corrected result shows it does not fire spuriously when the honest
+answer is ``we cannot tell.'' Neither dataset gives us a case where the
+real detector is significant and the null is not --- the comparison we
+would need to claim the diagnostic cleanly isolates detector-driven signal
+from content-driven signal in a positive instance --- and we say so rather
+than reach for the reading our earlier, uncorrected numbers had offered. We
+note that the Snowy intervals were computed with frame-level rather than
 session-level resampling and are therefore narrower than our convention
-elsewhere would give; the qualitative contrast is robust to this, but the
-Snowy interval widths should not be read as comparable to
-Table~\ref{tab:underpowered}'s.
+elsewhere would give; this does not affect the qualitative reading above.
 
 \subsection{What We Do Not Report}
 \label{sec:not-reported}

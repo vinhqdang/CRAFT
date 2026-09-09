@@ -1,203 +1,107 @@
 {
   "note": "Per-drive mean frame miscoverage under a single pooled q_hat.",
-  "checkpoint": "../../../checkpoints/cadc_focal/checkpoint_final.pth",
-  "q_hat": 1.9350011348724365,
+  "checkpoint": "../../../checkpoints/cadc_split/checkpoint_final.pth",
+  "q_hat": 2.711702823638916,
   "alpha": 0.2,
   "max_frames_per_drive": 60,
   "drives": {
     "bare/2018_03_06_0001": {
       "role": "calibration",
       "n_frames": 60,
-      "mean_miscoverage": 0.21368040807697863,
-      "above_alpha": true
-    },
-    "bare/2018_03_06_0002": {
-      "role": "calibration",
-      "n_frames": 60,
-      "mean_miscoverage": 0.26135142248532345,
-      "above_alpha": true
+      "mean_miscoverage": 0.11252154729416747,
+      "above_alpha": false
     },
     "bare/2018_03_06_0005": {
       "role": "calibration",
       "n_frames": 60,
-      "mean_miscoverage": 0.6229563492063492,
-      "above_alpha": true
-    },
-    "bare/2018_03_06_0006": {
-      "role": "calibration",
-      "n_frames": 60,
-      "mean_miscoverage": 0.24002599252599252,
+      "mean_miscoverage": 0.5221626984126984,
       "above_alpha": true
     },
     "bare/2018_03_06_0008": {
       "role": "calibration",
       "n_frames": 60,
-      "mean_miscoverage": 0.21165992421427202,
-      "above_alpha": true
-    },
-    "bare/2018_03_06_0009": {
-      "role": "calibration",
-      "n_frames": 60,
-      "mean_miscoverage": 0.2826447596751295,
-      "above_alpha": true
+      "mean_miscoverage": 0.15946450288841596,
+      "above_alpha": false
     },
     "bare/2018_03_06_0010": {
       "role": "nominal",
       "n_frames": 60,
-      "mean_miscoverage": 0.11841646790664155,
+      "mean_miscoverage": 0.19334235593355262,
       "above_alpha": false
-    },
-    "bare/2018_03_06_0012": {
-      "role": "nominal",
-      "n_frames": 60,
-      "mean_miscoverage": 0.22994008714596947,
-      "above_alpha": true
     },
     "bare/2018_03_06_0013": {
       "role": "nominal",
       "n_frames": 50,
-      "mean_miscoverage": 0.2082428792150712,
-      "above_alpha": true
-    },
-    "bare/2018_03_06_0015": {
-      "role": "nominal",
-      "n_frames": 50,
-      "mean_miscoverage": 0.16804761904761903,
+      "mean_miscoverage": 0.17560426992332598,
       "above_alpha": false
     },
     "bare/2018_03_06_0016": {
       "role": "nominal",
       "n_frames": 60,
-      "mean_miscoverage": 0.19834114959114962,
-      "above_alpha": false
-    },
-    "bare/2018_03_06_0018": {
-      "role": "nominal",
-      "n_frames": 60,
-      "mean_miscoverage": 0.11789799253034547,
+      "mean_miscoverage": 0.11353114478114477,
       "above_alpha": false
     },
     "bare/2018_03_07_0001": {
       "role": "calibration",
       "n_frames": 50,
-      "mean_miscoverage": 0.16821380996308308,
-      "above_alpha": false
-    },
-    "bare/2018_03_07_0002": {
-      "role": "calibration",
-      "n_frames": 60,
-      "mean_miscoverage": 0.13820233007733007,
+      "mean_miscoverage": 0.11818574755706328,
       "above_alpha": false
     },
     "bare/2018_03_07_0004": {
       "role": "calibration",
       "n_frames": 60,
-      "mean_miscoverage": 0.13271678860948938,
-      "above_alpha": false
-    },
-    "bare/2018_03_07_0005": {
-      "role": "nominal",
-      "n_frames": 60,
-      "mean_miscoverage": 0.2252616645452198,
+      "mean_miscoverage": 0.3519535133658386,
       "above_alpha": true
     },
     "bare/2018_03_07_0006": {
       "role": "nominal",
       "n_frames": 60,
-      "mean_miscoverage": 0.08304112554112555,
-      "above_alpha": false
-    },
-    "bare/2018_03_07_0007": {
-      "role": "nominal",
-      "n_frames": 60,
-      "mean_miscoverage": 0.28421906856361356,
+      "mean_miscoverage": 0.38604076479076477,
       "above_alpha": true
     },
     "covered/2019_02_27_0002": {
       "role": "degraded",
       "n_frames": 60,
-      "mean_miscoverage": 0.24063814589549884,
-      "above_alpha": true
-    },
-    "covered/2019_02_27_0006": {
-      "role": "degraded",
-      "n_frames": 60,
-      "mean_miscoverage": 0.26930046719133405,
-      "above_alpha": true
+      "mean_miscoverage": 0.1072712146241558,
+      "above_alpha": false
     },
     "covered/2019_02_27_0011": {
       "role": "degraded",
       "n_frames": 60,
-      "mean_miscoverage": 0.2537873198699634,
-      "above_alpha": true
-    },
-    "covered/2019_02_27_0018": {
-      "role": "degraded",
-      "n_frames": 60,
-      "mean_miscoverage": 0.3267515117828179,
+      "mean_miscoverage": 0.4791127086197083,
       "above_alpha": true
     },
     "covered/2019_02_27_0022": {
       "role": "degraded",
       "n_frames": 60,
-      "mean_miscoverage": 0.3288455219325626,
+      "mean_miscoverage": 0.39058750490073685,
       "above_alpha": true
-    },
-    "covered/2019_02_27_0028": {
-      "role": "degraded",
-      "n_frames": 60,
-      "mean_miscoverage": 0.18445642140059507,
-      "above_alpha": false
     },
     "covered/2019_02_27_0034": {
       "role": "degraded",
       "n_frames": 60,
-      "mean_miscoverage": 0.2094190664084921,
+      "mean_miscoverage": 0.21113231591064194,
       "above_alpha": true
-    },
-    "covered/2019_02_27_0040": {
-      "role": "degraded",
-      "n_frames": 60,
-      "mean_miscoverage": 0.12756102696317123,
-      "above_alpha": false
     },
     "covered/2019_02_27_0046": {
       "role": "degraded",
       "n_frames": 60,
-      "mean_miscoverage": 0.21027777777777779,
-      "above_alpha": true
-    },
-    "covered/2019_02_27_0051": {
-      "role": "degraded",
-      "n_frames": 60,
-      "mean_miscoverage": 0.16276936026936023,
+      "mean_miscoverage": 0.11805555555555555,
       "above_alpha": false
     },
     "covered/2019_02_27_0058": {
       "role": "degraded",
       "n_frames": 60,
-      "mean_miscoverage": 0.2687623242770301,
+      "mean_miscoverage": 0.46826166072489606,
       "above_alpha": true
-    },
-    "covered/2019_02_27_0065": {
-      "role": "degraded",
-      "n_frames": 60,
-      "mean_miscoverage": 0.1978323965921556,
-      "above_alpha": false
     },
     "covered/2019_02_27_0072": {
       "role": "degraded",
       "n_frames": 60,
-      "mean_miscoverage": 0.27888949013949016,
-      "above_alpha": true
-    },
-    "covered/2019_02_27_0079": {
-      "role": "degraded",
-      "n_frames": 60,
-      "mean_miscoverage": 0.27509652384652383,
+      "mean_miscoverage": 0.31839886964886965,
       "above_alpha": true
     }
   },
-  "n_nominal_drives_above_alpha": 4,
+  "n_nominal_drives_above_alpha": 1,
   "verdict": "HETEROGENEOUS: some nominal drives sit far above alpha under a single pooled quantile, so marginal validity holds on average while failing per session."
 }

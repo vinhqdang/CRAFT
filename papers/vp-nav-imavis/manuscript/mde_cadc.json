@@ -1,0 +1,22 @@
+{
+  "note": "MDE computed from the two-level bootstrap CI half-width under a normal approximation (SE = half-width / z_0.975); MDE = (z_0.975 + z_0.80) * SE.",
+  "source_json": "../manuscript/split_effect_split_ep5_fixed.json",
+  "z_975": 1.959963985,
+  "z_80": 0.841621234,
+  "results": {
+    "real_detector": {
+      "ci_half_width": 0.14160598942652777,
+      "se_normal_approx": 0.07224928136958995,
+      "mde_80pct_power": 0.20241251876841526,
+      "point_estimate": 0.06909366415449242,
+      "mde_over_point_estimate": 2.9295380588851656
+    },
+    "null_detector": {
+      "ci_half_width": 0.10458248257272912,
+      "se_normal_approx": 0.053359389954672626,
+      "mde_80pct_power": 0.1494908781918679,
+      "point_estimate": -0.003468754987402234,
+      "mde_over_point_estimate": 43.096407424216
+    }
+  }
+}

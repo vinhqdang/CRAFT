@@ -36,6 +36,12 @@ I.~Waudby-Smith, A.~Ramdas, Estimating means of bounded random variables by
   betting, Journal of the Royal Statistical Society Series B: Statistical
   Methodology 86~(1) (2024) 1--27, preprint: arXiv:2010.09686 (2020).
 
+\bibitem{Prinster2025WATCH}
+D.~Prinster, X.~Han, A.~Liu, S.~Saria, {WATCH}: Adaptive monitoring for ai
+  deployments via weighted-conformal martingales, in: International Conference
+  on Machine Learning (ICML), 2025.
+\newblock \href {http://arxiv.org/abs/2505.04608} {\path{arXiv:2505.04608}}.
+
 \bibitem{MonroyMunoz2026WACV}
 A.~M. Mu{\~n}oz, R.~Verma, A.~Timans, Detecting object tracking failure via
   sequential hypothesis testing, in: IEEE/CVF Winter Conference on Applications
@@ -70,6 +76,16 @@ M.~Bijelic, T.~Gruber, F.~Mannan, F.~Kraus, W.~Ritter, K.~Dietmayer, F.~Heide,
   Seeing through fog without seeing fog: Deep multimodal sensor fusion in
   unseen adverse weather, in: IEEE/CVF Conference on Computer Vision and
   Pattern Recognition (CVPR), 2020.
+
+\bibitem{Zhou2019ObjectsAsPoints}
+X.~Zhou, D.~Wang, P.~Kr{\"a}henb{\"u}hl, Objects as points, arXiv preprint
+  (2019).
+\newblock \href {http://arxiv.org/abs/1904.07850} {\path{arXiv:1904.07850}}.
+
+\bibitem{Yin2021CenterPoint}
+T.~Yin, X.~Zhou, P.~Kr{\"a}henb{\"u}hl, Center-based {3D} object detection and
+  tracking, in: Proceedings of the IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition (CVPR), 2021.
 
 \bibitem{WangRamdas2022JRSSB}
 R.~Wang, A.~Ramdas, False discovery rate control with e-values, Journal of the
