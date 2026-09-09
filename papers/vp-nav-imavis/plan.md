@@ -358,3 +358,21 @@ change. Download cost was not assessed before work stopped.
 Design constraint for both: keep the drive-disjoint split; regression over
 evaluation drives only; null-detector arm; drive-level clustering; CIs on
 the slope.
+
+## Submission status
+
+**Submitted 2026-09-09** to Elsevier *Image and Vision Computing*, VP-NAV
+special issue, by the corresponding author. Portal classifications selected:
+3D point cloud understanding; Object detection in images; 3D object pose
+estimation from images; Scene analysis and understanding.
+
+Manuscript state at submission: commit `5383093` on `main`
+(`papers/vp-nav-imavis/manuscript/main.pdf`, 38 pages). This followed a
+same-day review pass that found and corrected a checkpoint-leak defect in
+most CADC headline numbers (see the fix commit `115c1aa` for the full
+list: per-drive spread, Mondrian sweep, MDE, object-count claim, the
+"null monitor better behaved"/"mirror image of CADC" claims, Elsevier
+backmatter, abstract/keyword trim). Outstanding item not resolved before
+submission: the author block still read "withheld pending anonymity-policy
+confirmation" — the corresponding author resolved this directly in the
+portal at submission time, outside this repo.
